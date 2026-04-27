@@ -30,7 +30,7 @@ const StudentStories = () => {
   ];
 
   return (
-    <section className="w-full bg-[#fdfaf5] py-12 px-8 lg:px-16 overflow-hidden">
+    <section className="w-full bg-[#FDFCF8] py-12 px-8 lg:px-16 overflow-hidden">
       <div className="max-w-[1280px] mx-auto">
         
         {/* Header Section */}
@@ -47,11 +47,11 @@ const StudentStories = () => {
         </div>
 
         {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex lg:grid lg:grid-cols-3 gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0">
           {testimonials.map((item, index) => (
             <div 
               key={index} 
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow flex-shrink-0 w-full lg:w-auto"
             >
               <div className="space-y-4">
                 {/* Professional Star Rating */}

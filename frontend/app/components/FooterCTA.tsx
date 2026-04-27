@@ -7,7 +7,7 @@ const FooterCTA = () => {
       <div className="max-w-[1080px] mx-auto flex flex-col items-center text-center space-y-6">
         
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1e2d45] border border-[#2d3b55] text-[11px] font-semibold text-[#4ade80] uppercase tracking-[0.18em]">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2DBE8226] border border-[#2d3b55] text-[11px] font-semibold text-[#A8EDCF] uppercase tracking-[0.18em]">
           <Rocket size={14} className="fill-[#4ade80]" /> Start Today
         </div>
 
@@ -23,7 +23,7 @@ const FooterCTA = () => {
 
         {/* Main Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-4 pt-3 w-full justify-center">
-          <button className="w-full sm:w-auto bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)]">
+          <button className="w-full sm:w-auto bg-[#1E40AF] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)]">
             <MessageSquare size={18} className="fill-white" />
             Talk to AI — It's Free
           </button>
