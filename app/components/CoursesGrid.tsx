@@ -46,7 +46,7 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
       </div>
 
       <div className="p-6 flex flex-col flex-grow">
-        <h3 className="font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors">
+        <h3 className="font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors cursor-pointer ">
           {title}
         </h3>
 
@@ -60,7 +60,7 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
 
         <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
           <span className="text-2xl font-black text-[#0F1C2E]">${price}</span>
-          <button className="bg-[#1E40AF] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm">
+          <button className="bg-[#1E40AF] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer ">
             Enroll Now
           </button>
         </div>
@@ -130,7 +130,7 @@ export const CoursesGrid = () => {
             Curated by industry professionals, updated quarterly with the latest tools and trends.
           </p>
         </div>
-        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-[110px] text-sm text-[#0F1C2E] transition-all active:scale-95">
+        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-[110px] text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer ">
           View all 80+ courses →
         </button>
       </div>

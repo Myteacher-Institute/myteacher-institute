@@ -37,7 +37,7 @@ export const MentorshipSection = () => {
   return (
     <section className="py-24 px-6 max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center font-sans">
       {/* Visual Side */}
-      <div className="bg-[linear-gradient(135deg,#E8FAF3_0%,#EDE9FE_100%)] p-10 rounded-[3rem] h-110 grid grid-cols-2 gap-6 relative">
+      <div className="bg-[linear-gradient(135deg,#E8FAF3_0%,#EDE9FE_100%)] p-10 rounded-[3rem] h-110 grid grid-cols-2 gap-6 relative cursor-pointer ">
         <MentorMiniCard name="Fatima A." role="Senior UX Designer" initial="FA" color="bg-blue-100" />
 
         <MentorMiniCard name="Kelechi O." role="Data Scientist" initial="KO" color="bg-emerald-100" />
@@ -48,7 +48,7 @@ export const MentorshipSection = () => {
             
           <FiAward size={32} className="mb-2 text-yellow-400" />
 
-          <p className="font-bold text-sm leading-tight text-white/90">180+ Expert Mentors Ready</p>
+          <p className="font-bold text-sm leading-tight text-white/90 cursor-pointer ">180+ Expert Mentors Ready</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export const MentorshipSection = () => {
           ))}
         </ul>
 
-        <button className="bg-[#1E40AF] text-white px-10 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-3">
+        <button className="bg-[#1E40AF] text-white px-10 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-3 cursor-pointer ">
           Explore Mentorship <span className="text-xl">→</span>
         </button>
       </div>
