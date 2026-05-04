@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import StudentStories from './components/CareerTransform';
 import FooterCTA from './components/FooterCTA';
 import Footer from './components/Footer';
+import Link from 'next/dist/client/link';
+
 
 const ProfessionalHero = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,7 +23,7 @@ const ProfessionalHero = () => {
 
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-8 text-[15px] font-semibold text-slate-600">
-              <a href="#" className="hover:text-blue-600 transition-colors">Courses</a>
+              <a href="/courses" className="hover:text-blue-600 transition-colors">Courses</a>
               <a href="#" className="hover:text-blue-600 transition-colors">Learning Paths</a>
               <a href="#" className="hover:text-blue-600 transition-colors">Mentorship</a>
               <a href="#" className="hover:text-blue-600 transition-colors">AI Tutor</a>
@@ -29,6 +31,13 @@ const ProfessionalHero = () => {
             <button className="bg-[#0f172a] text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-all font-bold text-sm inline-flex">
               Get Started
             </button>
+
+             {/* <Link href="/dashboard">
+              <button className="bg-green-600 text-white px-5 py-2 rounded-lg">
+                Go to Dashboard
+              </button>
+            </Link> */}
+
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-600 hover:text-blue-600 lg:hidden">
               <i className="fas fa-bars text-xl"></i>
             </button>
@@ -38,21 +47,21 @@ const ProfessionalHero = () => {
           {isMenuOpen && (
             <div className="absolute top-20 left-0 w-full bg-white border-b border-gray-100 lg:hidden z-50">
               <div className="flex flex-col items-center gap-4 py-4">
-                <a href="#" className="text-slate-600 hover:text-blue-600 font-semibold">Courses</a>
+                <a href="/courses" className="text-slate-600 hover:text-blue-600 font-semibold">Courses</a>
                 <a href="#" className="text-slate-600 hover:text-blue-600 font-semibold">Learning Paths</a>
                 <a href="#" className="text-slate-600 hover:text-blue-600 font-semibold">Mentorship</a>
                 <a href="#" className="text-slate-600 hover:text-blue-600 font-semibold">AI Tutor</a>
-                
+
               </div>
             </div>
           )}
         </nav>
 
         {/* --- Main Content: Tightened Gap --- */}
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-8 pt-24 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-4">
+        <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-8 pt-24 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-4">
 
           {/* Left Side: Content tightened with space-y-3 */}
-        <div className="w-full lg:w-[52%] space-y-4 order-1 lg:order-1">
+          <div className="w-full lg:w-[52%] space-y-4 order-1 lg:order-1">
             {/* Update bg to #FFFFFF and tweak the border/text for better contrast */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFFFFF] text-[#10b981] text-[11px] font-bold border border-slate-200 uppercase tracking-wider shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
