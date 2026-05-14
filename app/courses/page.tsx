@@ -90,6 +90,13 @@ const CourseDetails = () => {
   );
 };
 
+const CourseBenefit = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
+  <div className="flex items-center gap-4 text-[15px] font-medium text-gray-700">
+    <span className="text-[#2546BD]">{icon}</span>
+    {text}
+  </div>
+);
+
 // --- MAIN PAGE COMPONENT ---
 
 const CoursePage = () => {
@@ -208,13 +215,6 @@ const CoursePage = () => {
       </main>
     </div>
   );
-}
-
-const CourseBenefit = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
-  <div className="flex items-center gap-4 text-[15px] font-medium text-gray-700">
-    <span className="text-[#2546BD]">{icon}</span>
-    {text}
-  </div>
-);
+};
 
 export default CoursePage;

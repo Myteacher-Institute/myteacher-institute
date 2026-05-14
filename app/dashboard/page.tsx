@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard,
-  Home,
   BookOpen,
   LineChart,
   Award,
@@ -116,7 +115,6 @@ const NOTIFICATIONS = [
 ];
 
 const SIDEBAR_ITEMS = [
-  { icon: <Home size={18} strokeWidth={1.5} />, label: "Home", href: "/home" },
   { icon: <LayoutDashboard size={18} strokeWidth={1.5} />, label: "Dashboard", href: "/dashboard", active: true },
   { icon: <Clock size={18} strokeWidth={1.5} />, label: "Schedule", href: "/schedule" },
   { icon: <BookOpen size={18} strokeWidth={1.5} />, label: "Courses", href: "/courses" },
@@ -296,7 +294,6 @@ const SidebarNavContent = () => {
 };
 
 // --- 4. MAIN DASHBOARD ---
-
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifyOpen, setNotifyOpen] = useState(false);
