@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard,
+  Home,
   BookOpen,
   LineChart,
   Award,
@@ -26,6 +27,8 @@ import {
   AlertTriangle, // Added for notifications
   Info,          // Added for notifications
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 // --- 1. CONSTANTS & MOCK DATA ---
 const COURSES = [
@@ -113,13 +116,15 @@ const NOTIFICATIONS = [
 ];
 
 const SIDEBAR_ITEMS = [
-  { icon: <LayoutDashboard size={18} strokeWidth={1.5} />, label: "Dashboard", active: true },
-  { icon: <BookOpen size={18} strokeWidth={1.5} />, label: "My Courses" },
-  { icon: <LineChart size={18} strokeWidth={1.5} />, label: "Progress" },
-  { icon: <Bot size={18} strokeWidth={1.5} />, label: "AI Tutor" },
-  { icon: <Award size={18} strokeWidth={1.5} />, label: "Certificates" },
-  { icon: <Users size={18} strokeWidth={1.5} />, label: "Mentorship" },
-  { icon: <Megaphone size={18} strokeWidth={1.5} />, label: "Community" },
+  { icon: <Home size={18} strokeWidth={1.5} />, label: "Home", href: "/home" },
+  { icon: <LayoutDashboard size={18} strokeWidth={1.5} />, label: "Dashboard", href: "/dashboard", active: true },
+  { icon: <Clock size={18} strokeWidth={1.5} />, label: "Schedule", href: "/schedule" },
+  { icon: <BookOpen size={18} strokeWidth={1.5} />, label: "Courses", href: "/courses" },
+  { icon: <LineChart size={18} strokeWidth={1.5} />, label: "Progress", href: "/progress" },
+  { icon: <Bot size={18} strokeWidth={1.5} />, label: "AI Tutor", href: "/ai-tutor" },
+  { icon: <Award size={18} strokeWidth={1.5} />, label: "Certificates", href: "/certificates" },
+  { icon: <Users size={18} strokeWidth={1.5} />, label: "Mentorship", href: "/request-mentor" },
+  { icon: <Megaphone size={18} strokeWidth={1.5} />, label: "Community", href: "/community" },
 ];
 
 // --- 2. REUSABLE ATOMS ---
@@ -165,7 +170,7 @@ const CourseCard = ({ title, progress, icon, color, bg }: any) => (
           style={{ width: `${progress}%` }}
         ></div>
       </div>
-      <button className="w-full py-2 lg:py-3 bg-blue-600 text-white text-[10px] lg:text-sm font-bold rounded-lg lg:rounded-xl active:scale-95 transition-transform hover:bg-blue-700">
+      <button className="w-full py-2 lg:py-3 bg-blue-600 text-white text-[10px] lg:text-sm font-bold rounded-lg lg:rounded-xl active:scale-95 transition-transform hover:bg-blue-700 cursor-pointer">
         Continue
       </button>
     </div>
@@ -187,7 +192,7 @@ const MentorWidget = () => (
     <p className="text-blue-100 text-xs mb-6 max-w-xs">
       Get guidance from industry experts Omeke Charles at Myteacher. Accelerate your growth.
     </p>
-    <button className="w-full bg-white text-blue-600 font-bold py-3 rounded-xl shadow-md active:bg-blue-50 transition-colors hover:bg-slate-50">
+    <button className="w-full bg-white text-blue-600 font-bold py-3 rounded-xl shadow-md active:bg-blue-50 transition-colors hover:bg-slate-50 cursor-pointer">
       Book Now
     </button>
   </div>
@@ -208,7 +213,7 @@ const RecommendedSection = () => (
         <div className="flex-1 min-w-0">
           <h4 className="text-[13px] font-bold truncate text-slate-800">{rec.t}</h4>
           <p className="text-[11px] text-slate-400 truncate mb-1">{rec.d}</p>
-          <button className="text-[11px] font-bold text-blue-600 flex items-center gap-1 hover:underline">
+          <button className="text-[11px] font-bold text-blue-600 flex items-center gap-1 hover:underline cursor-pointer">
             View <ArrowRight size={12} />
           </button>
         </div>
@@ -257,24 +262,38 @@ const NotificationsContent = () => {
   );
 };
 
-const SidebarNavContent = () => (
-  <nav className="px-4 space-y-1.5 flex-1 overflow-y-auto no-scrollbar">
-    {SIDEBAR_ITEMS.map((item, i) => (
-      <button
-        key={i}
-        className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${item.active ? "bg-blue-50 text-blue-700" : "text-slate-500 hover:bg-slate-50"}`}
-      >
-        {item.icon}
-        {item.label}
-      </button>
-    ))}
-    <div className="p-4 bg-slate-50 rounded-xl mt-6 border border-slate-100">
-        <p className="text-xs text-slate-500">Need help Omeke Charles?</p>
-        <button className="flex items-center gap-2 mt-2 text-[11px] font-bold text-blue-600 hover:underline">Chat with Support <ArrowRight size={12} /></button>
-    </div>
-  </nav>
-);
+const SidebarNavContent = () => {
+  const pathname = usePathname();
 
+  return (
+    <nav className="px-4 space-y-1.5 flex-1 overflow-y-auto no-scrollbar">
+      {SIDEBAR_ITEMS.map((item, i) => {
+        const isActive = pathname === item.href;
+        
+        return (
+          <Link
+            key={i}
+            href={item.href}
+            className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+              isActive 
+                ? "bg-blue-50 text-blue-700" 
+                : "text-slate-500 hover:bg-slate-50 cursor-pointer"
+            }`}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        );
+      })}
+      <div className="p-4 bg-slate-50 rounded-xl mt-6 border border-slate-100">
+        <p className="text-xs text-slate-500">Need help Omeke Charles?</p>
+        <Link href="/support" className="flex items-center gap-2 mt-2 text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
+          Chat with Support <ArrowRight size={12} />
+        </Link>
+      </div>
+    </nav>
+  );
+};
 
 // --- 4. MAIN DASHBOARD ---
 
@@ -305,7 +324,7 @@ export default function Dashboard() {
            <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
           </div>
-          <button className="lg:hidden p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100" onClick={() => setSidebarOpen(false)}>
+          <button className="lg:hidden p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer" onClick={() => setSidebarOpen(false)}>
             <X size={18} className="text-slate-600" />
           </button>
         </div>
@@ -315,7 +334,7 @@ export default function Dashboard() {
         </div>
 
         <div className="p-6 border-t border-slate-50 shrink-0">
-            <button className="w-full text-center text-sm font-bold text-slate-500 py-3 rounded-xl hover:bg-slate-50 transition-colors">Log out Omeke Charles</button>
+            <button className="w-full text-center text-sm font-bold text-slate-500 py-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">Log out Omeke Charles</button>
         </div>
       </aside>
 
@@ -323,7 +342,7 @@ export default function Dashboard() {
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-50">
           <div className="flex items-center gap-3">
             <button
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg cursor-pointer"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={22} className="text-slate-700" />
@@ -337,7 +356,7 @@ export default function Dashboard() {
             <div className="relative">
               <button
                 onClick={handleNotifyToggle}
-                className={`p-2.5 rounded-xl transition-colors lg:cursor-default ${notifyOpen ? "bg-blue-50 text-blue-600" : "text-slate-400 hover:bg-slate-50 lg:hover:bg-transparent"}`}
+                className={`p-2.5 rounded-xl transition-colors lg:cursor-default ${notifyOpen ? "bg-blue-50 text-blue-600" : "text-slate-400 hover:bg-slate-50 lg:hover:bg-transparent cursor-pointer"}`}
               >
                 <Bell size={19} strokeWidth={2} />
                 <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
@@ -347,7 +366,7 @@ export default function Dashboard() {
                 <div className="lg:hidden absolute top-16 right-0 w-[calc(100vw-32px)] bg-white border border-slate-100 shadow-2xl rounded-2xl z-[100] animate-in fade-in slide-in-from-top-4 p-6">
                     <div className="flex justify-between items-center mb-5">
                         <h3 className="font-black text-xl text-slate-800">Notifications</h3>
-                        <button onClick={() => setNotifyOpen(false)} className="p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100">
+                        <button onClick={() => setNotifyOpen(false)} className="p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer">
                             <X size={18} className="text-slate-600" />
                         </button>
                     </div>
@@ -387,7 +406,7 @@ export default function Dashboard() {
                 <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
                   Continue Learning Omeke Charles
                 </h3>
-                <button className="text-[11px] font-bold text-blue-600 hover:underline">View All</button>
+                <button className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">View All</button>
               </div>
               
               <div className="grid grid-cols-2 gap-3 lg:gap-6">
@@ -433,7 +452,7 @@ export default function Dashboard() {
         {mentorOpen && (
           <div className="absolute bottom-20 right-0 w-[calc(100vw-48px)] max-w-[320px] bg-blue-600 rounded-[2rem] p-7 shadow-2xl animate-in slide-in-from-bottom-10 z-[110]">
              <div className="absolute top-5 right-5 z-[120]">
-                <button onClick={() => setMentorOpen(false)} className="p-1.5 bg-white/20 rounded-lg hover:bg-white/30">
+                <button onClick={() => setMentorOpen(false)} className="p-1.5 bg-white/20 rounded-lg hover:bg-white/30 cursor-pointer">
                     <X size={16} className="text-white" />
                 </button>
              </div>
@@ -442,7 +461,7 @@ export default function Dashboard() {
         )}
         <button
           onClick={() => setMentorOpen(!mentorOpen)}
-          className="w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center border-4 border-white active:scale-95 transition-all z-[100] relative"
+          className="w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center border-4 border-white active:scale-95 transition-all z-[100] relative cursor-pointer"
         >
           {mentorOpen ? <X size={26} strokeWidth={2.5} /> : <MessageCircle size={26} strokeWidth={2.5} />}
         </button>

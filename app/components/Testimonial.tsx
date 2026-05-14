@@ -1,7 +1,7 @@
 import React from 'react';
 import { Star, ArrowUpRight, GraduationCap } from 'lucide-react';
 
-const StudentStories = () => {
+const Testimonial = () => {
   const testimonials = [
     {
       name: "Amara M.",
@@ -92,4 +92,4 @@ const StudentStories = () => {
   );
 };
 
-export default StudentStories;
+export default Testimonial;

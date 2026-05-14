@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import InstructorAndReviews from './InstructorAndReviews';
-import Footer from './Footer';
 import { 
   Video, Download, Smartphone, Infinity, Award, Clock, 
   ChevronDown, ChevronUp, PlayCircle, FileText, Check, 
   Menu, X, Star 
 } from 'lucide-react';
+import Navbar from '../components/Navbar';
 
 // --- SUB-COMPONENTS (CONTENT & DETAILS) ---
 
@@ -56,7 +56,7 @@ const CourseDetails = () => {
             <div key={section.id} className="border-b border-gray-100 last:border-0">
               <button
                 onClick={() => setOpenSection(openSection === section.id ? null : section.id)}
-                className="w-full flex items-center justify-between p-5 md:p-6 hover:bg-gray-50/50 transition-colors"
+                className="w-full flex items-center justify-between p-5 md:p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3 md:gap-5">
                   <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
@@ -99,36 +99,7 @@ const CoursePage = () => {
     <div className="min-h-screen bg-[#FDFBF7] font-sans text-[#1A1E2E]">
       {/* Navigation Header */}
       <header className="bg-white px-4 md:px-[8%] py-4 flex justify-between items-center sticky top-0 z-[60] border-b border-gray-100">
-        <div className="flex items-center gap-3 shrink-0">
-          <img src="/logo.png" alt="Logo" className="w-28 md:w-44 h-10 object-contain" />
-        </div>
-
-        {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex gap-8 text-sm font-semibold text-gray-600">
-          <a href="#" className="hover:text-[#2546BD] transition-colors">Courses</a>
-          <a href="#" className="hover:text-[#2546BD] transition-colors">Mentors</a>
-          <a href="#" className="hover:text-[#2546BD] transition-colors">Community</a>
-        </nav>
-
-        {/* Right Actions (Login/Signup ALWAYS visible, Hamburger for Links) */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="flex items-center gap-2 md:gap-6">
-            <button className="text-[12px] md:text-sm font-bold text-gray-700 hover:text-[#2546BD] transition-colors px-2">
-              Log In
-            </button>
-            <button className="bg-[#1A1E2E] text-white px-3 py-2 md:px-6 md:py-2.5 rounded-lg md:rounded-xl text-[12px] md:text-sm font-bold hover:bg-black transition-all shadow-md">
-              Sign Up
-            </button>
-          </div>
-          
-          {/* Mobile Menu Toggle (Only for links) */}
-          <button 
-            className="lg:hidden p-1.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-1"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
+        <Navbar />
 
         {/* MOBILE MENU OVERLAY (Links Only) */}
         {isMenuOpen && (
@@ -168,7 +139,7 @@ const CoursePage = () => {
           <div className="flex items-center gap-4 mb-12 p-1">
             <img
               src="https://api.dicebear.com/7.x/avataaars/svg?seed=Omeke"
-              className="w-12 h-12 rounded-full bg-blue-100 border border-gray-100"
+              className="w-12 h-12 rounded-full bg-blue-100 border border-gray-100 "
               alt="Instructor"
             />
             <div>
@@ -185,7 +156,7 @@ const CoursePage = () => {
               alt="Course Workspace"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-all group-hover:bg-black/20">
-              <button className="w-16 h-16 md:w-22 md:h-22 bg-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
+              <button className="w-16 h-16 md:w-22 md:h-22 bg-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 cursor-pointer">
                 <div className="w-0 h-0 border-t-[10px] md:border-t-[14px] border-t-transparent border-b-[10px] md:border-b-[14px] border-b-transparent border-l-[18px] md:border-l-[24px] border-l-[#2546BD] ml-1"></div>
               </button>
             </div>
@@ -207,7 +178,7 @@ const CoursePage = () => {
               <Clock size={16} className="animate-pulse" /> 40% off for the next 2 days
             </p>
 
-            <button className="w-full bg-[#2546BD] hover:bg-[#1e389c] text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-100 mb-3 text-lg">
+            <button className="w-full bg-[#2546BD] hover:bg-[#1e389c] text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-100 mb-3 text-lg cursor-pointer">
               Enroll Now
             </button>
             <p className="text-center text-[12px] text-gray-400 font-semibold mb-10">
@@ -228,15 +199,13 @@ const CoursePage = () => {
               <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                 Get this course plus 5,000+ of our top-rated courses for your team.
               </p>
-              <button className="w-full border-2 border-[#1A1E2E] text-[#1A1E2E] font-bold py-4 rounded-2xl hover:bg-gray-50 transition-colors">
+              <button className="w-full border-2 border-[#1A1E2E] text-[#1A1E2E] font-bold py-4 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer">
                 Try Myteacher Business
               </button>
             </div>
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -2,7 +2,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { useState } from 'react';
-import Footer from '../courses/Footer';
 import {
   ChevronDown,
   Sparkles,
@@ -14,6 +13,7 @@ import {
   Users as GroupIcon,
   ArrowRight
 } from 'lucide-react';
+import Navbar from '../components/Navbar';
 
 export default function RequestMentorPage() {
   const steps = [
@@ -46,32 +46,10 @@ export default function RequestMentorPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white px-4 md:px-[8%] py-4 flex justify-between items-center sticky top-0 z-[60] border-b border-gray-100">
-        <div className="flex items-center gap-3 shrink-0">
-          <img src="/logo.png" alt="Logo" className="w-28 md:w-44 h-10 object-contain" />
-        </div>
-        <nav className="hidden lg:flex gap-8 text-sm font-semibold text-gray-600">
-          <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
-          <a href="/courses" className="hover:text-blue-600 transition-colors">Courses</a>
-          <a href="/request-mentor" className="text-blue-600 transition-colors">Request Mentor</a>
-          <a href="/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</a>
-        </nav>
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Profile Image */}
-          <div className="relative cursor-pointer group">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?fit=crop&w=100&h=100"
-              alt="Profile"
-              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-all"
-            />
-            {/* Optional: Online status dot */}
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* SECTION 1: How It Works - Steps */}
-      <main className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 pt-28">
         <div className="text-center mb-20">
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">
             Request a Mentor
@@ -110,7 +88,6 @@ export default function RequestMentorPage() {
 
       {/* SECTION 2: Request Details Form with AI Recommendation - COMPLETED */}
       <RequestDetailsPage />
-      <Footer />
     </div>
   );
 }
@@ -204,7 +181,7 @@ const RequestDetailsPage = () => {
                     <button
                       key={l}
                       onClick={() => setLevel(l)}
-                      className={`py-3 rounded-xl font-semibold border-2 transition-all ${level === l ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'}`}
+                      className={`py-3 rounded-xl font-semibold border-2 transition-all ${level === l ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200 cursor-pointer'}`}
                     >
                       {l}
                     </button>
@@ -218,13 +195,13 @@ const RequestDetailsPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setType('Private')}
-                    className={`flex items-center justify-center py-4 rounded-xl font-semibold border-2 transition-all ${type === 'Private' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-500'}`}
+                    className={`flex items-center justify-center py-4 rounded-xl font-semibold border-2 transition-all ${type === 'Private' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-500 cursor-pointer'}`}
                   >
                     <User className="w-5 h-5 mr-2" /> Private (1-on-1)
                   </button>
                   <button
                     onClick={() => setType('Group')}
-                    className={`flex items-center justify-center py-4 rounded-xl font-semibold border-2 transition-all ${type === 'Group' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-500'}`}
+                    className={`flex items-center justify-center py-4 rounded-xl font-semibold border-2 transition-all ${type === 'Group' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-500 cursor-pointer'}`}
                   >
                     <GroupIcon className="w-5 h-5 mr-2" /> Group
                   </button>
@@ -235,7 +212,7 @@ const RequestDetailsPage = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-500 mb-3">Budget Range (per session)</label>
                 <div className="relative">
-                  <select className={inputStyles}>
+                  <select className={inputStyles + " cursor-pointer appearance-none"}>
                     <option>Select budget range</option>
                     <option>$20 - $50</option>
                     <option>$50 - $100</option>
@@ -249,7 +226,7 @@ const RequestDetailsPage = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-500 mb-3">Availability</label>
                 <div className="relative">
-                  <select className={inputStyles}>
+                  <select className={inputStyles + " cursor-pointer appearance-none"}>
                     <option>Select your availability</option>
                     <option>Weekdays</option>
                     <option>Weekends</option>
@@ -270,7 +247,7 @@ const RequestDetailsPage = () => {
               </div>
 
               {/* Submit Button */}
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center transition-all shadow-xl shadow-blue-100">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center transition-all shadow-xl shadow-blue-100 cursor-pointer">
                 Request Mentor <ArrowRight className="ml-2 w-5 h-5" />
               </button>
             </div>
@@ -334,7 +311,7 @@ const RequestDetailsPage = () => {
                   </p>
 
                   {/* Action Button */}
-                  <button className="w-full bg-[#1d61ff] hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-blue-100 mt-2">
+                  <button className="w-full bg-[#1d61ff] hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-blue-100 mt-2 cursor-pointer">
                     Request This Mentor
                   </button>
                 </div>

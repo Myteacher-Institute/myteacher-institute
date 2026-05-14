@@ -5,3 +5,7 @@
     @apply bg-slate-50 font-sans text-slate-900 overflow-x-hidden;
   }
 }
+
+::selection {
+  @apply bg-emerald-100 text-slate-900;
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Rocket, MousePointerClick, Check, MessageSquare } from 'lucide-react';
 
-const FooterCTA = () => {
+const Banner = () => {
   return (
     <section className="w-full bg-[#0b1629] py-16 px-6 overflow-hidden">
       <div className="max-w-[1080px] mx-auto flex flex-col items-center text-center space-y-6">
@@ -23,12 +23,12 @@ const FooterCTA = () => {
 
         {/* Main Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-4 pt-3 w-full justify-center">
-          <button className="w-full sm:w-auto bg-[#1E40AF] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)]">
+          <button className="w-full sm:w-auto bg-[#1E40AF] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)] cursor-pointer">
             <MessageSquare size={18} className="fill-white" />
             Talk to AI — It's Free
           </button>
           
-          <button className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#0f172a] px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all border border-white/20">
+          <button className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#0f172a] px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all border border-white/20 cursor-pointer">
             Browse All Courses
           </button>
         </div>
@@ -50,4 +50,4 @@ const FooterCTA = () => {
   );
 };
 
-export default FooterCTA;
+export default Banner;

@@ -57,7 +57,7 @@ const InstructorAndReviews = () => {
               Get personalized feedback on your portfolio and career advice directly from Marcus.
             </p>
           </div>
-          <button className="w-full bg-[#2546BD] hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors border border-blue-400/30">
+          <button className="w-full bg-[#2546BD] hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors border border-blue-400/30 cursor-pointer">
             Book a Session
           </button>
         </div>
@@ -71,7 +71,7 @@ const InstructorAndReviews = () => {
           <p className="text-gray-500 text-sm leading-relaxed mb-6">
             Stuck on a concept? Ask our specialized AI tutor for instant explanations and coding examples.
           </p>
-          <button className="flex items-center gap-2 text-sm font-bold hover:gap-3 transition-all">
+          <button className="flex items-center gap-2 text-sm font-bold hover:gap-3 transition-all cursor-pointer">
             Try it out <ArrowRight className="w-4 h-4" />
           </button>
         </div>
