@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  FiGrid, FiBook, FiUsers, FiDollarSign,
+  FiGrid, FiBook, FiUsers, FiDollarSign, 
   FiStar, FiMessageSquare, FiTrendingUp,
   FiSettings, FiHelpCircle, FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiX
 } from 'react-icons/fi';
@@ -44,7 +44,8 @@ export default function InstructorDashboard() {
       )}
 
       {/* --- Sidebar --- */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#FFFFFF] border-r border-slate-100 p-8 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Changed lg:fixed to lg:sticky to prevent content overlap */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#FFFFFF] border-r border-slate-100 p-8 flex flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden absolute top-4 right-4 text-[#111827]" aria-label="Close sidebar"><FiX size={24} /></button>
 
         <div className="flex items-center gap-3 mb-10 px-2">
@@ -61,7 +62,7 @@ export default function InstructorDashboard() {
           <p className="text-[#111827] text-sm flex items-center gap-1 font-medium">Instructor <span className="text-emerald-500 text-[10px]">●</span></p>
         </div>
 
-        <nav className="space-y-1 overflow-y-auto">
+        <nav className="space-y-1 overflow-y-auto flex-grow pr-2">
           <SidebarItem icon={FiGrid} label="Dashboard" active />
           <SidebarItem icon={FiBook} label="My Courses" />
           <SidebarItem icon={FiUsers} label="Students" />
@@ -73,7 +74,8 @@ export default function InstructorDashboard() {
           <SidebarItem icon={FiHelpCircle} label="Help & Support" />
         </nav>
 
-        <div className="mt-10 bg-[#0A1629] p-6 rounded-[24px] relative overflow-hidden shrink-0">
+        {/* Sidebar Promo Box */}
+        {/* <div className="mt-6 bg-[#0A1629] p-6 rounded-[24px] relative overflow-hidden shrink-0">
           <div className="relative z-10">
             <p className="text-white font-semibold text-sm mb-4">Create New Course</p>
             <p className="text-[#FFFFFF] text-[11px] mb-5 leading-relaxed">Share your knowledge and reach more students.</p>
@@ -82,7 +84,7 @@ export default function InstructorDashboard() {
             </button>
           </div>
           <div className="absolute top-0 right-0 w-full h-full pointer-events-none bg-[radial-gradient(circle_at_85%_50%,rgba(124,58,237,0.6)_0%,rgba(124,58,237,0)_50%)]" />
-        </div>
+        </div> */}
       </aside>
 
       {/* --- Main Content --- */}
@@ -122,7 +124,7 @@ export default function InstructorDashboard() {
                 { title: "AI Fundamentals", students: "1,238", lessons: "38", status: "Draft", img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400" },
                 { title: "Python for Beginners", students: "1,238", lessons: "38", status: "Published", img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400" },
               ].map((course, i) => (
-                <div key={i} className="flex items-center justify-between group cursor-pointer overflow-hidden">
+                <div key={i} className="flex items-center justify-between group overflow-hidden">
                   <div className="flex items-center gap-3 lg:gap-5 min-w-0">
                     <img src={course.img} className="w-16 h-12 lg:w-24 lg:h-16 rounded-xl lg:rounded-2xl object-cover shadow-sm flex-shrink-0" alt={course.title} />
                     <div className="min-w-0">
@@ -132,7 +134,7 @@ export default function InstructorDashboard() {
                   </div>
                   <div className="flex items-center gap-2 lg:gap-6 ml-2 flex-shrink-0">
                     <span className={`hidden sm:inline-block px-4 py-1.5 text-[11px] font-bold rounded-full ${course.status === 'Draft' ? 'bg-[#E7F9F1] text-[#FEB00A]' : 'bg-[#E7F9F1] text-[#5CC68C]'}`}>{course.status}</span>
-                    <FiMoreHorizontal className="text-[#111827]" size={20} />
+                    <FiMoreHorizontal className="text-[#111827] cursor-pointer" size={20} />
                   </div>
                 </div>
               ))}
