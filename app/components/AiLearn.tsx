@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fi';
 import { LuLeaf } from "react-icons/lu";
 import { FiCpu } from 'react-icons/fi';
+import Image from 'next/image';
 
 // --- Interfaces ---
 interface SidebarItemProps {
@@ -44,7 +45,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, active = f
             : 'text-[#475569] hover:bg-slate-50'
     )}>
         <Icon size={18} className={active ? "text-[#2563EB]" : "text-[#94A3B8]"} />
-        <span className="flex-grow">{label}</span>
+        <span className="grow">{label}</span>
     </div>
 );
 
@@ -53,7 +54,7 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ icon: Icon, title, desc
         <div className="p-2.5 rounded-lg bg-[#EFF6FF] text-[#2563EB] w-fit">
             <Icon size={18} />
         </div>
-        <div className="text-left space-y-1.5 flex-grow flex flex-col justify-between">
+        <div className="text-left space-y-1.5 grow flex flex-col justify-between">
             <h4 className="font-bold text-[#0F172A] text-sm group-hover:text-[#2563EB] transition-colors">{title}</h4>
             <p className="text-slate-500 text-xs leading-relaxed">{description}</p>
         </div>
@@ -123,11 +124,7 @@ export default function AiLearningAssistant() {
 
                 <div className="border-t border-slate-100 pt-6 flex items-center gap-3.5 mt-auto">
                     <div className="relative">
-                        <img
-                            src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop"
-                            className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-inner"
-                            alt="Profile Avatar"
-                        />
+                        <Image src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop" alt="Profile Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-inner" />
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full shadow-md" />
                     </div>
                     <div className="min-w-0">
@@ -161,7 +158,7 @@ export default function AiLearningAssistant() {
                 </div>
 
                 {/* Content Container Area Layout */}
-                <div className="flex flex-col items-center justify-center p-6 lg:p-12 flex-grow">
+                <div className="flex flex-col items-center justify-center p-6 lg:p-12 grow">
                     <div className="text-center mb-16 space-y-1.5 w-full max-w-2xl px-4">
                         <h1 className="text-[34px] lg:text-[44px] font-extrabold text-[#0F172A] tracking-tighter leading-tight">AI Learning Assistant</h1>
                         <p className="text-[#64748B] text-[15px] lg:text-[16px] font-medium">Tell me what you want to learn</p>
@@ -175,7 +172,7 @@ export default function AiLearningAssistant() {
                         <p className="text-[#64748B] text-[13px] mt-2 font-medium">Choose a suggestion below or type your own question</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-[960px] px-2.5 mb-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-240 px-2.5 mb-12">
                         <SuggestionCard title="High-Income Skills" description="I want to learn a high-income skill" icon={FiTrendingUp} />
                         <SuggestionCard title="Beginner Friendly" description="What skill is best for beginners?" icon={LuLeaf} />
                         <SuggestionCard title="Course Guidance" description="Help me choose a course" icon={FiCompass} />
