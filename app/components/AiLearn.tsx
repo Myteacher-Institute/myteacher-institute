@@ -78,7 +78,7 @@ export default function AiLearningAssistant() {
             )}
 
             {/* --- Sidebar (Left Panel) --- */}
-            <aside 
+            <aside
                 className={cn(
                     "fixed top-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-100 p-6 flex flex-col transition-transform duration-300 ease-in-out",
                     isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -137,16 +137,16 @@ export default function AiLearningAssistant() {
             </aside>
 
             {/* --- Main Area (Right Panel) --- */}
-            <main 
+            <main
                 className="flex-1 flex flex-col min-w-0 bg-[#FDFDFD] transition-all duration-300 ease-in-out"
                 style={{ marginLeft: isSidebarOpen ? '256px' : '0px' }}
             >
                 {/* Global Sticky App Header bar containing trigger toggle actions */}
                 <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 p-4.5 flex items-center gap-4 z-30">
                     {!isSidebarOpen && (
-                        <button 
-                            type="button" 
-                            onClick={() => setSidebarOpen(true)} 
+                        <button
+                            type="button"
+                            onClick={() => setSidebarOpen(true)}
                             className="p-2.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                             aria-label="Expand layout sidebar menu"
                             title="Expand sidebar"
@@ -185,7 +185,7 @@ export default function AiLearningAssistant() {
                 {/* Fixed Structural Layout Footer Input Row */}
                 <div className="p-6 lg:p-8 pt-0 lg:pt-0">
                     <div className="max-w-4xl mx-auto relative">
-                        <form 
+                        <form
                             onSubmit={(e) => e.preventDefault()}
                             className="flex items-center rounded-2xl p-2 pl-6 bg-white border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-50 transition-all duration-300"
                         >
@@ -196,16 +196,16 @@ export default function AiLearningAssistant() {
                                 aria-label="Type your message here"
                             />
                             <div className="flex items-center gap-1.5 pr-2">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="p-3 text-[#94A3B8] hover:text-[#2563EB] transition-colors rounded-xl hover:bg-slate-100 cursor-pointer"
                                     aria-label="Attach context file attachment"
                                     title="Attach asset file"
                                 >
                                     <FiPaperclip size={20} />
                                 </button>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className="bg-[#2563EB] text-white p-3.5 rounded-xl shadow-md shadow-blue-100 hover:bg-blue-700 transition-all cursor-pointer"
                                     aria-label="Send user chat data request"
                                     title="Send Message"
