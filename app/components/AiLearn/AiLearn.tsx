@@ -137,7 +137,7 @@ export default function AiLearningAssistant() {
             </aside>
 
             {/* --- Main Area (Right Panel) --- */}
-            <main
+            <section
                 className="flex-1 flex flex-col min-w-0 bg-[#FDFDFD] transition-all duration-300 ease-in-out"
                 style={{ marginLeft: isSidebarOpen ? '256px' : '0px' }}
             >
@@ -219,7 +219,7 @@ export default function AiLearningAssistant() {
                         </p>
                     </div>
                 </div>
-            </main>
+            </section>
         </div>
     );
 }

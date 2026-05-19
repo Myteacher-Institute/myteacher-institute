@@ -1,4 +1,4 @@
-import AiLearn from "@/app/components/AiLearn";
+import AiLearn from "@/app/components/AiLearn/AiLearn";
 
 export default function AiLearningAssistant() {
     return (
