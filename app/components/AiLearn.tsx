@@ -124,7 +124,7 @@ export default function AiLearningAssistant() {
 
                 <div className="border-t border-slate-100 pt-6 flex items-center gap-3.5 mt-auto">
                     <div className="relative">
-                        <Image src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop" alt="Profile Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-inner" />
+                        <Image src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop" width={40} height={40} alt="Profile Avatar" className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-inner" />
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full shadow-md" />
                     </div>
                     <div className="min-w-0">

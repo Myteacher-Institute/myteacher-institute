@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import Image from 'next/image';
 import {
   FiSearch,
   FiStar,
@@ -147,9 +148,11 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
     <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
       {/* Image Container */}
       <div className="relative h-44 overflow-hidden">
-        <img
+        <Image
           src={course.image}
           alt={course.title}
+          width={512}
+          height={176}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />

@@ -56,7 +56,7 @@ export default function InstructorDashboard() {
 
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-3">
-            <Image src={`https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400`} className="w-20 h-20 rounded-full object-cover p-1 border border-slate-100" alt="Henry Madu" />
+            <Image src={`https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400`} width={80} height={80} className="w-20 h-20 rounded-full object-cover p-1 border border-slate-100" alt="Henry Madu" />
             <div className="absolute bottom-1 right-1 bg-emerald-500 w-4 h-4 rounded-full border-4 border-white" />
           </div>
           <h3 className="font-bold text-[#111827] text-lg">Henry Madu</h3>
@@ -127,7 +127,7 @@ export default function InstructorDashboard() {
               ].map((course, i) => (
                 <div key={i} className="flex items-center justify-between group overflow-hidden">
                   <div className="flex items-center gap-3 lg:gap-5 min-w-0">
-                    <Image src={course.img} className="w-16 h-12 lg:w-24 lg:h-16 rounded-xl lg:rounded-2xl object-cover shadow-sm shrink-0" alt={course.title} />
+                    <Image src={course.img} width={96} height={64} className="w-16 h-12 lg:w-24 lg:h-16 rounded-xl lg:rounded-2xl object-cover shadow-sm shrink-0" alt={course.title} />
                     <div className="min-w-0">
                       <h4 className="font-bold text-[#111827] text-sm lg:text-[16px] mb-0.5 truncate">{course.title}</h4>
                       <p className="text-[#111827] text-[10px] lg:text-xs font-medium truncate">{course.students} students ● {course.lessons} lessons</p>
@@ -179,7 +179,7 @@ export default function InstructorDashboard() {
                 ].map((item) => (
                   <div key={item.id} className="flex items-center gap-2">
                     <span className="font-bold text-[#111827] text-sm w-4">{item.id}</span>
-                    <div className="w-24 h-10 bg-slate-100 rounded-lg overflow-hidden"><Image src={item.img} className="w-24 h-10 object-cover shadow-sm" alt={item.title} /></div>
+                    <div className="w-24 h-10 bg-slate-100 rounded-lg overflow-hidden"><Image src={item.img} width={96} height={40} className="w-24 h-10 object-cover shadow-sm" alt={item.title} /></div>
                     <div className="grow min-w-0"><p className="text-[13px] font-bold text-[#111827] truncate">{item.title}</p></div>
                     <div className="flex gap-1 text-right shrink-0"><p className="text-[13px] font-bold text-[#111827]">{item.price}</p><p className="text-[10px] mt-1 text-slate-600 font-bold">({item.perc})</p></div>
                   </div>
