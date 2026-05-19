@@ -128,7 +128,7 @@ const SIDEBAR_ITEMS = [
 // --- 2. REUSABLE ATOMS ---
 
 const StatCard = ({ label, value, icon, iconBgColor }: any) => (
-  <div className="bg-white p-4 lg:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between min-w-[170px] md:min-w-0 flex-1 snap-center">
+  <div className="bg-white p-4 lg:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between min-w-42.5 md:min-w-0 flex-1 snap-center">
     <div className="min-w-0 mr-2">
       <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">
         {label}
@@ -309,13 +309,13 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B] overflow-x-hidden">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 z-[60] lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-900/40 z-60 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`w-64 bg-white border-r border-slate-200 fixed h-full z-[70] transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}
+        className={`w-64 bg-white border-r border-slate-200 fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col`}
       >
         <div className="p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
            <div className="flex items-center gap-3">
@@ -360,7 +360,7 @@ export default function Dashboard() {
               </button>
               
               {notifyOpen && (
-                <div className="lg:hidden absolute top-16 right-0 w-[calc(100vw-32px)] bg-white border border-slate-100 shadow-2xl rounded-2xl z-[100] animate-in fade-in slide-in-from-top-4 p-6">
+                <div className="lg:hidden absolute top-16 right-0 w-[calc(100vw-32px)] bg-white border border-slate-100 shadow-2xl rounded-2xl z-100 animate-in fade-in slide-in-from-top-4 p-6">
                     <div className="flex justify-between items-center mb-5">
                         <h3 className="font-black text-xl text-slate-800">Notifications</h3>
                         <button onClick={() => setNotifyOpen(false)} className="p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer">
@@ -422,7 +422,7 @@ export default function Dashboard() {
                 <RecommendedSection />
               </div>
               
-              <div className="bg-blue-600 rounded-[32px] p-8 shadow-xl shadow-blue-100">
+              <div className="bg-blue-600 rounded-4xl p-8 shadow-xl shadow-blue-100">
                 <MentorWidget />
               </div>
 
@@ -445,10 +445,10 @@ export default function Dashboard() {
       </main>
 
       {/* FLOATING ACTION BUTTON */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-[60]">
+      <div className="lg:hidden fixed bottom-6 right-6 z-60">
         {mentorOpen && (
-          <div className="absolute bottom-20 right-0 w-[calc(100vw-48px)] max-w-[320px] bg-blue-600 rounded-[2rem] p-7 shadow-2xl animate-in slide-in-from-bottom-10 z-[110]">
-             <div className="absolute top-5 right-5 z-[120]">
+          <div className="absolute bottom-20 right-0 w-[calc(100vw-48px)] max-w-[320px] bg-blue-600 rounded-4xl p-7 shadow-2xl animate-in slide-in-from-bottom-10 z-110">
+             <div className="absolute top-5 right-5 z-120">
                 <button onClick={() => setMentorOpen(false)} className="p-1.5 bg-white/20 rounded-lg hover:bg-white/30 cursor-pointer">
                     <X size={16} className="text-white" />
                 </button>
@@ -458,7 +458,7 @@ export default function Dashboard() {
         )}
         <button
           onClick={() => setMentorOpen(!mentorOpen)}
-          className="w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center border-4 border-white active:scale-95 transition-all z-[100] relative cursor-pointer"
+          className="w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center border-4 border-white active:scale-95 transition-all z-100 relative cursor-pointer"
         >
           {mentorOpen ? <X size={26} strokeWidth={2.5} /> : <MessageCircle size={26} strokeWidth={2.5} />}
         </button>

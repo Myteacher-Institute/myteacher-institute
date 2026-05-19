@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import InstructorAndReviews from './InstructorAndReviews';
 import { 
   Video, Download, Smartphone, Infinity, Award, Clock, 
-  ChevronDown, ChevronUp, PlayCircle, FileText, Check, 
-  Menu, X, Star 
+  ChevronDown, ChevronUp, PlayCircle, FileText, Check, Star 
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
