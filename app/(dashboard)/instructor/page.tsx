@@ -1,4 +1,4 @@
-import InstructorDashboard from "../components/InstructorDashboard";
+import InstructorDashboard from "@/app/components/InstructorDashboard";
 
 export default function InstructorDashboardPage() {
   return (
