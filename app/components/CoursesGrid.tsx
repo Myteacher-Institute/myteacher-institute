@@ -1,5 +1,3 @@
-// components/CoursesGrid.tsx
-import React from 'react';
 import { FiTerminal, FiEdit3, FiPieChart, FiSmartphone, FiStar, FiClock, FiBookOpen } from 'react-icons/fi';
 
 const IconMap = {
@@ -126,11 +124,11 @@ export const CoursesGrid = () => {
           <h2 className="text-4xl md:text-5xl font-black text-[#0F1C2E] tracking-tight leading-[1.1]">
             Skills the market is hiring for
           </h2>
-          <p className="text-[#4A5E7A] text-[16px] font-medium max-w-[430px] leading-relaxed">
+          <p className="text-[#4A5E7A] text-[16px] font-medium max-w-107.5 leading-relaxed">
             Curated by industry professionals, updated quarterly with the latest tools and trends.
           </p>
         </div>
-        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-[110px] text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer ">
+        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-27.5 text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer ">
           View all 80+ courses →
         </button>
       </div>

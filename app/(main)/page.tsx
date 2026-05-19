@@ -1,4 +1,3 @@
-// app/(main)/page.tsx
 import { CoursesGrid } from "../components/CoursesGrid";
 import { MentorshipSection } from "../components/MentorshipSection";
 

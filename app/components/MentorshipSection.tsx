@@ -1,4 +1,3 @@
-// components/MentorshipSection.tsx
 import { FiVideo, FiMessageCircle, FiCalendar, FiTarget, FiAward, FiStar } from 'react-icons/fi';
 
 const MentorMiniCard = ({ name, role, initial, color }: { name: string; role: string; initial: string; color: string }) => (
