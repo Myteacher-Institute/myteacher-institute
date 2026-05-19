@@ -33,7 +33,7 @@ const TAG_STYLES: Record<string, { bg: string; text: string }> = {
 const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tagColor }: any) => {
   const Icon = IconMap[iconKey as keyof typeof IconMap];
   const tagStyle = TAG_STYLES[tagColor];
-  
+
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full group transition-all hover:shadow-md">
       <div className={`h-36 flex items-center justify-center ${tagColor} relative`}>
@@ -45,7 +45,7 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
         <Icon size={44} className="text-[#0F1C2E] stroke-[1.5]" />
       </div>
 
-      <div className="p-6 flex flex-col flex-grow">
+      <div className="p-6 flex flex-col grow">
         <h3 className="font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors cursor-pointer ">
           {title}
         </h3>

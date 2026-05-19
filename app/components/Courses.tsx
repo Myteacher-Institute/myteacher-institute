@@ -156,7 +156,7 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
       </div>
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-5 flex flex-col grow">
         {/* TAG & STARS ABOVE TITLE */}
         <div className="flex justify-between items-center mb-4">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${TAG_CONFIG[course.tagType]}`}>
