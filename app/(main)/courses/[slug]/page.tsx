@@ -145,8 +145,8 @@ const CourseDetailsPage = () => {
                             width={48}
                             height={48}
                             alt="Instructor"
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Omeke"
-                            className="w-12 h-12 rounded-full bg-blue-100 border border-gray-100 "
+                            className="w-12 h-12 rounded-full bg-blue-100 border border-gray-100"
+                            src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=2000"
                         />
                         <div>
                             <p className="font-bold text-[15px]">Omeke Charles</p>

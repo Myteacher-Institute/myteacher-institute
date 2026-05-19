@@ -8,16 +8,15 @@ export default function Home() {
     return (
         <main className="min-h-screen bg-white">
             <Hero />
-            <Testimonial />
-            <Banner />
 
-            {/* Popular Courses Section (Contains data and internal Card component) */}
+            <Testimonial />
+
             <CoursesGrid />
 
-            {/* Decorative Divider */}
+            <Banner />
+
             <div className="h-px bg-slate-100 max-w-7xl mx-auto opacity-50" />
 
-            {/* Mentorship Section (Contains data and internal MentorMiniCard) */}
             <MentorshipSection />
         </main>
     );

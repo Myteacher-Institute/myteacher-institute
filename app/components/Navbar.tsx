@@ -16,8 +16,8 @@ export default function Navbar() {
                     <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
                     <a href="/courses" className="hover:text-blue-600 transition-colors">Courses</a>
                     <a href="/learning-paths" className="hover:text-blue-600 transition-colors">Learning Paths</a>
-                    <a href="/request-mentor" className="hover:text-blue-600 transition-colors">Mentorship</a>
-                    <a href="/ai-tutor" className="hover:text-blue-600 transition-colors">AI Tutor</a>
+                    <a href="/mentor" className="hover:text-blue-600 transition-colors">Mentorship</a>
+                    <a href="/tutor" className="hover:text-blue-600 transition-colors">AI Tutor</a>
                 </div>
                 <button className="bg-[#0f172a] text-white px-4 py-2 ml-2 rounded-lg hover:bg-slate-800 transition-all font-bold text-sm inline-flex cursor-pointer">
                     Get Started
