@@ -195,13 +195,13 @@ export default function AiLearningAssistant() {
                             <input
                                 type="text"
                                 placeholder="Type your message here..."
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-[14.5px] py-4 text-[#0F172A] placeholder:text-[#94A3B8]"
+                                className="flex-1 bg-transparent focus:outline-0 text-[14.5px] py-4 text-[#0F172A] placeholder:text-[#94A3B8]"
                                 aria-label="Type your message here"
                             />
                             <div className="flex items-center gap-1.5 pr-2">
                                 <button 
                                     type="button" 
-                                    className="p-3 text-[#94A3B8] hover:text-[#2563EB] transition-colors rounded-xl hover:bg-slate-100"
+                                    className="p-3 text-[#94A3B8] hover:text-[#2563EB] transition-colors rounded-xl hover:bg-slate-100 cursor-pointer"
                                     aria-label="Attach context file attachment"
                                     title="Attach asset file"
                                 >
@@ -209,7 +209,7 @@ export default function AiLearningAssistant() {
                                 </button>
                                 <button 
                                     type="submit" 
-                                    className="bg-[#2563EB] text-white p-3.5 rounded-xl shadow-md shadow-blue-100 hover:bg-blue-700 transition-all"
+                                    className="bg-[#2563EB] text-white p-3.5 rounded-xl shadow-md shadow-blue-100 hover:bg-blue-700 transition-all cursor-pointer"
                                     aria-label="Send user chat data request"
                                     title="Send Message"
                                 >
