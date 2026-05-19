@@ -1,9 +1,16 @@
+import Hero from "../components/Hero";
+import Banner from "../components/Banner";
+import Testimonial from "../components/Testimonial";
 import { CoursesGrid } from "../components/CoursesGrid";
 import { MentorshipSection } from "../components/MentorshipSection";
 
 export default function Home() {
     return (
         <main className="min-h-screen bg-white">
+            <Hero />
+            <Testimonial />
+            <Banner />
+
             {/* Popular Courses Section (Contains data and internal Card component) */}
             <CoursesGrid />
 
