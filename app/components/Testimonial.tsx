@@ -1,5 +1,4 @@
-import React from 'react';
-import { Star, ArrowUpRight, GraduationCap } from 'lucide-react';
+import { Star, ArrowUpRight } from 'lucide-react';
 
 const Testimonial = () => {
   const testimonials = [
@@ -31,7 +30,7 @@ const Testimonial = () => {
 
   return (
     <section className="w-full bg-[#FDFCF8] py-12 px-8 lg:px-16 overflow-hidden">
-      <div className="max-w-[1280px] mx-auto">
+      <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
         <div className="text-center space-y-3 mb-8">
@@ -42,7 +41,7 @@ const Testimonial = () => {
             Careers transformed. Lives changed.
           </h2>
           <p className="text-slate-500 text-base font-medium max-w-xl mx-auto">
-            Don't take our word for it — here's what our students achieved.
+            Don&#39;t take our word for it — here&#39;s what our students achieved.
           </p>
         </div>
 
@@ -51,7 +50,7 @@ const Testimonial = () => {
           {testimonials.map((item, index) => (
             <div 
               key={index} 
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow flex-shrink-0 w-full lg:w-auto"
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow hrink-0 w-full lg:w-auto"
             >
               <div className="space-y-4">
                 {/* Professional Star Rating */}
@@ -62,7 +61,7 @@ const Testimonial = () => {
                 </div>
 
                 <p className="text-[#0f172a] text-sm font-medium leading-relaxed italic">
-                  "{item.text}"
+                  &#34;{item.text}&#34;
                 </p>
 
                 {/* Profile Section */}

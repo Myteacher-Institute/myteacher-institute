@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import {
     Video, Download, Smartphone, Infinity, Award, Clock,
@@ -40,7 +41,7 @@ const CourseDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                     {learningObjectives.map((text, i) => (
                         <div key={i} className="flex items-start gap-3">
-                            <Check className="w-4 h-4 text-[#2546BD] mt-1 flex-shrink-0 stroke-[3]" />
+                            <Check className="w-4 h-4 text-[#2546BD] mt-1 shrink-0 stroke-3" />
                             <p className="text-[15px] leading-relaxed text-slate-600 font-medium">{text}</p>
                         </div>
                     ))}
@@ -102,11 +103,11 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen bg-[#FDFBF7] font-sans text-[#1A1E2E]">
             {/* Navigation Header */}
-            <header className="bg-white px-4 md:px-[8%] py-4 flex justify-between items-center sticky top-0 z-[60] border-b border-gray-100">
+            <header className="bg-white px-4 md:px-[8%] py-4 flex justify-between items-center sticky top-0 z-60 border-b border-gray-100">
 
                 {/* MOBILE MENU OVERLAY (Links Only) */}
                 {isMenuOpen && (
-                    <div className="absolute top-[100%] left-0 w-full bg-white border-b border-gray-100 shadow-2xl lg:hidden z-50 animate-in slide-in-from-top-2 duration-300">
+                    <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-2xl lg:hidden z-50 animate-in slide-in-from-top-2 duration-300">
                         <div className="p-4 flex flex-col">
                             <a href="#" className="p-4 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-[#2546BD] rounded-xl transition-all">Courses</a>
                             <a href="#" className="p-4 text-base font-bold text-gray-800 hover:bg-blue-50 hover:text-[#2546BD] rounded-xl transition-all">Mentors</a>
@@ -140,10 +141,12 @@ const CourseDetailsPage = () => {
                     </p>
 
                     <div className="flex items-center gap-4 mb-12 p-1">
-                        <img
+                        <Image
+                            width={48}
+                            height={48}
+                            alt="Instructor"
                             src="https://api.dicebear.com/7.x/avataaars/svg?seed=Omeke"
                             className="w-12 h-12 rounded-full bg-blue-100 border border-gray-100 "
-                            alt="Instructor"
                         />
                         <div>
                             <p className="font-bold text-[15px]">Omeke Charles</p>
@@ -152,15 +155,17 @@ const CourseDetailsPage = () => {
                     </div>
 
                     {/* Video Preview */}
-                    <div className="relative group aspect-video rounded-2xl md:rounded-[32px] overflow-hidden shadow-2xl bg-gray-200">
-                        <img
-                            src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=2000"
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    <div className="relative group aspect-video rounded-2xl md:rounded-4xl overflow-hidden shadow-2xl bg-gray-200">
+                        <Image
+                            width={48}
+                            height={48}
                             alt="Course Workspace"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=2000"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/10 transition-all group-hover:bg-black/20">
                             <button className="w-16 h-16 md:w-22 md:h-22 bg-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110 cursor-pointer">
-                                <div className="w-0 h-0 border-t-[10px] md:border-t-[14px] border-t-transparent border-b-[10px] md:border-b-[14px] border-b-transparent border-l-[18px] md:border-l-[24px] border-l-[#2546BD] ml-1"></div>
+                                <div className="w-0 h-0 border-t-10 md:border-t-14 border-t-transparent border-b-10 md:border-b-14 border-b-transparent border-l-18 md:border-l-24 border-l-[#2546BD] ml-1"></div>
                             </button>
                         </div>
                     </div>
@@ -171,7 +176,7 @@ const CourseDetailsPage = () => {
 
                 {/* Right Column (Sidebar) */}
                 <div className="lg:col-span-4 mt-10 lg:mt-0">
-                    <div className="bg-white p-6 md:p-10 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] lg:sticky lg:top-28 border border-gray-50">
+                    <div className="bg-white p-6 md:p-10 rounded-4xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] lg:sticky lg:top-28 border border-gray-50">
                         <div className="flex items-baseline gap-3 mb-2">
                             <span className="text-4xl font-bold tracking-tight">$50</span>
                             <span className="text-gray-400 line-through text-xl">$149.99</span>
