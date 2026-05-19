@@ -1,5 +1,3 @@
-// components/CoursesGrid.tsx
-import React from 'react';
 import { FiTerminal, FiEdit3, FiPieChart, FiSmartphone, FiStar, FiClock, FiBookOpen } from 'react-icons/fi';
 
 const IconMap = {
@@ -33,7 +31,7 @@ const TAG_STYLES: Record<string, { bg: string; text: string }> = {
 const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tagColor }: any) => {
   const Icon = IconMap[iconKey as keyof typeof IconMap];
   const tagStyle = TAG_STYLES[tagColor];
-  
+
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full group transition-all hover:shadow-md">
       <div className={`h-36 flex items-center justify-center ${tagColor} relative`}>
@@ -45,7 +43,7 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
         <Icon size={44} className="text-[#0F1C2E] stroke-[1.5]" />
       </div>
 
-      <div className="p-6 flex flex-col flex-grow">
+      <div className="p-6 flex flex-col grow">
         <h3 className="font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors cursor-pointer ">
           {title}
         </h3>
@@ -126,11 +124,11 @@ export const CoursesGrid = () => {
           <h2 className="text-4xl md:text-5xl font-black text-[#0F1C2E] tracking-tight leading-[1.1]">
             Skills the market is hiring for
           </h2>
-          <p className="text-[#4A5E7A] text-[16px] font-medium max-w-[430px] leading-relaxed">
+          <p className="text-[#4A5E7A] text-[16px] font-medium max-w-107.5 leading-relaxed">
             Curated by industry professionals, updated quarterly with the latest tools and trends.
           </p>
         </div>
-        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-[110px] text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer ">
+        <button className="border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-27.5 text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer ">
           View all 80+ courses →
         </button>
       </div>

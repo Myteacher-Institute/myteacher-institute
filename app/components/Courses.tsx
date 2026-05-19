@@ -1,50 +1,171 @@
-"use client";
-
+'use client';
 import React, { useState } from 'react';
-import InstructorAndReviews from './InstructorAndReviews';
-import { 
-  Video, Download, Smartphone, Infinity, Award, Clock, 
-  ChevronDown, ChevronUp, PlayCircle, FileText, Check, Star 
-} from 'lucide-react';
-import Navbar from '../components/Navbar';
+import Image from 'next/image';
+import {
+  FiSearch,
+  FiStar,
+  FiClock,
+  FiUser,
+  FiZap,
+  FiChevronRight
+} from 'react-icons/fi';
 
-// --- SUB-COMPONENTS (CONTENT & DETAILS) ---
+import { FaStarHalfAlt } from 'react-icons/fa';
 
-const CourseDetails = () => {
-  const [openSection, setOpenSection] = useState<number | null>(1);
+// --- Types ---
+interface Course {
+  id: number;
+  title: string;
+  instructor: string;
+  description: string;
+  duration: string;
+  lessons: number;
+  rating: number;
+  price: number;
+  tag: string;
+  tagType: 'bestseller' | 'popular' | 'new' | 'creative';
+  image: string;
+}
 
-  const learningObjectives = [
-    "Conduct effective user research and create actionable personas",
-    "Design accessible and inclusive user interfaces",
-    "Master Figma's advanced features including auto-layout and components",
-    "Build interactive prototypes for user testing"
-  ];
+// --- Style Config ---
+const TAG_CONFIG: Record<string, string> = {
+  bestseller: "bg-emerald-50 text-emerald-600 border-emerald-100",
+  popular: "bg-orange-50 text-orange-600 border-orange-100",
+  new: "bg-blue-50 text-blue-600 border-blue-100",
+  creative: "bg-purple-50 text-purple-600 border-purple-100",
+};
 
-  const curriculum = [
-    {
-      id: 1,
-      title: "Introduction to UX Design",
-      content: [
-        { type: 'video', title: 'Understanding User Needs', meta: '12:30' },
-        { type: 'video', title: 'The Design Thinking Process', meta: '15:45' },
-        { type: 'file', title: 'Assignment: Your First Persona', meta: 'Reading' },
-      ]
-    },
-    { id: 2, title: "Wireframing Basics", content: [] },
-    { id: 3, title: "High Fidelity UI with Figma", content: [] }
-  ];
+// --- Mock Data ---
+const COURSES_DATA: Course[] = [
+  {
+    id: 1,
+    title: "Complete Web Development Bootcamp",
+    instructor: "Dr. Sarah Johnson",
+    description: "Master HTML, CSS, JavaScript, React, and Node.js to become a full-stack developer.",
+    duration: "12 weeks",
+    lessons: 48,
+    rating: 4.9,
+    price: 199,
+    tag: "Best Seller",
+    tagType: "bestseller",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+  {
+    id: 2,
+    title: "Data Science Fundamentals",
+    instructor: "Prof. Michael Chen",
+    description: "Learn Python, statistics, and machine learning to analyze data and make predictions.",
+    duration: "8 weeks",
+    lessons: 32,
+    rating: 4.7,
+    price: 149,
+    tag: "Beginner Friendly",
+    tagType: "new",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+
+  {
+    id: 3,
+    title: "UI/UX Design Masterclass",
+    instructor: "Emily Davis",
+    description: "Design stunning user interfaces and create seamless user experiences with Figma and Adobe XD.",
+    duration: "10 weeks",
+    lessons: 40,
+    rating: 4.8,
+    price: 179,
+    tag: "Creative",
+    tagType: "creative",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+
+  {
+    id: 4,
+    title: "Introduction to Programming with Python",
+    instructor: "John Doe",
+    description: "Start your programming journey with Python, the most popular and versatile language.",
+    duration: "6 weeks",
+    lessons: 24,
+    rating: 4.6,
+    price: 99,
+    tag: "Popular",
+    tagType: "popular",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+
+  {
+    id: 5,
+    title: "Advanced JavaScript Concepts",
+    instructor: "Jane Smith",
+    description: "Deep dive into JavaScript with ES6+, asynchronous programming, and design patterns.",
+    duration: "8 weeks",
+    lessons: 30,
+    rating: 4.7,
+    price: 149,
+    tag: "Best Seller",
+    tagType: "bestseller",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+
+  {
+    id: 6,
+    title: "Full-Stack Development with MERN",
+    instructor: "Dr. Sarah Johnson",
+    description: "Build modern web applications using MongoDB, Express, React, and Node.js.",
+    duration: "12 weeks",
+    lessons: 48,
+    rating: 4.9,
+    price: 199,
+    tag: "Best Seller",
+    tagType: "bestseller",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
+  },
+];
+
+// --- Sub-Component ---
+const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
+  // Helper to render the star rating
+  const renderStars = (rating: number) => {
+    const totalStars = 5;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+
+    return (
+      <div className="flex items-center gap-0.5 text-orange-500">
+        {[...Array(totalStars)].map((_, i) => {
+          if (i < fullStars) {
+            return <FiStar key={i} fill="currentColor" size={14} />;
+          } else if (i === fullStars && hasHalfStar) {
+            return <FaStarHalfAlt key={i} fill="currentColor" size={14} />;
+          }
+          return <FiStar key={i} size={14} className="text-slate-300" />;
+        })}
+        <span className="ml-1 text-slate-400 text-xs">{rating}</span>
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full mt-12">
-      <section className="bg-white rounded-2xl p-6 md:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50 mb-12">
-        <h2 className="text-2xl font-bold mb-8 tracking-tight">What you will learn</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-          {learningObjectives.map((text, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <Check className="w-4 h-4 text-[#2546BD] mt-1 flex-shrink-0 stroke-[3]" />
-              <p className="text-[15px] leading-relaxed text-slate-600 font-medium">{text}</p>
-            </div>
-          ))}
+    <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+      {/* Image Container */}
+      <div className="relative h-44 overflow-hidden">
+        <Image
+          src={course.image}
+          alt={course.title}
+          width={512}
+          height={176}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+      </div>
+
+      {/* Content */}
+      <div className="p-5 flex flex-col grow">
+        {/* TAG & STARS ABOVE TITLE */}
+        <div className="flex justify-between items-center mb-4">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${TAG_CONFIG[course.tagType]}`}>
+            {course.tag}
+          </span>
+          {renderStars(course.rating)}
         </div>
       </section>
 
