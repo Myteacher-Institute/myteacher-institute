@@ -1,5 +1,7 @@
 import React from 'react';
-import { Rocket, Check, MessageSquare } from 'lucide-react';
+import { IoRocketSharp } from 'react-icons/io5';
+import { MdCheck } from 'react-icons/md';
+import { BiMessageSquareDetail } from 'react-icons/bi';
 
 const Banner = () => {
   return (
@@ -8,7 +10,7 @@ const Banner = () => {
         
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2DBE8226] border border-[#2d3b55] text-[11px] font-semibold text-[#A8EDCF] uppercase tracking-[0.18em]">
-          <Rocket size={14} className="fill-[#4ade80]" /> Start Today
+          <IoRocketSharp size={14} className="text-[#4ade80]" /> Start Today
         </div>
 
         {/* Heading Section */}
@@ -24,8 +26,8 @@ const Banner = () => {
         {/* Main Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-4 pt-3 w-full justify-center">
           <button className="w-full sm:w-auto bg-[#1E40AF] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)] cursor-pointer">
-            <MessageSquare size={18} className="fill-white" />
-            Talk to AI — It&#39;s Free
+            <BiMessageSquareDetail size={18} className="text-white" />
+            Talk to AI — It's Free
           </button>
           
           <button className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#0f172a] px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all border border-white/20 cursor-pointer">
@@ -36,13 +38,13 @@ const Banner = () => {
         {/* Feature List */}
         <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-3 pt-5 text-slate-400 text-sm font-medium">
           <div className="flex items-center gap-2">
-            <Check size={16} className="text-[#4ade80]" strokeWidth={3} /> No credit card required
+            <MdCheck size={16} className="text-[#4ade80]" /> No credit card required
           </div>
           <div className="flex items-center gap-2">
-            <Check size={16} className="text-[#4ade80]" strokeWidth={3} /> Cancel anytime
+            <MdCheck size={16} className="text-[#4ade80]" /> Cancel anytime
           </div>
           <div className="flex items-center gap-2">
-            <Check size={16} className="text-[#4ade80]" strokeWidth={3} /> Certificate available
+            <MdCheck size={16} className="text-[#4ade80]" /> Certificate available
           </div>
         </div>
       </div>

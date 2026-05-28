@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import React, { useState } from 'react';
 import {
-    Video, Download, Smartphone, Infinity, Award, Clock,
-    ChevronDown, ChevronUp, PlayCircle, FileText, Check, Star
-} from 'lucide-react';
+    BiVideoRecording as Video, BiDownload as Download, BiMobile as Smartphone, BiInfinite as Infinity, BiAward as Award, BiTime as Clock,
+    BiChevronDown as ChevronDown, BiChevronUp as ChevronUp, BiPlay as PlayCircle, BiFile as FileText, BiCheck as Check, BiStar as Star
+} from 'react-icons/bi';
 import InstructorAndReviews from '@/app/components/InstructorAndReviews';
 
 // --- SUB-COMPONENTS (CONTENT & DETAILS) ---

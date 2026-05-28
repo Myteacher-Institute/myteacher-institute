@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { BiMenu } from 'react-icons/bi';
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,7 +31,7 @@ export default function Navbar() {
             </Link> */}
 
                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-600 hover:text-blue-600 lg:hidden">
-                    <i className="fas fa-bars text-xl"></i>
+                    <BiMenu className="text-xl" />
                 </button>
             </div>
 

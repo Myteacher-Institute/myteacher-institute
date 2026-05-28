@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { BiErrorCircle as AlertTriangle, BiInfoCircle as Info, BiCheckCircle as CheckCircle2 } from 'react-icons/bi';
 
 const NotificationsPanel = () => {
   const notifications = [

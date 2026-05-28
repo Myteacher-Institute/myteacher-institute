@@ -116,9 +116,7 @@ export const CoursesGrid = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
         <div className="space-y-5">
           <div className="flex items-center gap-2 text-[#1A8A5C] bg-[#E8FAF3] rounded-md px-3 py-1.5 w-fit font-extrabold text-[10px] uppercase tracking-[0.2em]">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 4 2 9l10 5 9-4.5L12 4Zm0 2.18 6.84 3.32L12 13.82 5.16 9.5 12 6.18Zm-8 4.32.39.18L12 15.82l7.61-3.32.39-.18v2.18l-8 3.64-8-3.64V10.5Z" fill="black" />
-            </svg>
+            <FiStar className="h-4 w-4" />
             Popular Courses
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-[#0F1C2E] tracking-tight leading-[1.1]">
