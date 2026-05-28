@@ -17,13 +17,22 @@ const SidebarItem = ({ label, active }: { label: string; active?: boolean }) => 
 
 export const Sidebar = ({ isOpen, onClose }: Props) => (
   <aside className={`fixed top-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-100 p-6 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-    <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+    <button 
+      onClick={onClose} 
+      className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+      title="Close sidebar"
+      aria-label="Close sidebar menu"
+    >
       <FiX size={18} />
     </button>
 
     <div className="mb-10 mt-4">
       <h1 className="text-xl font-bold text-[#0F172A] mb-8">Myteacher</h1>
-      <button className="bg-[#2563EB] text-white w-full py-3.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+      <button 
+        className="bg-[#2563EB] text-white w-full py-3.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
+        title="Start a new chat conversation"
+        aria-label="Create a new chat"
+      >
         <FiPlus size={18} /> New Chat
       </button>
     </div>
@@ -33,7 +42,14 @@ export const Sidebar = ({ isOpen, onClose }: Props) => (
         <h3 className="text-[10px] font-extrabold text-[#94A3B8] uppercase tracking-wide mb-2 px-1">Recent Chats</h3>
         <div className="space-y-0.5">
           {['High-income skills discussion', 'Beginner course recommendations', 'Career path planning'].map((chat, i) => (
-            <div key={i} className="px-4 py-3 text-[13.5px] text-[#475569] hover:bg-slate-50 rounded-lg cursor-pointer truncate">
+            <div 
+              key={i} 
+              className="px-4 py-3 text-[13.5px] text-[#475569] hover:bg-slate-50 rounded-lg cursor-pointer truncate"
+              title={`Open ${chat}`}
+              aria-label={`Open conversation: ${chat}`}
+              role="button"
+              tabIndex={0}
+            >
               {chat}
             </div>
           ))}
@@ -51,12 +67,26 @@ export const Sidebar = ({ isOpen, onClose }: Props) => (
 
     <div className="border-t border-slate-100 pt-6 flex items-center gap-3.5 mt-auto">
       <div className="relative">
-        <Image src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop" width={40} height={40} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
-        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full" />
+        <Image 
+          src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&q=80&auto=format&fit=crop" 
+          width={40} 
+          height={40} 
+          alt="User profile avatar of Omeke Charles" 
+          className="w-10 h-10 rounded-full object-cover" 
+          title="Profile picture"
+        />
+        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10B981] border-2 border-white rounded-full" 
+             title="Online status - Active now" 
+             aria-label="Online: Active now" 
+        />
       </div>
       <div>
         <p className="text-sm font-bold text-[#0F172A]">Omeke Charles</p>
-        <button className="text-[11px] text-[#94A3B8] font-medium hover:text-[#2563EB] flex items-center gap-0.5">
+        <button 
+          className="text-[11px] text-[#94A3B8] font-medium hover:text-[#2563EB] flex items-center gap-0.5"
+          title="View and edit your profile settings"
+          aria-label="Go to profile settings"
+        >
           View Profile <FiChevronRight size={12} />
         </button>
       </div>
