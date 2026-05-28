@@ -15,6 +15,7 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
                 <div className="hidden lg:flex items-center gap-8 text-[15px] font-semibold text-slate-600">
                     <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
+                    <a href="/affliate-dashboard" className="hover:text-blue-600 transition-colors">Affliate</a>
                     <a href="/courses" className="hover:text-blue-600 transition-colors">Courses</a>
                     <a href="/learning-paths" className="hover:text-blue-600 transition-colors">Learning Paths</a>
                     <a href="/mentor" className="hover:text-blue-600 transition-colors">Mentorship</a>
