@@ -1,52 +1,39 @@
+"use client";
 import React from 'react';
-import { IoRocketSharp } from 'react-icons/io5';
-import { MdCheck } from 'react-icons/md';
-import { BiMessageSquareDetail } from 'react-icons/bi';
 
 const Banner = () => {
   return (
-    <section className="w-full bg-[#0b1629] py-16 px-6 overflow-hidden">
-      <div className="max-w-270 mx-auto flex flex-col items-center text-center space-y-6">
+    <section className="w-full bg-[#0c1524] py-24 px-6 overflow-hidden flex items-center justify-center">
+      <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-7">
         
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2DBE8226] border border-[#2d3b55] text-[11px] font-semibold text-[#A8EDCF] uppercase tracking-[0.18em]">
-          <IoRocketSharp size={14} className="text-[#4ade80]" /> Start Today
-        </div>
-
         {/* Heading Section */}
-        <div className="space-y-3 max-w-2xl">
-          <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight leading-tight">
-            your future career starts <br /> with one click.
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Ready to Start Earning?
           </h2>
-          <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed font-medium">
-            Join 12,000+ learners across Nigeria mastering skills that employers hire for. Start with our AI tutor today and build your career with confidence.
+          <p className="text-slate-300/80 text-sm md:text-base max-w-xl mx-auto font-normal">
+            Join thousands of affiliates who are already earning commissions
           </p>
         </div>
 
-        {/* Main Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 pt-3 w-full justify-center">
-          <button className="w-full sm:w-auto bg-[#1E40AF] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-18px_rgba(37,99,235,0.45)] cursor-pointer">
-            <BiMessageSquareDetail size={18} className="text-white" />
-            Talk to AI — It's Free
-          </button>
-          
-          <button className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#0f172a] px-6 py-3 rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 transition-all border border-white/20 cursor-pointer">
-            Browse All Courses
-          </button>
+        {/* Main Action Button */}
+        <div className="pt-2">
+          <a href="/affiliate-dashboard">
+            <button className="bg-white hover:bg-slate-50 text-blue-600 px-8 py-3.5 rounded-xl font-bold text-sm md:text-base shadow-sm transition-all cursor-pointer">
+              Become an Affiliate
+            </button>
+          </a>
         </div>
 
-        {/* Feature List */}
-        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-3 pt-5 text-slate-400 text-sm font-medium">
-          <div className="flex items-center gap-2">
-            <MdCheck size={16} className="text-[#4ade80]" /> No credit card required
-          </div>
-          <div className="flex items-center gap-2">
-            <MdCheck size={16} className="text-[#4ade80]" /> Cancel anytime
-          </div>
-          <div className="flex items-center gap-2">
-            <MdCheck size={16} className="text-[#4ade80]" /> Certificate available
-          </div>
+        {/* Info Row Divider List */}
+        <div className="flex items-center justify-center gap-2 pt-2 text-slate-400 text-xs font-normal">
+          <span>Free to join</span>
+          <span>•</span>
+          <span>No monthly fees</span>
+          <span>•</span>
+          <span>Start earning immediately</span>
         </div>
+
       </div>
     </section>
   );
