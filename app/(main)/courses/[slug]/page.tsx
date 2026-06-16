@@ -103,7 +103,7 @@ const CourseDetailsPage = () => {
     return (
         <div className="min-h-screen bg-[#FDFBF7] font-sans text-[#1A1E2E]">
             {/* Navigation Header */}
-            <header className="bg-white px-4 md:px-[8%] py-4 flex justify-between items-center sticky top-0 z-60 border-b border-gray-100">
+            <header className="bg-white px-4 md:px-[8%] flex justify-between items-center sticky top-0 z-60 border-b border-gray-100">
 
                 {/* MOBILE MENU OVERLAY (Links Only) */}
                 {isMenuOpen && (
@@ -118,7 +118,7 @@ const CourseDetailsPage = () => {
             </header>
 
             {/* Main Content Layout */}
-            <main className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-10 md:py-16 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+            <main className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-10 md:py-16 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 mt-10">
 
                 {/* Left Column */}
                 <div className="lg:col-span-8">
