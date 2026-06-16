@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { BiBot as BiRobot, BiRightArrowAlt as BiRightArrow, BiX as BiX, BiSend as BiSend } from 'react-icons/bi';
 
 const Hero = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -37,11 +38,11 @@ const Hero = () => {
 
         <div className="flex items-center gap-4 pt-2">
           <button className="bg-[#00c984] hover:bg-[#00b274] text-white px-6 py-3 rounded-xl font-bold text-base flex items-center gap-2.5 transition-all shadow-md active:scale-95 cursor-pointer">
-            <i className="fas fa-robot"></i>
+            <BiRobot className="text-xl" />
             Talk to AI
           </button>
           <button className="bg-white border border-slate-200 hover:border-slate-300 px-6 py-3 rounded-xl font-bold text-slate-700 text-base transition-all active:scale-95 cursor-pointer">
-            Browse Courses <i className="fas fa-arrow-right ml-2"></i>
+            Browse Courses <BiRightArrow className="ml-2" />
           </button>
         </div>
       </div>
@@ -54,7 +55,7 @@ const Hero = () => {
             className="bg-[#00c984] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-sm hover:bg-[#00b274] transition-all cursor-pointer"
             aria-label="Chat with AI"
           >
-            <i className="fas fa-robot"></i>
+            <BiRobot className="text-xl" />
           </button>
         </div>
         <div className="hidden lg:block w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden flex flex-col">
@@ -62,7 +63,7 @@ const Hero = () => {
           {/* Chat Header */}
           <div className="bg-[#0f172a] p-4 flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-400 rounded-full flex items-center justify-center text-white text-sm">
-              <i className="fas fa-robot"></i>
+              <BiRobot className="text-lg" />
             </div>
             <div>
               <h4 className="text-white font-bold text-sm leading-tight">myteacherai - your AI Teacher</h4>
@@ -106,7 +107,7 @@ const Hero = () => {
                 className="bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"
               />
               <button className="bg-[#00c984] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00b274] transition-all cursor-pointer">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                <BiSend className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -121,7 +122,7 @@ const Hero = () => {
             <div className="bg-[#0f172a] p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-emerald-400 rounded-full flex items-center justify-center text-white text-sm">
-                  <i className="fas fa-robot"></i>
+                  <BiRobot className="text-lg" />
                 </div>
                 <div>
                   <h4 className="text-white font-bold text-sm leading-tight">myteacherai - your AI Teacher</h4>
@@ -132,7 +133,7 @@ const Hero = () => {
                 </div>
               </div>
               <button onClick={() => setIsChatOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                <i className="fas fa-times text-lg"></i>
+                <BiX className="text-lg" />
               </button>
             </div>
 
@@ -169,7 +170,7 @@ const Hero = () => {
                   className="bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"
                 />
                 <button className="bg-[#00c984] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00b274] transition-all cursor-pointer">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                  <BiSend className="w-4 h-4" />
                 </button>
               </div>
             </div>

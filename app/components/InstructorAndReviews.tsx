@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Users, PlayCircle, ArrowRight, Bot } from 'lucide-react';
+import { BiStar as Star, BiGroup as Users, BiPlay as PlayCircle, BiRightArrowAlt as ArrowRight, BiBot as Bot } from 'react-icons/bi';
 
 const InstructorAndReviews = () => {
   const reviews = [

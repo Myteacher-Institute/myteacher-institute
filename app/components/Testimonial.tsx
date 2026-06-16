@@ -1,4 +1,4 @@
-import { Star, ArrowUpRight } from 'lucide-react';
+import { BiStar as Star, BiUpArrowAlt as ArrowUpRight } from 'react-icons/bi';
 
 const Testimonial = () => {
   const testimonials = [
