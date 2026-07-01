@@ -1,0 +1,89 @@
+// Authentication Service
+import axiosInstance from '../lib/axios';
+import {
+  LoginRequest,
+  VerifyPasswordRequest,
+  VerifyOtpRequest,
+  OnboardingRequest,
+  AuthResponse,
+  OnboardingResponse,
+  ResetPasswordRequest,
+  TokenResponse,
+} from '../types';
+
+export const authService = {
+  async checkUserExists(email: string): Promise<{ userExists: boolean }> {
+    const response = await axiosInstance.post('/api/auth/check-user', { email });
+    return response.data;
+  },
+
+  async login(credentials: { email: string; password: string }): Promise<AuthResponse> {
+    const response = await axiosInstance.post('/api/auth/login', credentials);
+    return response.data;
+  },
+
+  async resendOtp(email: string): Promise<{ status: 'success' | 'failed'; message: string }> {
+    const response = await axiosInstance.post('/api/auth/resend-otp', { email });
+    return response.data;
+  },
+
+  async register(data: {
+    email: string;
+    name: string;
+    phone: string;
+    password: string;
+  }): Promise<AuthResponse> {
+    const response = await axiosInstance.post('/api/auth/register', data);
+    return response.data;
+  },
+
+  async verifyPassword(request: VerifyPasswordRequest): Promise<AuthResponse> {
+    const response = await axiosInstance.post('/api/auth/verify-password', request);
+    return response.data;
+  },
+
+  async verifyOtp(request: VerifyOtpRequest): Promise<AuthResponse> {
+    const response = await axiosInstance.post('/api/auth/verify-otp', request);
+    return response.data;
+  },
+
+  async completeOnboarding(data: OnboardingRequest): Promise<OnboardingResponse> {
+    const response = await axiosInstance.post('/api/auth/complete-onboarding', data);
+    return response.data;
+  },
+
+  async resetPassword(request: ResetPasswordRequest): Promise<{ status: 'success' | 'failed'; message: string }> {
+    const response = await axiosInstance.post('/api/auth/request-reset-account-instructions', request);
+    return response.data;
+  },
+
+  async resetPasswordWithCode(request: {
+    code: string;
+    password: string;
+    confirmPassword: string;
+    logoutAllDevices?: boolean;
+  }): Promise<{ status: 'success' | 'failed'; message: string }> {
+    const response = await axiosInstance.post('/api/auth/reset-password-with-code', request);
+    return response.data;
+  },
+
+  async getNewAccessToken(): Promise<TokenResponse> {
+    const response = await axiosInstance.get('/api/auth/new-access-code');
+    return response.data;
+  },
+
+  async logout(): Promise<void> {
+    try {
+      // Backend doesn't have a logout endpoint, so we just clear local storage
+      // The session will be invalidated on the backend side through token expiration
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage regardless of API call success
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    }
+  },
+};

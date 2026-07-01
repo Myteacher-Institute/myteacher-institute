@@ -1,149 +1,168 @@
 "use client";
 
-import React, { useState } from 'react';
-import { HiOutlineArrowLeft } from 'react-icons/hi';
+import { useState } from 'react';
+import { useAuthStore } from '@/store/auth.store';
+import { verifyOtpSchema } from '@/validation/auth.schema';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { decryptFromUrl } from '@/utils/encryption';
 
 export default function OtpVerificationPage() {
-  const [otp, setOtp] = useState(new Array(6).fill(""));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get('email') || '';
+  const email = emailParam ? decryptFromUrl(emailParam) : '';
+  const role = searchParams.get('role') || 'user';
 
-  // Clean handler reading directly from event targets without parameter passing closures
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const target = e.target;
-    const index = parseInt(target.getAttribute('data-index') || '0', 10);
-    const value = target.value;
-    
-    if (isNaN(Number(value))) return;
+  const { verifyOtp, resendOtp, isLoading, error } = useAuthStore();
+  const [otp, setOtp] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [resendMessage, setResendMessage] = useState('');
+  const [canResend, setCanResend] = useState(true);
+  const [countdown, setCountdown] = useState(0);
 
-    const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1);
-    setOtp(newOtp);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
 
-    // Shift focus automatically if data is filled
-    if (value !== "" && index < 5) {
-      const nextInput = document.getElementById(`otp-field-${index + 1}`);
-      nextInput?.focus();
+    const result = verifyOtpSchema.safeParse({ otp });
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((err: any) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFieldErrors(errors);
+      return;
     }
-  };
 
-  // Clean backspacing handler mapping element index via data attribute
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const target = e.target as HTMLInputElement;
-    const index = parseInt(target.getAttribute('data-index') || '0', 10);
+    await verifyOtp(otp);
 
-    if (e.key === "Backspace") {
-      if (!otp[index] && index > 0) {
-        const newOtp = [...otp];
-        newOtp[index - 1] = "";
-        setOtp(newOtp);
-        
-        const prevInput = document.getElementById(`otp-field-${index - 1}`);
-        prevInput?.focus();
-      } else {
-        const newOtp = [...otp];
-        newOtp[index] = "";
-        setOtp(newOtp);
+    const { isAuthenticated, userType } = useAuthStore.getState();
+
+    if (isAuthenticated && userType) {
+      // Both registration and login flows - user is now verified
+      switch (userType) {
+        case 'admin':
+          router.push('/admin/dashboard');
+          break;
+        case 'instructor':
+          router.push('/instructor/dashboard');
+          break;
+        case 'user':
+          router.push('/student');
+          break;
       }
     }
   };
 
+  const handleResendOtp = async () => {
+    if (!canResend || !email) return;
+
+    const response = await resendOtp(email);
+    setResendMessage(response.message);
+
+    if (response.status === 'success') {
+      setCanResend(false);
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  };
+
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-white p-4 font-sans select-none overflow-hidden">
-      
-      {/* Main Container Card */}
-      <div 
-        className="grid grid-cols-1 md:grid-cols-2 w-full h-full bg-white shadow-2xl overflow-hidden rounded-none"
-        style={{ maxWidth: '1000px', maxHeight: '650px' }}
-      >
-        
-        {/* Left Section: Image Split */}
-        <div className="w-full relative h-full bg-[#eaeaea] hidden md:block">
-          <img 
-            src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop" 
-            alt="Student working on laptop" 
-            className="absolute inset-0 w-full h-full object-cover object-center"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Verify OTP</h1>
+          <p className="text-gray-600">
+            Enter the code sent to <span className="font-semibold">{email}</span>
+          </p>
         </div>
 
-        {/* Right Section: Form Sheet */}
-        <div className="w-full bg-white h-full flex flex-col justify-center items-center px-6 py-2 md:py-6 relative overflow-hidden">
-          
-          {/* Back Arrow */}
-          <div className="absolute top-6 left-6 md:left-12 flex items-center justify-center cursor-pointer text-[#111111] hover:text-[#223D85] transition-colors">
-            <HiOutlineArrowLeft size={20} />
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
+        )}
 
-          {/* Logo Assembly */}
-          <div className="flex items-center gap-3 mb-6 md:mb-8 flex-shrink-0">
-           <div className="flex items-center gap-3 mb-4 md:mb-6 flex-shrink-0">
-            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-9 object-contain" />
-          </div>
-          </div>
-            
-          {/* Form Header */}
-          <h2 className="text-[#111111] text-[20px] md:text-[24px] font-bold mb-1 tracking-tight text-center flex-shrink-0">
-            OTP Verification
-          </h2>
-
-          <p className="text-[#555555] text-[11px] md:text-[12px] text-center max-w-[260px] mb-6 flex-shrink-0 leading-tight">
-            For your own security, we have to make sure it's really you
-          </p>
-
-          {/* Width Block Container */}
-          <div style={{ width: '310px' }} className="flex flex-col items-center w-full">
-            
-            <p className="text-[#111111] text-[11px] md:text-[12px] text-center mb-4 flex-shrink-0 leading-normal">
-              Please verify with your OTP code sent to your email <br />
-              <span className="font-bold">Henry***@gmail.com</span>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+              One-Time Password
+            </label>
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              className={`w-full px-4 py-3 rounded-lg border ${
+                fieldErrors.otp ? 'border-red-500' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-center text-2xl tracking-widest`}
+              style={{
+                color: '#000'
+              }}
+              placeholder="*******"
+            />
+            {fieldErrors.otp && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.otp}</p>
+            )}
+            <p className="mt-2 text-sm text-gray-500 text-center">
+              Enter code from your email
             </p>
-
-            {/* Verification Form */}
-            <form className="w-full flex flex-col items-center" onSubmit={(e: React.FormEvent<HTMLFormElement>) => e.preventDefault()}>
-              
-              {/* Row Grid Matrix for 6 Inputs */}
-              <div className="flex items-center justify-between w-full gap-2 mb-2 flex-shrink-0">
-                {otp.map((data, index) => (
-                  <input
-                    key={index}
-                    id={`otp-field-${index}`}
-                    data-index={index}
-                    type="text"
-                    maxLength={1}
-                    value={data}
-                    onChange={handleInputChange}
-                    onKeyDown={handleInputKeyDown}
-                    className="w-11 h-11 md:w-12 md:h-12 text-center font-bold text-[18px] text-[#111111] border border-[#b3b3b3] rounded-md bg-white focus:outline-none focus:border-[#223D85] focus:ring-1 focus:ring-[#223D85] transition-all"
-                    required
-                  />
-                ))}
-              </div>
-
-              {/* Counter Notification Line */}
-              <div className="w-full flex items-center justify-between px-1 mb-6 flex-shrink-0">
-                <span className="text-[#555555] text-[11px] font-normal">Resend code in</span>
-                <span className="text-[#111111] text-[11px] font-semibold">0:30</span>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-md transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center"
-                style={{ height: '44px' }}
-              >
-                Submit
-              </button>
-            </form>
-
-            {/* Support Links */}
-            <div className="text-center text-[11px] md:text-[12px] text-[#111111] mt-6 leading-relaxed flex-shrink-0">
-              Did not receive your <span className="font-bold">OTP</span> code?{" "}
-              <a href="/support" className="text-[#223D85] hover:underline">Contact Support</a>
-              <div className="mt-0.5">
-                or <a href="/change-email" className="text-[#223D85] font-semibold hover:underline">Change E-mail</a>
-              </div>
-            </div>
-
           </div>
 
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              cursor: "pointer" 
+            }}
+          >
+            {isLoading ? 'Verifying...' : 'Verify OTP'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          {resendMessage && (
+            <p className={`text-sm mb-3 ${resendMessage.includes('success') || resendMessage.includes('resent') ? 'text-green-600' : 'text-red-600'}`}>
+              {resendMessage}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            disabled={!canResend || isLoading}
+            className="text-blue-600 hover:text-blue-700 font-semibold disabled:text-gray-400 disabled:cursor-not-allowed"
+          >
+            {canResend ? 'Resend OTP' : `Resend in ${countdown}s`}
+          </button>
+        </div>
+
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => router.push('/get-started')}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            ← Back to Login
+          </button>
         </div>
       </div>
     </div>

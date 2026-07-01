@@ -1,12 +1,14 @@
-import Hero from "../components/Hero";
-import Banner from "../components/Banner";
-import Testimonial from "../components/Testimonial";
-import { CoursesGrid } from "../components/CoursesGrid";
-import { MentorshipSection } from "../components/MentorshipSection";
+import Hero from "./components/Hero";
+import Navbar from "./components/Navbar";
+import Banner from "./components/Banner";
+import Testimonial from "./components/Testimonial";
+import { CoursesGrid } from "./components/CoursesGrid";
+import { MentorshipSection } from "./components/MentorshipSection";
 
 export default function Home() {
     return (
         <main className="min-h-screen bg-white">
+            <Navbar />
             <Hero />
 
             <Testimonial />

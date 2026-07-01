@@ -4,15 +4,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiArrowRight as ArrowRight } from "react-icons/fi";
 import { SIDEBAR_ITEMS } from "./SidebarItems";
+import { useAuthStore } from "@/store/auth.store";
+import { useConfirmDialog } from "../../ConfirmDialog";
 
 export const SidebarNavContent = () => {
   const pathname = usePathname();
+  const { logout } = useAuthStore();
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
+
+  const handleLogout = async () => {
+    
+    const confirmed = await confirm({
+      title: "Logout",
+      message: "Are you sure you want to logout?",
+      confirmText: "Logout",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        await logout();
+        window.location.href = '/get-started';
+      },
+    });
+
+  };
 
   return (
     <>
+      {ConfirmDialogComponent}
       <nav className="px-4 space-y-1.5 flex-1 overflow-y-auto no-scrollbar">
         {SIDEBAR_ITEMS.map((item, i) => {
           const isActive = pathname === item.href;
+
+          if (item.isAction) {
+            return (
+              <button
+                key={i}
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-500 hover:bg-slate-50 cursor-pointer"
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          }
 
           return (
             <Link
