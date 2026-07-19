@@ -32,9 +32,10 @@ export interface Instructor {
   profilePicture: string;
   phone: string;
   courses: string[];
-  password: string;
+  password?: string;
   moneyMade: number;
   isVerified: boolean;
+  specialization?: string;
   resetPasswordToken?: string;
   resetPasswordExpiry?: Date;
   youtubeTokens?: {

@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
-  timeout: 10000,
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000',
+  timeout: 120000, // 120 seconds — covers slow networks and large payloads
   headers: {
     'Content-Type': 'application/json',
   },
@@ -26,7 +26,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/api/course',
     GET_BY_ID: (id: string) => `/api/course/${id}`,
     GET_BY_USER: '/api/course/user',
-    CREATE: '/api/course',
+    CREATE: '/api/course/add',
     UPDATE: (id: string) => `/api/course/${id}`,
     DELETE: (id: string) => `/api/course/${id}`,
   },

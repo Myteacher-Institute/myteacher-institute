@@ -79,7 +79,7 @@ export default function AdminVerifyOtpPage() {
             Verify Your Identity
           </h2>
           <p className="text-[#71717a] text-[14px] mb-6 text-center">
-            Enter the 6-digit code sent to {user?.email || 'your email'}
+            Enter the code sent to {user?.email || 'your email'}
           </p>
 
           {/* Error Message */}
@@ -111,7 +111,7 @@ export default function AdminVerifyOtpPage() {
                   value={otp}
                   onChange={handleChange}
                   className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-center text-2xl tracking-widest font-mono text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldError ? 'border-red-500' : ''}`}
-                  placeholder="000000"
+                  placeholder="******"
                   maxLength={6}
                 />
               </div>
@@ -124,7 +124,7 @@ export default function AdminVerifyOtpPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center"
+                className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center cursor-pointer"
                 style={{ height: '48px' }}
               >
                 {isLoading ? 'Verifying...' : 'Verify Code'}

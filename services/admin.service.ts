@@ -15,8 +15,8 @@ export const adminService = {
     email: string;
     password: string;
     name: string;
-  }): Promise<{ admin: Admin; message: string }> {
-    const response = await axiosInstance.post('/api/admin/add-admin', data);
+  }): Promise<{ admin: Admin; message: string; status: string }> {
+    const response = await axiosInstance.post('/api/admin/add', data);
     return response.data;
   },
 

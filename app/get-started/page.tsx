@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { verifyPasswordSchema } from '@/validation/auth.schema';
 import { useRouter } from 'next/navigation';
 import { encryptForUrl } from '@/utils/encryption';
+import Link from 'next/link';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -218,7 +219,7 @@ export default function AuthPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center"
+                  className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center cursor-pointer"
                   style={{ height: '48px' }}
                 >
                   {isLoading ? 'Verifying...' : 'Sign in'}

@@ -74,14 +74,14 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      // Backend doesn't have a logout endpoint, so we just clear local storage
-      // The session will be invalidated on the backend side through token expiration
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Hit the backend logout endpoint so the server can revoke the refresh
+      // token stored in MongoDB. withCredentials is set globally on axiosInstance
+      // so the httpOnly refresh token cookie is automatically included.
+      await axiosInstance.post('/api/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      // Network error or token already gone — still safe to clear local state.
+      console.error('Logout request failed (session may already be expired):', error);
     } finally {
-      // Clear local storage regardless of API call success
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     }

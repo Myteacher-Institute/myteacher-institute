@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiCheckCircle as CheckCircle2,
   FiPlayCircle as PlayCircle,
   FiClock as Clock,
   FiAward as Award,
   FiX as X,
+  FiBook,
+  FiStar,
+  FiTrendingUp,
 } from "react-icons/fi";
+import { activityTracker } from "@/utils/activityTracker";
 import { COURSES } from "@/app/components/constants/Students/courses";
 import { recommended } from "@/app/components/constants/Students/recommended";
 import { notification } from "@/app/components/constants/Students/notification";
@@ -26,6 +30,11 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [mentorOpen, setMentorOpen] = useState(false);
+  const [activities, setActivities] = useState<any[]>([]);
+
+  useEffect(() => {
+    setActivities(activityTracker.getFormattedActivities());
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B] overflow-x-hidden">
@@ -121,11 +130,51 @@ export default function Dashboard() {
                 <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
                   Recommended For You
                 </h3>
-                <RecommendedSection />  {/* Fixed: Using RecommendedSection component */}
+                <RecommendedSection />
               </div>
 
               <div className="bg-blue-600 rounded-4xl p-8 shadow-xl shadow-blue-100">
                 <MentorWidget />
+              </div>
+
+              <div className="space-y-6">
+                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight uppercase">
+                  Recent Activity
+                </h3>
+                <div className="space-y-4">
+                  {activities.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-4">No recent activities</p>
+                  ) : (
+                    activities.slice(0, 5).map((activity) => {
+                      const iconMap: Record<string, any> = {
+                        'Course enrolled': FiBook,
+                        'Lesson completed': FiCheckCircle2,
+                        'Achievement unlocked': FiAward,
+                        'Progress milestone': FiTrendingUp,
+                        'default': FiBook,
+                      };
+                      const colorMap: Record<string, string> = {
+                        'Course enrolled': 'text-blue-600 bg-blue-50',
+                        'Lesson completed': 'text-green-600 bg-green-50',
+                        'Achievement unlocked': 'text-yellow-600 bg-yellow-50',
+                        'Progress milestone': 'text-purple-600 bg-purple-50',
+                        'default': 'text-blue-600 bg-blue-50',
+                      };
+                      const Icon = iconMap[activity.action] || iconMap['default'];
+                      const color = colorMap[activity.action] || colorMap['default'];
+
+                      return (
+                        <div key={activity.id} className="flex gap-4">
+                          <div className={`p-2.5 rounded-xl h-fit ${color}`}><Icon size={18} /></div>
+                          <div>
+                            <p className="text-[14px] text-[#1E293B] leading-tight">{activity.action} <br /><span className="font-bold text-[#1E293B]">{activity.detail}</span></p>
+                            <span className="text-[11px] text-slate-600 font-medium">{activity.time}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="space-y-6">

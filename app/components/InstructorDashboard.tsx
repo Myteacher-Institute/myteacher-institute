@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   FiGrid, FiBook, FiUsers, FiDollarSign,
   FiStar, FiMessageSquare, FiTrendingUp,
-  FiSettings, FiHelpCircle, FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiX
+  FiSettings, FiHelpCircle, FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiX, FiLogOut
 } from 'react-icons/fi';
+import { activityTracker } from '@/utils/activityTracker';
+import { useAuthStore } from '@/store/auth.store';
+import { LogoutConfirmModal } from './LogoutConfirmModal';
 
 const SidebarItem = ({ icon: Icon, label, active = false }: any) => (
   <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-blue-50 text-[#111827] font-semibold' : 'text-[#111827] hover:bg-slate-50'
@@ -36,6 +40,22 @@ const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: any) 
 
 export default function InstructorDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const { logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    window.location.href = '/get-started';
+  };
+
+  useEffect(() => {
+    setActivities(activityTracker.getFormattedActivities());
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#FDFDFD] font-poppins relative">
@@ -73,6 +93,15 @@ export default function InstructorDashboard() {
           <SidebarItem icon={FiTrendingUp} label="Analytics" />
           <SidebarItem icon={FiSettings} label="Settings" />
           <SidebarItem icon={FiHelpCircle} label="Help & Support" />
+
+          {/* Logout */}
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#111827] hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer"
+          >
+            <FiLogOut size={20} className="text-red-500" />
+            <span className="text-[15px] font-medium">Logout</span>
+          </button>
         </nav>
 
         {/* Sidebar Promo Box */}
@@ -88,6 +117,13 @@ export default function InstructorDashboard() {
         </div> */}
       </aside>
 
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+        isLoading={isLoggingOut}
+      />
+
       {/* --- Main Content --- */}
       <main className="grow p-5 lg:p-10 overflow-y-auto w-full">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
@@ -100,7 +136,7 @@ export default function InstructorDashboard() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button type="button" aria-label="View notifications" className="p-3 bg-[#FFFFFF] border border-slate-100 rounded-2xl text-[#111827] relative cursor-pointer hover:bg-slate-50"><FiBell size={22} /><span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white" /></button>
-            <button type="button" className="grow sm:grow-0 bg-blue-600 text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200"><FiPlus size={18} /> <span className="whitespace-nowrap">Create New Course</span></button>
+            <button type="button" onClick={() => router.push('/instructor/create-course')} className="grow sm:grow-0 bg-blue-600 text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200"><FiPlus size={18} /> <span className="whitespace-nowrap">Create New Course</span></button>
           </div>
         </header>
 
@@ -149,21 +185,38 @@ export default function InstructorDashboard() {
                 <button className="text-[#2563EB] cursor-pointer font-bold text-sm">View all</button>
               </div>
               <div className="space-y-6">
-                {[
-                  { user: "New student enrolled in", action: "UI/UX Design Fundamentals", time: "2 minutes ago", icon: FiUsers, color: "text-blue-600 bg-blue-50" },
-                  { user: "New student enrolled in", action: "UI/UX Design Fundamentals", time: "2 minutes ago", icon: FiUsers, color: "text-[#111827] bg-blue-50" },
-                  { user: "New review on", action: "Complete Web Development Bootcamp", time: "1 hour ago", icon: FiStar, color: "text-[#FEB00A] bg-[#FFEDD5]" },
-                  { user: "Payment of ₦120,000 initiated", action: "", time: "1 hour ago", icon: FiDollarSign, color: "text-emerald-500 bg-emerald-50" },
-                  { user: "Payment of ₦120,000 initiated", action: "", time: "1 hour ago", icon: FiDollarSign, color: "text-emerald-500 bg-emerald-50" },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className={`p-2.5 rounded-xl h-fit ${item.color}`}><item.icon size={18} /></div>
-                    <div>
-                      <p className="text-[14px] text-[#111827] leading-tight">{item.user} <br /><span className="font-bold text-[#111827]">{item.action}</span></p>
-                      <span className="text-[11px] text-slate-600 font-medium">{item.time}</span>
-                    </div>
-                  </div>
-                ))}
+                {activities.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">No recent activities</p>
+                ) : (
+                  activities.slice(0, 5).map((activity) => {
+                    const iconMap: Record<string, any> = {
+                      'New student enrolled': FiUsers,
+                      'New review': FiStar,
+                      'Payment': FiDollarSign,
+                      'Course created': FiBook,
+                      'default': FiUsers,
+                    };
+                    const colorMap: Record<string, string> = {
+                      'New student enrolled': 'text-blue-600 bg-blue-50',
+                      'New review': 'text-[#FEB00A] bg-[#FFEDD5]',
+                      'Payment': 'text-emerald-500 bg-emerald-50',
+                      'Course created': 'text-[#111827] bg-blue-50',
+                      'default': 'text-blue-600 bg-blue-50',
+                    };
+                    const Icon = iconMap[activity.action] || iconMap['default'];
+                    const color = colorMap[activity.action] || colorMap['default'];
+
+                    return (
+                      <div key={activity.id} className="flex gap-4">
+                        <div className={`p-2.5 rounded-xl h-fit ${color}`}><Icon size={18} /></div>
+                        <div>
+                          <p className="text-[14px] text-[#111827] leading-tight">{activity.action} <br /><span className="font-bold text-[#111827]">{activity.detail}</span></p>
+                          <span className="text-[11px] text-slate-600 font-medium">{activity.time}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </section>
 

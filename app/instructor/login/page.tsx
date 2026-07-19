@@ -145,7 +145,7 @@ export default function InstructorLoginPage() {
                 type="submit"
                 disabled={isLoading}
                 className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center"
-                style={{ height: '48px' }}
+                style={{ height: '48px', cursor: "pointer" }}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
@@ -158,6 +158,10 @@ export default function InstructorLoginPage() {
               </Link>
               <Link href="/instructor/apply" className="text-sm text-[#223D85] hover:underline cursor-pointer block">
                 Apply to become an Instructor
+              </Link>
+              <div className='text-sm text-[#71717a]'>--- Or ----</div>
+              <Link href="/admin/login" className="text-sm text-[#223D85] hover:underline cursor-pointer block">
+                Login As Admin
               </Link>
               <Link href="/get-started" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
                 ← Back to User Login

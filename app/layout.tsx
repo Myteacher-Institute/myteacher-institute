@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Poppins, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SocketProvider } from "./components/SocketProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -34,7 +35,9 @@ export default function RootLayout({
       className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <SocketProvider>
+          {children}
+        </SocketProvider>
       </body>
     </html>
   );

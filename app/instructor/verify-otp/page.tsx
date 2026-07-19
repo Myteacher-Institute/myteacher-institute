@@ -22,33 +22,48 @@ export default function InstructorVerifyOtpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (otp.length !== 6) {
       setFieldError('Please enter a 6-digit OTP code');
       return;
     }
 
     await instructorVerifyOtp(otp);
-    
-    const { isAuthenticated } = useAuthStore.getState();
-    if (isAuthenticated) {
+
+    // Read state after the async action completes
+    const { isAuthenticated, error: storeError } = useAuthStore.getState();
+
+    if (isAuthenticated && !storeError) {
       router.push('/instructor');
     }
+    // If storeError is set the error banner in the JSX will show it automatically
   };
 
   const handleResendOtp = async () => {
-    if (!user?.email) return;
-    
+    // Read directly from store state — bypasses React render/hydration timing
+    const email = useAuthStore.getState().user?.email;
+
+    if (!email) {
+      setFieldError('Session expired. Please go back and log in again.');
+      return;
+    }
+
     setIsResending(true);
     setResendSuccess(false);
-    
-    const result = await instructorResendOtp(user.email);
-    
-    setIsResending(false);
-    
-    if (result.status === 'success') {
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000);
+    setFieldError('');
+
+    try {
+      const result = await instructorResendOtp(email);
+      if (result?.status === 'success') {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 5000);
+      } else {
+        setFieldError(result?.message || 'Failed to resend OTP. Please try again.');
+      }
+    } catch {
+      setFieldError('Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -79,7 +94,7 @@ export default function InstructorVerifyOtpPage() {
             Verify Your Identity
           </h2>
           <p className="text-[#71717a] text-[14px] mb-6 text-center">
-            Enter the 6-digit code sent to {user?.email || 'your email'}
+            Enter the code sent to {user?.email || 'your email'}
           </p>
 
           {/* Error Message */}
@@ -111,7 +126,7 @@ export default function InstructorVerifyOtpPage() {
                   value={otp}
                   onChange={handleChange}
                   className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-center text-2xl tracking-widest font-mono text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldError ? 'border-red-500' : ''}`}
-                  placeholder="000000"
+                  placeholder="******"
                   maxLength={6}
                 />
               </div>
@@ -124,7 +139,7 @@ export default function InstructorVerifyOtpPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center"
+                className="w-full bg-[#223D85] hover:bg-[#1A3069] text-white font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center cursor-pointer"
                 style={{ height: '48px' }}
               >
                 {isLoading ? 'Verifying...' : 'Verify Code'}

@@ -6,6 +6,9 @@ import { authService } from '../services';
 import { adminService } from '../services';
 import { instructorService } from '../services';
 import { userService } from '../services';
+import { activityTracker } from '../utils/activityTracker';
+import { notificationTracker } from '../utils/notificationTracker';
+import { getSocket } from '@/lib/socket';
 
 // Helper to set cookies
 const setAuthCookies = (accessToken: string, userType: 'user' | 'admin' | 'instructor' | null) => {
@@ -39,7 +42,7 @@ interface AuthActions extends AuthState {
   adminSendResetCode: (email: string) => Promise<{ status: 'success' | 'failed'; message: string }>;
   adminResetPassword: (code: string, password: string) => Promise<{ status: 'success' | 'failed'; message: string }>;
   instructorLogin: (email: string, password: string) => Promise<void>;
-  instructorApply: (data: { name: string; email: string; password: string; phone: string; profilePicture: string }) => Promise<void>;
+  instructorApply: (data: { name: string; email: string; password: string; phone: string; specialization: string; profilePicture: string }) => Promise<void>;
   instructorVerifyOtp: (otp: string) => Promise<void>;
   instructorResendOtp: (email: string) => Promise<{ status: 'success' | 'failed'; message: string }>;
   instructorSendResetCode: (email: string) => Promise<{ status: 'success' | 'failed'; message: string }>;
@@ -160,14 +163,23 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authService.resendOtp(email);
+          console.log('Resend OTP response:', response);
           set({ isLoading: false, error: null });
-          return response;
+          
+          // Handle different response structures
+          if (response && (response.status === 'success' || response.message)) {
+            return response;
+          } else {
+            // If response doesn't have expected structure, treat as success if no error was thrown
+            return { status: 'success', message: 'OTP resent successfully' };
+          }
         } catch (error: any) {
+          console.error('Resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to resend OTP',
+            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
           });
-          return { status: 'failed', message: 'Failed to resend OTP' };
+          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
         }
       },
 
@@ -242,6 +254,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authService.verifyOtp({ otp });
+          console.log('Verify OTP response:', response);
           
           if (response.status === 'success') {
             if (response.nextStep === 'onboarding' && response.userId) {
@@ -276,6 +289,12 @@ export const useAuthStore = create<AuthActions>()(
               if (response.accessToken) {
                 localStorage.setItem('accessToken', response.accessToken);
                 setAuthCookies(response.accessToken, userType);
+              }
+              
+              // Emit user online event via socket
+              const socket = getSocket();
+              if (socket && socket.connected && userType) {
+                socket.emit('user:online', { userType });
               }
             }
           } else {
@@ -382,6 +401,12 @@ export const useAuthStore = create<AuthActions>()(
             
             localStorage.setItem('accessToken', response.accessToken);
             setAuthCookies(response.accessToken, 'admin');
+            
+            // Emit admin online event via socket
+            const socket = getSocket();
+            if (socket && socket.connected) {
+              socket.emit('user:online', { userType: 'admin' });
+            }
           }
         } catch (error: any) {
           set({
@@ -395,14 +420,23 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await adminService.resendOtp(email);
+          console.log('Admin resend OTP response:', response);
           set({ isLoading: false, error: null });
-          return response;
+          
+          // Handle different response structures
+          if (response && (response.status === 'success' || response.message)) {
+            return response;
+          } else {
+            // If response doesn't have expected structure, treat as success if no error was thrown
+            return { status: 'success', message: 'OTP resent successfully' };
+          }
         } catch (error: any) {
+          console.error('Admin resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to resend OTP',
+            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to resend OTP' };
+          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
         }
       },
 
@@ -475,7 +509,7 @@ export const useAuthStore = create<AuthActions>()(
         }
       },
 
-      instructorApply: async (data: { name: string; email: string; password: string; phone: string; profilePicture: string }) => {
+      instructorApply: async (data: { name: string; email: string; password: string; phone: string; specialization: string; profilePicture: string }) => {
         set({ isLoading: true, error: null });
         try {
           const response = await instructorService.apply(data);
@@ -498,19 +532,38 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await instructorService.verifyOtp(otp);
-          
-          if (response.instructor && response.accessToken) {
+
+          // Backend may return { success: true } or { status: 'success' }
+          const isSuccess = response.success === true || (response as any).status === 'success';
+          const instructor = response.instructor ?? (response as any).authUser;
+          const accessToken = response.accessToken ?? (response as any).access_code;
+
+          if (isSuccess && instructor && accessToken) {
             set({
               isAuthenticated: true,
-              user: response.instructor,
+              user: instructor,
               userType: 'instructor',
-              accessToken: response.accessToken,
+              accessToken,
               isLoading: false,
               error: null,
             });
-            
-            localStorage.setItem('accessToken', response.accessToken);
-            setAuthCookies(response.accessToken, 'instructor');
+
+            localStorage.setItem('accessToken', accessToken);
+            setAuthCookies(accessToken, 'instructor');
+
+            // Emit instructor online event via socket
+            const socket = getSocket();
+            if (socket && socket.connected) {
+              socket.emit('user:online', { userType: 'instructor' });
+            }
+          } else if (isSuccess && !accessToken) {
+            // OTP accepted but token not yet issued (shouldn't happen, safety net)
+            set({ isLoading: false, error: null });
+          } else {
+            set({
+              isLoading: false,
+              error: response.message || 'OTP verification failed',
+            });
           }
         } catch (error: any) {
           set({
@@ -524,14 +577,23 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await instructorService.resendOtp(email);
+          console.log('Instructor resend OTP response:', response);
           set({ isLoading: false, error: null });
-          return response;
+          
+          // Handle different response structures
+          if (response && (response.status === 'success' || response.message)) {
+            return response;
+          } else {
+            // If response doesn't have expected structure, treat as success if no error was thrown
+            return { status: 'success', message: 'OTP resent successfully' };
+          }
         } catch (error: any) {
+          console.error('Instructor resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to resend OTP',
+            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to resend OTP' };
+          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
         }
       },
 
@@ -628,6 +690,8 @@ export const useAuthStore = create<AuthActions>()(
           });
           localStorage.removeItem('accessToken');
           clearAuthCookies();
+          activityTracker.clearActivities();
+          notificationTracker.clearNotifications();
         }
       },
 
@@ -685,12 +749,21 @@ export const useAuthStore = create<AuthActions>()(
     }),
     {
       name: 'auth-storage',
+      version: 1,
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         user: state.user,
         userType: state.userType,
         accessToken: state.accessToken,
       }),
+      migrate: (persistedState: any, version: number) => {
+        // Handle future migrations if needed
+        if (version === 0) {
+          // Migration from version 0 to 1
+          return persistedState;
+        }
+        return persistedState;
+      },
     }
   )
 );

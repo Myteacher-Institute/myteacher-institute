@@ -17,6 +17,7 @@ export const instructorService = {
     email: string;
     password: string;
     phone: string;
+    specialization: string;
     profilePicture: string;
   }): Promise<{ status: string; message: string; instructor?: any }> {
     const response = await axiosInstance.post('/api/instructor/apply', data);
@@ -24,7 +25,7 @@ export const instructorService = {
   },
 
   async getAllInstructors(): Promise<{ instructors: Instructor[] }> {
-    const response = await axiosInstance.get('/api/instructor');
+    const response = await axiosInstance.get('/api/instructor/all');
     return response.data;
   },
 
@@ -47,16 +48,36 @@ export const instructorService = {
   },
 
   async verifyInstructor(instructorId: string): Promise<{ message: string }> {
-    const response = await axiosInstance.post(`/api/instructor/verify/${instructorId}`);
+    const response = await axiosInstance.patch(`/api/instructor/verify/${instructorId}`);
     return response.data;
   },
 
   async rejectInstructor(instructorId: string): Promise<{ message: string }> {
-    const response = await axiosInstance.post(`/api/instructor/reject/${instructorId}`);
+    const response = await axiosInstance.delete(`/api/instructor/reject/${instructorId}`);
     return response.data;
   },
 
-  async verifyOtp(otp: string): Promise<{ instructor: any; accessToken: string; message: string }> {
+  async verifyOtp(otp: string): Promise<{
+    success: boolean;
+    message: string;
+    instructor?: {
+      _id: string;
+      name: string;
+      email: string;
+      profilePicture: string;
+      phone: string;
+      specialization: string;
+      courses: any[];
+      moneyMade: number;
+      youtubeTokens: {
+        accessToken?: string;
+        refreshToken?: string;
+        expiryDate?: number;
+      };
+      isVerified: boolean;
+    };
+    accessToken?: string
+  }> {
     const response = await axiosInstance.post('/api/instructor/verify-otp', { otp });
     return response.data;
   },

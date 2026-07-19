@@ -38,7 +38,8 @@ export default function OtpVerificationPage() {
 
     await verifyOtp(otp);
 
-    const { isAuthenticated, userType } = useAuthStore.getState();
+    const { isAuthenticated, userType, user, accessToken } = useAuthStore.getState();
+    console.log('After verifyOtp - isAuthenticated:', isAuthenticated, 'userType:', userType, 'user:', user, 'accessToken:', accessToken);
 
     if (isAuthenticated && userType) {
       // Both registration and login flows - user is now verified

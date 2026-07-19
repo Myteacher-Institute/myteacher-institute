@@ -10,6 +10,7 @@ export interface ProgrammingCode {
 export interface Asset {
   name: string;
   url: string;
+  file?: File;
 }
 
 export interface QuizQuestion {
@@ -33,9 +34,7 @@ export interface CourseVideo {
   videoDuration: number;
   isProgrammingVideo: boolean;
   isPreview: boolean;
-  programmingCodes: ProgrammingCode[];
-  assets: Asset[];
-  quizzes: Quiz[];
+  file?: File;
 }
 
 export interface InstructorDetails {
@@ -58,6 +57,9 @@ export interface Course {
   courseName: string;
   description: string;
   courseVideos: CourseVideo[];
+  programmingCodes: ProgrammingCode[];
+  assets: Asset[];
+  quizzes: Quiz[];
   courseRequirements: string[];
   appliedUsers: AppliedUser[];
   price: number;
@@ -72,6 +74,9 @@ export interface CreateCourseRequest {
   courseName: string;
   description: string;
   courseVideos: CourseVideo[];
+  programmingCodes: ProgrammingCode[];
+  assets: Asset[];
+  quizzes: Quiz[];
   courseRequirements: string[];
   price: number;
   duration: number;
