@@ -1,6 +1,9 @@
 import { BiStar as Star, BiUpArrowAlt as ArrowUpRight } from 'react-icons/bi';
+import { useThemeStore } from '@/store/theme.store';
 
 const Testimonial = () => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const testimonials = [
     {
       name: "Amara M.",
@@ -29,7 +32,7 @@ const Testimonial = () => {
   ];
 
   return (
-    <section className="w-full bg-[#FDFCF8] py-12 px-8 lg:px-16 overflow-hidden">
+    <section className={isDark ? "w-full bg-slate-900 py-12 px-8 lg:px-16 overflow-hidden" : "w-full bg-[#FDFCF8] py-12 px-8 lg:px-16 overflow-hidden"}>
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
@@ -37,7 +40,7 @@ const Testimonial = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff9ea] border border-[#fef3c7] text-[10px] font-bold text-[#d97706] uppercase tracking-[0.2em]">
             <Star size={12} fill="#d97706" /> Student Stories
           </div>
-          <h2 className="text-3xl lg:text-4xl font-black text-[#0f172a] tracking-tight leading-tight">
+          <h2 className={isDark ? "text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight" : "text-3xl lg:text-4xl font-black text-[#0f172a] tracking-tight leading-tight"}>
             Careers transformed. Lives changed.
           </h2>
           <p className="text-slate-500 text-base font-medium max-w-xl mx-auto">
@@ -50,7 +53,7 @@ const Testimonial = () => {
           {testimonials.map((item, index) => (
             <div 
               key={index} 
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow hrink-0 w-full lg:w-auto"
+              className={isDark ? "bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow hrink-0 w-full lg:w-auto" : "bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow hrink-0 w-full lg:w-auto"}
             >
               <div className="space-y-4">
                 {/* Professional Star Rating */}
@@ -60,7 +63,7 @@ const Testimonial = () => {
                   ))}
                 </div>
 
-                <p className="text-[#0f172a] text-sm font-medium leading-relaxed italic">
+                <p className={isDark ? "text-white text-sm font-medium leading-relaxed italic" : "text-[#0f172a] text-sm font-medium leading-relaxed italic"}>
                   &#34;{item.text}&#34;
                 </p>
 
@@ -70,14 +73,14 @@ const Testimonial = () => {
                     {item.initials}
                   </div>
                   <div>
-                    <h4 className="font-bold text-[#0f172a] text-sm">{item.name}</h4>
+                    <h4 className={isDark ? "font-bold text-white text-sm" : "font-bold text-[#0f172a] text-sm"}>{item.name}</h4>
                     <p className="text-slate-400 text-xs font-medium">{item.location}</p>
                   </div>
                 </div>
               </div>
 
               {/* Achievement Badge */}
-              <div className="mt-4 pt-4 border-t border-slate-50">
+              <div className={isDark ? "mt-4 pt-4 border-t border-slate-700" : "mt-4 pt-4 border-t border-slate-50"}>
                 <div className="flex items-center gap-1.5 text-[#10b981] font-bold text-xs">
                   <ArrowUpRight size={14} strokeWidth={3} />
                   {item.achievement}

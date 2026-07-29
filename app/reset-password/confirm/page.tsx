@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { FiLock } from 'react-icons/fi';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function UserResetPasswordConfirmPage() {
   const router = useRouter();
   const { userResetPasswordWithCode, isLoading, error } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,9 +77,9 @@ export default function UserResetPasswordConfirmPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 font-sans select-none">
+    <div className={`flex min-h-screen w-full items-center justify-center p-4 font-sans select-none ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
       <div 
-        className="grid grid-cols-1 md:grid-cols-2 w-full bg-white shadow-2xl overflow-hidden rounded-none"
+        className={`grid grid-cols-1 md:grid-cols-2 w-full shadow-2xl overflow-hidden rounded-none ${isDark ? 'bg-slate-800' : 'bg-white'}`}
         style={{ maxWidth: '940px', minHeight: '600px' }}
       >
         {/* Left Section: Image */}
@@ -89,17 +92,17 @@ export default function UserResetPasswordConfirmPage() {
         </div>
 
         {/* Right Section: Form */}
-        <div className="w-full bg-white flex flex-col justify-center items-center px-6 py-8 md:py-12">
+        <div className={`w-full flex flex-col justify-center items-center px-6 py-8 md:py-12 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10 flex-shrink-0">
             <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
           </div>
             
           {/* Form Header */}
-          <h2 className="text-[#111111] text-[24px] font-bold mb-2 tracking-tight text-center flex-shrink-0">
+          <h2 className={`text-[24px] font-bold mb-2 tracking-tight text-center flex-shrink-0 ${isDark ? 'text-white' : 'text-[#111111]'}`}>
             Reset Password
           </h2>
-          <p className="text-[#71717a] text-[14px] mb-6 text-center">
+          <p className={`text-[14px] mb-6 text-center ${isDark ? 'text-slate-400' : 'text-[#71717a]'}`}>
             Enter the code sent to {email || 'your email'} and your new password
           </p>
 
@@ -132,7 +135,7 @@ export default function UserResetPasswordConfirmPage() {
                   placeholder="000000"
                   value={code}
                   onChange={handleCodeChange}
-                  className={`w-full h-full pl-16 pr-4 border border-[#b3b3b3] rounded-[6px] text-center text-2xl tracking-widest font-mono text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.code ? 'border-red-500' : ''}`}
+                  className={`w-full h-full pl-16 pr-4 border border-[#b3b3b3] rounded-[6px] text-center text-2xl tracking-widest font-mono placeholder-[#71717a] focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.code ? 'border-red-500' : ''} ${isDark ? 'bg-slate-700 text-white' : 'bg-white text-[#111111]'}`}
                   maxLength={6}
                 />
               </div>
@@ -154,7 +157,7 @@ export default function UserResetPasswordConfirmPage() {
                     setPassword(e.target.value);
                     if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' }));
                   }}
-                  className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-[14px] text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.password ? 'border-red-500' : ''}`}
+                  className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-[14px] placeholder-[#71717a] focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.password ? 'border-red-500' : ''} ${isDark ? 'bg-slate-700 text-white' : 'bg-white text-[#111111]'}`}
                   required
                 />
               </div>

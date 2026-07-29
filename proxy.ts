@@ -1,59 +1,111 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Guest-only routes - accessible only when NOT authenticated
-const GUEST_ROUTES = ['/get-started', '/otp-verification', '/create-account', '/instructor/login', '/instructor/apply', '/instructor/verify-otp', '/admin/login', '/admin/verify-otp', '/reset-password', '/admin/reset-password', '/instructor/reset-password'];
-
-// Protected routes - require authentication
-const PROTECTED_ROUTES = [
-  '/student',
-  '/instructor',
-  '/admin',
-  '/onboarding',
-  '/profile',
-  '/settings',
+// Routes only unauthenticated users can access.
+// Authenticated users visiting these are redirected to their dashboard.
+const GUEST_ONLY_ROUTES = [
+  '/get-started',
+  '/otp-verification',
+  '/create-account',
+  '/reset-password',
 ];
+
+// Role-specific auth pages (login, apply, verify-otp, reset-password).
+// Unauthenticated users can always reach these.
+// Authenticated users are redirected to their own dashboard.
+// IMPORTANT: checked BEFORE the broad /instructor and /admin guards.
+const ROLE_AUTH_ROUTES: Record<string, 'instructor' | 'admin'> = {
+  '/instructor/login': 'instructor',
+  '/instructor/apply': 'instructor',
+  '/instructor/verify-otp': 'instructor',
+  '/instructor/reset-password': 'instructor',
+  '/admin/login': 'admin',
+  '/admin/verify-otp': 'admin',
+  '/admin/reset-password': 'admin',
+};
+
+function getDashboard(role: 'user' | 'instructor' | 'admin'): string {
+  if (role === 'admin') return '/admin';
+  if (role === 'instructor') return '/instructor';
+  return '/student';
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // The proxy runs on the edge — it has NO access to localStorage.
+  // Zustand persist uses localStorage, so auth-storage is NOT readable here.
+  //
+  // The only reliable auth signal is the pair of cookies that auth.store.ts
+  // explicitly sets via setAuthCookies() on every login:
+  //   - accessToken  (cleared on logout)
+  //   - userType     (cleared on logout)
+  //
+  // A valid session requires BOTH. A lone accessToken with no userType (or
+  // vice-versa) is treated as unauthenticated to prevent redirect loops from
+  // stale / partially-cleared cookies.
   const accessToken = request.cookies.get('accessToken')?.value;
-  const userType = request.cookies.get('userType')?.value;
+  const userType = request.cookies.get('userType')?.value as
+    | 'user'
+    | 'instructor'
+    | 'admin'
+    | undefined;
 
-  const isAuthenticated = !!accessToken;
+  const isAuthenticated = !!accessToken && !!userType;
+  const role = isAuthenticated ? userType! : null;
 
-  // Check if current path is a guest-only route
-  const isGuestRoute = GUEST_ROUTES.some(route => pathname.startsWith(route));
-
-  // If it's a guest route, allow access (don't check protected routes)
-  if (isGuestRoute) {
-    // Redirect authenticated users away from guest routes (except if they're trying to access instructor login as an instructor)
+  // -- 1. Pure guest-only routes --------------------------------------------
+  if (GUEST_ONLY_ROUTES.some(route => pathname.startsWith(route))) {
     if (isAuthenticated) {
-      // Allow authenticated instructors to access instructor login page
-      if (pathname === '/instructor/login' && userType === 'instructor') {
-        return NextResponse.next();
-      }
-      
-      let redirectPath = '/student';
-      
-      if (userType === 'admin') {
-        redirectPath = '/admin';
-      } else if (userType === 'instructor') {
-        redirectPath = '/instructor';
-      }
-      
-      return NextResponse.redirect(new URL(redirectPath, request.url));
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
     }
-    
-    // Allow unauthenticated users to access guest routes
     return NextResponse.next();
   }
 
-  // Check if current path is a protected route
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  // -- 2. Role-specific auth pages ------------------------------------------
+  const matchedAuthRoute = Object.keys(ROLE_AUTH_ROUTES).find(route =>
+    pathname.startsWith(route)
+  );
+  if (matchedAuthRoute) {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
+    }
+    // Not authenticated — allow through (covers mid-flow states like OTP entry)
+    return NextResponse.next();
+  }
 
-  // Redirect unauthenticated users to login
-  if (isProtectedRoute && !isAuthenticated) {
-    return NextResponse.redirect(new URL('/get-started', request.url));
+  // -- 3. Student dashboard -------------------------------------------------
+  if (pathname.startsWith('/student')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/get-started', request.url));
+    }
+    if (role !== 'user') {
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // -- 4. Instructor protected pages ----------------------------------------
+  // /instructor/login etc. are already handled above in section 2.
+  if (pathname.startsWith('/instructor')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/instructor/login', request.url));
+    }
+    if (role !== 'instructor') {
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // -- 5. Admin protected pages ---------------------------------------------
+  if (pathname.startsWith('/admin')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    if (role !== 'admin') {
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();
@@ -61,14 +113,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - api routes
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

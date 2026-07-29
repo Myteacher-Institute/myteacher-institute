@@ -1,10 +1,13 @@
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
+import { useThemeStore } from '@/store/theme.store';
 
 const Footer = () => {
+    const { theme } = useThemeStore();
+    const isDark = theme === 'dark';
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="bg-[#0F172A] text-white pt-16 pb-8 px-6">
+        <footer className={`text-white pt-16 pb-8 px-6 ${isDark ? 'bg-slate-900' : 'bg-[#0F172A]'}`}>
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-12 mb-16">
 
                 {/* Brand Section */}

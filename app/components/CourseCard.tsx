@@ -1,6 +1,7 @@
 // components/CoursesGrid.tsx
 import React from 'react';
 import { FiTerminal, FiEdit3, FiPieChart, FiSmartphone, FiStar, FiClock, FiBookOpen } from 'react-icons/fi';
+import { useThemeStore } from '@/store/theme.store';
 
 const IconMap = {
     python: FiTerminal,
@@ -11,9 +12,11 @@ const IconMap = {
 
 // CourseCard defined inside to keep the page.tsx clean
 const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tagColor }: any) => {
+    const { theme } = useThemeStore();
+    const isDark = theme === 'dark';
     const Icon = IconMap[iconKey as keyof typeof IconMap];
     return (
-        <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full group transition-all hover:shadow-md">
+        <div className={isDark ? "bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-sm flex flex-col h-full group transition-all hover:shadow-md" : "bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full group transition-all hover:shadow-md"}>
             <div className={`h-36 flex items-center justify-center ${tagColor} relative`}>
                 {tag && (
                     <span className="absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm text-[#0F1C2E]">
@@ -24,11 +27,11 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
             </div>
 
             <div className="p-6 flex flex-col grow">
-                <h3 className="font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors">
+                <h3 className={isDark ? "font-bold text-[19px] leading-snug mb-4 text-white transition-colors" : "font-bold text-[19px] leading-snug mb-4 text-[#0F1C2E] transition-colors"}>
                     {title}
                 </h3>
 
-                <div className="flex items-center gap-4 text-[#4A5E7A] text-[12px] font-medium mb-6">
+                <div className={isDark ? "flex items-center gap-4 text-slate-300 text-[12px] font-medium mb-6" : "flex items-center gap-4 text-[#4A5E7A] text-[12px] font-medium mb-6"}>
                     <div className="flex items-center gap-1.5"><FiClock className="text-slate-400" /> {duration}</div>
 
                     <div className="flex items-center gap-1.5"><FiBookOpen className="text-slate-400" /> {lessons} Lessons</div>
@@ -38,8 +41,8 @@ const CourseCard = ({ title, iconKey, duration, lessons, rating, price, tag, tag
                     </div>
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
-                    <span className="text-2xl font-black text-[#0F1C2E]">${price}</span>
+                <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
+                    <span className={isDark ? "text-2xl font-black text-white" : "text-2xl font-black text-[#0F1C2E]"}>${price}</span>
                     <button className="bg-[#0F1C2E] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm">
                         Enroll Now
                     </button>

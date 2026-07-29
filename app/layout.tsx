@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Poppins, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SocketProvider } from "./components/SocketProvider";
+import { NetworkStatus } from "./components/NetworkStatus";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -38,6 +39,7 @@ export default function RootLayout({
         <SocketProvider>
           {children}
         </SocketProvider>
+        <NetworkStatus />
       </body>
     </html>
   );

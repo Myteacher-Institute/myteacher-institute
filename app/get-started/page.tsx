@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { HiOutlineMail } from 'react-icons/hi';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { verifyPasswordSchema } from '@/validation/auth.schema';
 import { useRouter } from 'next/navigation';
 import { encryptForUrl } from '@/utils/encryption';
@@ -11,6 +12,8 @@ import Link from 'next/link';
 export default function AuthPage() {
   const router = useRouter();
   const { checkUserExists, login, verifyOtp, isLoading, error, clearInstruction } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -74,35 +77,34 @@ export default function AuthPage() {
   };
 
   return (
-    /* Changed background from bg-[#404040] to bg-white */
-    <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 font-sans select-none">
-      
+    <div className={`flex min-h-screen w-full items-center justify-center p-4 font-sans select-none ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+
       {/* Main Container Card - Force a strict layout container */}
-      <div 
-        className="grid grid-cols-1 md:grid-cols-2 w-full bg-white shadow-2xl overflow-hidden rounded-none"
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 w-full shadow-2xl overflow-hidden rounded-none ${isDark ? 'bg-slate-800' : 'bg-white'}`}
         style={{ maxWidth: '940px', minHeight: '600px' }}
       >
-        
+
         {/* Left Section: Image Split */}
         <div className="w-full relative min-h-[300px] md:min-h-full bg-[#eaeaea]">
-          <img 
-            src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1000&auto=format&fit=crop" 
-            alt="Student with VR Headset" 
+          <img
+            src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1000&auto=format&fit=crop"
+            alt="Student with VR Headset"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
         </div>
 
         {/* Right Section: Form Sheet - Using flex-col with dynamic padding to ensure nothing is cut off */}
-        <div className="w-full bg-white flex flex-col justify-center items-center px-6 py-8 md:py-12">
-          
+        <div className={`w-full flex flex-col justify-center items-center px-6 py-8 md:py-12 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+
           {/* Logo Assembly - Precise Vector Dimensions */}
           {/* FIXED: Added mb-10 for clean layout spacing before the heading */}
           <div className="flex items-center gap-3 mb-10 flex-shrink-0">
             <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
           </div>
-            
+
           {/* Form Header */}
-          <h2 className="text-[#111111] text-[24px] font-bold mb-6 tracking-tight text-center flex-shrink-0">
+          <h2 className={`text-[24px] font-bold mb-6 tracking-tight text-center flex-shrink-0 ${isDark ? 'text-white' : 'text-[#111111]'}`}>
             {step === 'email' ? 'Get started' : 'Enter your password'}
           </h2>
 
@@ -170,7 +172,7 @@ export default function AuthPage() {
                     placeholder="example@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-[14px] text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.email ? 'border-red-500' : ''}`}
+                    className={`w-full h-full pl-12 pr-4 border border-[#b3b3b3] rounded-[6px] text-[14px] placeholder-[#71717a] focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.email ? 'border-red-500' : ''} ${isDark ? 'bg-slate-700 text-white' : 'bg-white text-[#111111]'}`}
                     required
                   />
                 </div>
@@ -196,7 +198,7 @@ export default function AuthPage() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full h-full px-4 border border-[#b3b3b3] rounded-[6px] text-[14px] text-[#111111] placeholder-[#71717a] bg-white focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.password ? 'border-red-500' : ''}`}
+                    className={`w-full h-full px-4 border border-[#b3b3b3] rounded-[6px] text-[14px] placeholder-[#71717a] focus:outline-none focus:border-[#223D85] transition-colors ${fieldErrors.password ? 'border-red-500' : ''} ${isDark ? 'bg-slate-700 text-white' : 'bg-white text-[#111111]'}`}
                     required
                   />
                 </div>
@@ -233,6 +235,12 @@ export default function AuthPage() {
           <div className="mt-6 text-center space-y-2 w-full">
             <Link href="/reset-password" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
               Forgot password?
+            </Link>
+
+            <div className="divider mt-4 border-t border-[#b3b3b3]"></div>
+
+            <Link href="/instructor/login" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
+              Login as Instructor
             </Link>
           </div>
 

@@ -9,6 +9,7 @@ export interface User {
   hasOnboarded: boolean;
   coursesBought: string[];
   password: string;
+  profilePicture?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -20,6 +21,7 @@ export interface Admin {
   email: string;
   password: string;
   isAdmin: boolean;
+  profilePicture?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -29,7 +31,7 @@ export interface Instructor {
   _id: string;
   name: string;
   email: string;
-  profilePicture: string;
+  profilePicture?: string;
   phone: string;
   courses: string[];
   password?: string;

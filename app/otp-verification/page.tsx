@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { verifyOtpSchema } from '@/validation/auth.schema';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decryptFromUrl } from '@/utils/encryption';
@@ -9,6 +10,8 @@ import { decryptFromUrl } from '@/utils/encryption';
 export default function OtpVerificationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const emailParam = searchParams.get('email') || '';
   const email = emailParam ? decryptFromUrl(emailParam) : '';
   const role = searchParams.get('role') || 'user';
@@ -80,16 +83,16 @@ export default function OtpVerificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
+      <div className={`max-w-md w-full rounded-2xl shadow-xl p-8 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Verify OTP</h1>
-          <p className="text-gray-600">
+          <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>Verify OTP</h1>
+          <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>
             Enter the code sent to <span className="font-semibold">{email}</span>
           </p>
         </div>
@@ -102,7 +105,7 @@ export default function OtpVerificationPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="otp" className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
               One-Time Password
             </label>
             <input
@@ -113,17 +116,14 @@ export default function OtpVerificationPage() {
               onChange={(e) => setOtp(e.target.value)}
               maxLength={6}
               className={`w-full px-4 py-3 rounded-lg border ${
-                fieldErrors.otp ? 'border-red-500' : 'border-gray-300'
-              } focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-center text-2xl tracking-widest`}
-              style={{
-                color: '#000'
-              }}
+                fieldErrors.otp ? 'border-red-500' : isDark ? 'border-slate-600' : 'border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-center text-2xl tracking-widest ${isDark ? 'bg-slate-700 text-white' : 'bg-white'}`}
               placeholder="*******"
             />
             {fieldErrors.otp && (
               <p className="mt-1 text-sm text-red-600">{fieldErrors.otp}</p>
             )}
-            <p className="mt-2 text-sm text-gray-500 text-center">
+            <p className={`mt-2 text-sm text-center ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               Enter code from your email
             </p>
           </div>
@@ -160,7 +160,7 @@ export default function OtpVerificationPage() {
           <button
             type="button"
             onClick={() => router.push('/get-started')}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className={`text-sm ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700'}`}
           >
             ← Back to Login
           </button>

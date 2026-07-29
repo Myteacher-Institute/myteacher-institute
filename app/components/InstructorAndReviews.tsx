@@ -1,7 +1,10 @@
 import React from 'react';
 import { BiStar as Star, BiGroup as Users, BiPlay as PlayCircle, BiRightArrowAlt as ArrowRight, BiBot as Bot } from 'react-icons/bi';
+import { useThemeStore } from '@/store/theme.store';
 
 const InstructorAndReviews = () => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const reviews = [
     {
       name: "Sarah Jenkins",
@@ -18,28 +21,28 @@ const InstructorAndReviews = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-[#FDFBF7] font-sans text-[#1A1E2E]">
+    <div className={isDark ? "max-w-4xl mx-auto p-8 bg-slate-900 font-sans text-white" : "max-w-4xl mx-auto p-8 bg-[#FDFBF7] font-sans text-[#1A1E2E]"}>
       
       {/* Meet Your Instructor Section */}
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-8">Meet your instructor</h2>
-        <div className="bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50 flex flex-col md:flex-row gap-8">
+        <div className={isDark ? "bg-slate-800 rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-700 flex flex-col md:flex-row gap-8" : "bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50 flex flex-col md:flex-row gap-8"}>
           <img 
             src="https://api.dicebear.com/7.x/avataaars/svg?seed=Omeke" 
             alt="Omeke Charles" 
             className="w-32 h-32 rounded-xl bg-blue-100 object-cover self-start"
           />
           <div>
-            <h3 className="text-xl font-bold">Omeke Charles</h3>
+            <h3 className={isDark ? "text-xl font-bold text-white" : "text-xl font-bold"}>Omeke Charles</h3>
             <p className="text-[#059669] font-semibold text-sm mb-4">Senior Product Designer</p>
             
             <div className="flex flex-wrap gap-4 mb-6 text-gray-500 text-xs font-bold uppercase tracking-wider">
               <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-400 fill-yellow-400" /> 4.9 Rating</span>
-              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> 45k Students</span>
-              <span className="flex items-center gap-1"><PlayCircle className="w-3 h-3" /> 12 Courses</span>
+              <span className={isDark ? "flex items-center gap-1 text-slate-400" : "flex items-center gap-1"}><Users className="w-3 h-3" /> 45k Students</span>
+              <span className={isDark ? "flex items-center gap-1 text-slate-400" : "flex items-center gap-1"}><PlayCircle className="w-3 h-3" /> 12 Courses</span>
             </div>
             
-            <p className="text-gray-500 text-[14px] leading-relaxed">
+            <p className={isDark ? "text-slate-400 text-[14px] leading-relaxed" : "text-gray-500 text-[14px] leading-relaxed"}>
               Marcus is a passionate designer with over 10 years of experience building products for top tech companies. 
               He focuses on creating practical, project-based learning experiences that help students land their dream jobs.
             </p>
@@ -50,7 +53,7 @@ const InstructorAndReviews = () => {
       {/* Mentorship & AI Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
         {/* 1-on-1 Mentorship */}
-        <div className="bg-[#101827] text-white rounded-2xl p-8 flex flex-col justify-between">
+        <div className={isDark ? "bg-slate-800 text-white rounded-2xl p-8 flex flex-col justify-between" : "bg-[#101827] text-white rounded-2xl p-8 flex flex-col justify-between"}>
           <div>
             <h3 className="text-xl font-bold mb-3">1-on-1 Mentorship</h3>
             <p className="text-gray-400 text-sm leading-relaxed mb-8">
@@ -63,12 +66,12 @@ const InstructorAndReviews = () => {
         </div>
 
         {/* AI Learning Assistant */}
-        <div className="bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50">
+        <div className={isDark ? "bg-slate-800 rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-700" : "bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50"}>
           <div className="bg-[#F3E8FF] w-10 h-10 rounded-lg flex items-center justify-center mb-6">
             <Bot className="w-6 h-6 text-[#9333EA]" />
           </div>
-          <h3 className="text-xl font-bold mb-3">24/7 AI Learning Assistant</h3>
-          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+          <h3 className={isDark ? "text-xl font-bold mb-3 text-white" : "text-xl font-bold mb-3"}>24/7 AI Learning Assistant</h3>
+          <p className={isDark ? "text-slate-400 text-sm leading-relaxed mb-6" : "text-gray-500 text-sm leading-relaxed mb-6"}>
             Stuck on a concept? Ask our specialized AI tutor for instant explanations and coding examples.
           </p>
           <button className="flex items-center gap-2 text-sm font-bold hover:gap-3 transition-all cursor-pointer">
@@ -82,20 +85,20 @@ const InstructorAndReviews = () => {
         <h2 className="text-2xl font-bold mb-8">Student Reviews</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {reviews.map((review, i) => (
-            <div key={i} className="bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50">
+            <div key={i} className={isDark ? "bg-slate-800 rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-700" : "bg-white rounded-2xl p-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-50"}>
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, star) => (
                   <Star key={star} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                 ))}
               </div>
-              <p className="text-gray-600 text-[14px] italic leading-relaxed mb-8">
+              <p className={isDark ? "text-slate-300 text-[14px] italic leading-relaxed mb-8" : "text-gray-600 text-[14px] italic leading-relaxed mb-8"}>
                 {review.content}
               </p>
               <div className="flex items-center gap-3">
                 <img src={review.avatar} alt={review.name} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" />
                 <div>
-                  <p className="font-bold text-sm">{review.name}</p>
-                  <p className="text-xs text-gray-400 font-medium">{review.role}</p>
+                  <p className={isDark ? "font-bold text-sm text-white" : "font-bold text-sm"}>{review.name}</p>
+                  <p className={isDark ? "text-xs text-slate-400 font-medium" : "text-xs text-gray-400 font-medium"}>{review.role}</p>
                 </div>
               </div>
             </div>

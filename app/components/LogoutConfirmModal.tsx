@@ -1,6 +1,7 @@
 "use client";
 
 import { FiLogOut, FiX } from "react-icons/fi";
+import { useThemeStore } from "@/store/theme.store";
 
 interface LogoutConfirmModalProps {
   isOpen: boolean;
@@ -15,6 +16,9 @@ export const LogoutConfirmModal = ({
   onCancel,
   isLoading = false,
 }: LogoutConfirmModalProps) => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+
   if (!isOpen) return null;
 
   return (
@@ -23,16 +27,16 @@ export const LogoutConfirmModal = ({
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden"
+        className={isDark ? "bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden" : "bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden"}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+        <div className={isDark ? "flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-700" : "flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100"}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+            <div className={isDark ? "w-9 h-9 bg-red-900/30 rounded-xl flex items-center justify-center" : "w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center"}>
               <FiLogOut size={18} className="text-red-500" />
             </div>
-            <h2 className="text-base font-bold text-slate-800">Sign Out</h2>
+            <h2 className={isDark ? "text-base font-bold text-white" : "text-base font-bold text-slate-800"}>Sign Out</h2>
           </div>
           <button
             onClick={onCancel}
@@ -45,7 +49,7 @@ export const LogoutConfirmModal = ({
 
         {/* Body */}
         <div className="px-6 py-5">
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className={isDark ? "text-sm text-slate-300 leading-relaxed" : "text-sm text-slate-600 leading-relaxed"}>
             Are you sure you want to sign out? You'll need to log back in to
             access your dashboard.
           </p>
@@ -56,7 +60,7 @@ export const LogoutConfirmModal = ({
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
+            className={isDark ? "flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-300 bg-slate-700 hover:bg-slate-600 transition-colors disabled:opacity-50 cursor-pointer" : "flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50 cursor-pointer"}
           >
            <FiX size={15} />
           </button>

@@ -5,11 +5,14 @@ import { SIDEBAR_ITEMS } from "./SidebarItems";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
+import { useThemeStore } from "@/store/theme.store";
 import { LogoutConfirmModal } from "@/app/components/LogoutConfirmModal";
 
 export const SidebarNavContent = () => {
   const pathname = usePathname();
   const { logout } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -35,7 +38,7 @@ export const SidebarNavContent = () => {
               <button
                 key={item.label}
                 onClick={() => setShowLogoutModal(true)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${isDark ? 'text-slate-400 hover:bg-red-900/20 hover:text-red-400' : 'text-slate-600 hover:bg-red-50 hover:text-red-600'}`}
               >
                 {item.icon}
                 <span className="font-medium text-sm">{item.label}</span>
@@ -51,8 +54,12 @@ export const SidebarNavContent = () => {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
                 isActive
-                  ? "bg-blue-50 text-blue-600 font-medium"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? isDark
+                  ? 'bg-blue-900/30 text-blue-400 font-medium'
+                  : 'bg-blue-50 text-blue-600 font-medium'
+                  : isDark
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               {item.icon}

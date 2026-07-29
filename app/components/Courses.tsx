@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 
 import { FaStarHalfAlt } from 'react-icons/fa';
+import { useThemeStore } from '@/store/theme.store';
 
 // --- Types ---
 interface Course {
@@ -123,6 +124,9 @@ const COURSES_DATA: Course[] = [
 
 // --- Sub-Component ---
 const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+
   // Helper to render the star rating
   const renderStars = (rating: number) => {
     const totalStars = 5;
@@ -145,7 +149,7 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+    <div className={isDark ? "bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group" : "bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"}>
       {/* Image Container */}
       <div className="relative h-44 overflow-hidden">
         <Image
@@ -169,22 +173,22 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
         </div>
 
         <div className="flex justify-between items-start gap-2 mb-5 cursor-pointer ">
-          <h3 className="font-bold text-[17px] text-[#0F1C2E] leading-tight group-hover:text-blue-700 transition-colors">
+          <h3 className={isDark ? "font-bold text-[17px] text-white leading-tight group-hover:text-blue-400 transition-colors" : "font-bold text-[17px] text-[#0F1C2E] leading-tight group-hover:text-blue-700 transition-colors"}>
             {course.title}
           </h3>
         </div>
 
-        <p className="text-slate-500 text-xs leading-relaxed line-clamp-2 mb-4">
+        <p className={isDark ? "text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4" : "text-slate-500 text-xs leading-relaxed line-clamp-2 mb-4"}>
           {course.description}
         </p>
 
-        <div className="flex justify-between items-center gap-3 text-slate-400 text-[11px] font-medium mb-6">
+        <div className={isDark ? "flex justify-between items-center gap-3 text-slate-400 text-[11px] font-medium mb-6" : "flex justify-between items-center gap-3 text-slate-400 text-[11px] font-medium mb-6"}>
           <div className="flex items-center gap-1"><FiUser size={13} /> {course.instructor}</div>
           <div className="flex items-center gap-1"><FiClock size={13} /> {course.duration}</div>
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
-          <span className="text-xl font-black text-[#0F1C2E]">${course.price}</span>
+        <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
+          <span className={isDark ? "text-xl font-black text-white" : "text-xl font-black text-[#0F1C2E]"}>${course.price}</span>
           <button className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md cursor-pointer ">
             Enroll Now
           </button>
@@ -197,15 +201,17 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
 // --- Main Page Component ---
 export default function AllCoursesPage() {
   const [filter, setFilter] = useState('All');
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen font-sans pb-20">
+    <div className={isDark ? "bg-slate-900 min-h-screen font-sans pb-20" : "bg-[#F8FAFC] min-h-screen font-sans pb-20"}>
       {/* Hero Header */}
       <section className="pt-20 pb-12 px-6 text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-black text-[#0F1C2E] mb-4 tracking-tight">
+        <h1 className={isDark ? "text-4xl md:text-5xl font-black text-white mb-4 tracking-tight" : "text-4xl md:text-5xl font-black text-[#0F1C2E] mb-4 tracking-tight"}>
           All Courses
         </h1>
-        <p className="text-slate-500 font-medium text-lg mb-10">
+        <p className={isDark ? "text-slate-400 font-medium text-lg mb-10" : "text-slate-500 font-medium text-lg mb-10"}>
           Explore and choose your preferred learning path
         </p>
 
@@ -215,15 +221,15 @@ export default function AllCoursesPage() {
           <input
             type="text"
             placeholder="Search courses..."
-            className="w-full pl-14 pr-6 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-50 focus:border-blue-200 outline-none transition-all text-slate-600 font-medium"
+            className={isDark ? "w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-800 border border-slate-700 shadow-sm focus:ring-4 focus:ring-blue-900/30 focus:border-blue-500 outline-none transition-all text-white font-medium" : "w-full pl-14 pr-6 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-50 focus:border-blue-200 outline-none transition-all text-slate-600 font-medium"}
           />
         </div>
 
         {/* AI Banner */}
         <div className="flex items-center justify-center gap-4 mb-12">
-          <div className="bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm flex items-center gap-3">
+          <div className={isDark ? "bg-slate-800 px-4 py-2 rounded-full border border-slate-700 shadow-sm flex items-center gap-3" : "bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm flex items-center gap-3"}>
             <div className="bg-blue-500 p-1 rounded-full"><FiZap size={14} className="text-white" /></div>
-            <span className="text-sm font-semibold text-slate-600">Not sure what to learn?</span>
+            <span className={isDark ? "text-sm font-semibold text-slate-300" : "text-sm font-semibold text-slate-600"}>Not sure what to learn?</span>
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ">
               Get AI Recommendation
             </button>
@@ -238,7 +244,7 @@ export default function AllCoursesPage() {
               onClick={() => setFilter(cat)}
               className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${filter === cat
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                : 'bg-white text-slate-500 border border-slate-100 cursor-pointer  hover:border-blue-200'
+                : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-pointer hover:border-blue-500' : 'bg-white text-slate-500 border border-slate-100 cursor-pointer hover:border-blue-200')
                 }`}
             >
               {cat}

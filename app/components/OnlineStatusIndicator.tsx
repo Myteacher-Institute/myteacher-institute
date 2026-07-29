@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useThemeStore } from "@/store/theme.store";
 
 interface OnlineStatusIndicatorProps {
   userId: string;
@@ -15,6 +16,8 @@ export const OnlineStatusIndicator = ({
   showLabel = false,
   size = 'md' 
 }: OnlineStatusIndicatorProps) => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [isOnline, setIsOnline] = useState(false);
   const [lastSeen, setLastSeen] = useState<Date | null>(null);
 
@@ -67,7 +70,7 @@ export const OnlineStatusIndicator = ({
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+    const diffDays = Math.floor(diffMs / 8640000);
 
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
@@ -91,7 +94,7 @@ export const OnlineStatusIndicator = ({
         )}
       </div>
       {showLabel && (
-        <span className="text-xs text-slate-600">
+        <span className={isDark ? "text-xs text-slate-300" : "text-xs text-slate-600"}>
           {isOnline ? 'Online' : `Last seen ${formatLastSeen(lastSeen)}`}
         </span>
       )}

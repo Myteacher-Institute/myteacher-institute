@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { FiArrowRight as ArrowRight } from "react-icons/fi";
 import { SIDEBAR_ITEMS } from "./SidebarItems";
 import { useAuthStore } from "@/store/auth.store";
+import { useThemeStore } from "@/store/theme.store";
 import { useConfirmDialog } from "../../ConfirmDialog";
 
 export const SidebarNavContent = () => {
   const pathname = usePathname();
   const { logout } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const { user } = useAuthStore();
 
@@ -38,7 +41,7 @@ export const SidebarNavContent = () => {
               <button
                 key={i}
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-500 hover:bg-slate-50 cursor-pointer"
+                className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 {item.icon}
                 {item.label}
@@ -51,8 +54,12 @@ export const SidebarNavContent = () => {
               key={i}
               href={item.href}
               className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
-                  ? "bg-green-50 text-green-700"
-                  : "text-slate-500 hover:bg-slate-50 cursor-pointer"
+                  ? isDark
+                  ? 'bg-green-900/30 text-green-400'
+                  : 'bg-green-50 text-green-700'
+                  : isDark
+                  ? 'text-slate-400 hover:bg-slate-800 cursor-pointer'
+                  : 'text-slate-500 hover:bg-slate-50 cursor-pointer'
                 }`}
             >
               {item.icon}
@@ -62,8 +69,8 @@ export const SidebarNavContent = () => {
         })}
       </nav>
 
-      <div className="p-4 bg-slate-50 rounded-xl mt-6 border border-slate-100">
-        <p className="text-xs text-slate-500">Need help {user?.name || 'Instructor'}?</p>
+      <div className={`p-4 rounded-xl mt-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Need help {user?.name || 'Instructor'}?</p>
         <Link href="/support" className="flex items-center gap-2 mt-2 text-[11px] font-bold text-green-600 hover:underline cursor-pointer">
           Chat with Support <ArrowRight size={12} />
         </Link>

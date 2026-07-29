@@ -15,6 +15,7 @@ export default function YouTubeCallbackPage() {
     const handleCallback = async () => {
       const code = searchParams.get("code");
       const state = searchParams.get("state");
+      const redirectUrl = sessionStorage.getItem('course_form_redirect_url');
 
       if (!code || !state) {
         setStatus("error");
@@ -23,25 +24,37 @@ export default function YouTubeCallbackPage() {
       }
 
       try {
-        const res = await axiosInstance.get("/api/youtube/callback", {
-          params: { code, state },
-        });
+        const res = await axiosInstance.post("/api/youtube/callback", { code, state });
 
         if (res.data.status === "success") {
           setStatus("success");
           setMessage("YouTube authentication successful! Redirecting...");
           
-          // Redirect back to course creation page after a short delay
+          // Redirect back to the original URL or course creation page
           setTimeout(() => {
-            router.push("/instructor/create-course");
+            if (redirectUrl) {
+              sessionStorage.removeItem('course_form_redirect_url');
+              router.push(redirectUrl);
+            } else {
+              router.push("/instructor/create-course");
+            }
           }, 2000);
         } else {
           setStatus("error");
           setMessage(res.data.message || "Authentication failed");
         }
       } catch (err: any) {
+        const errorMessage = err?.response?.data?.message || err?.message || "An error occurred during authentication";
         setStatus("error");
-        setMessage(err?.response?.data?.message || "An error occurred during authentication");
+        
+        // Provide more user-friendly error messages
+        if (errorMessage.includes("invalid_grant")) {
+          setMessage("The authorization code has expired or already been used. Please try authenticating again.");
+        } else if (errorMessage.includes("state")) {
+          setMessage("Invalid state parameter. Please try authenticating again.");
+        } else {
+          setMessage(errorMessage);
+        }
       }
     };
 
@@ -78,12 +91,28 @@ export default function YouTubeCallbackPage() {
             </div>
             <h2 className="text-xl font-bold text-[#111827]">Authentication Failed</h2>
             <p className="text-sm text-slate-500">{message}</p>
-            <button
-              onClick={() => router.push("/instructor/create-course")}
-              className="mt-4 px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors cursor-pointer"
-            >
-              Back to Course Creation
-            </button>
+            <div className="flex flex-col gap-2 mt-4">
+              <button
+                onClick={() => {
+                  const redirectUrl = sessionStorage.getItem('course_form_redirect_url');
+                  if (redirectUrl) {
+                    sessionStorage.removeItem('course_form_redirect_url');
+                    router.push(redirectUrl);
+                  } else {
+                    router.push("/instructor/create-course");
+                  }
+                }}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors cursor-pointer"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => router.push("/instructor/create-course")}
+                className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Back to Course Creation
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { BiBot as BiRobot, BiRightArrowAlt as BiRightArrow, BiX as BiX, BiSend as BiSend } from 'react-icons/bi';
+import { useThemeStore } from '@/store/theme.store';
 
 const Hero = () => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
@@ -14,13 +17,13 @@ const Hero = () => {
       {/* Left Side: Content tightened with space-y-3 */}
       <div className="space-y-4 order-1 lg:order-1">
         {/* Update bg to #FFFFFF and tweak the border/text for better contrast */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFFFFF] text-[#10b981] text-[11px] font-bold border border-slate-200 uppercase tracking-wider shadow-sm">
+        <div className={isDark ? "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 text-[#10b981] text-[11px] font-bold border border-slate-700 uppercase tracking-wider shadow-sm" : "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFFFFF] text-[#10b981] text-[11px] font-bold border border-slate-200 uppercase tracking-wider shadow-sm"}>
           <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
           AI-Powered Platform
         </div>
 
         <div className="space-y-3"> {/* Reduced vertical spacing for a tighter look */}
-          <h1 className="text-4xl lg:text-[48px] font-black leading-[1.1] tracking-tight text-[#0F1C2E]">
+          <h1 className={isDark ? "text-4xl lg:text-[48px] font-black leading-[1.1] tracking-tight text-white" : "text-4xl lg:text-[48px] font-black leading-[1.1] tracking-tight text-[#0F1C2E]"}>
             Learn Digital Skills <br /> Faster and Get <br /> Certified
           </h1>
 
@@ -29,7 +32,7 @@ const Hero = () => {
             <span className="text-[#8B7CF8]">Mentorship</span>
           </h2>
 
-          <p className="text-slate-500 text-base lg:text-[17px] max-w-lg leading-relaxed font-medium">
+          <p className={isDark ? "text-slate-400 text-base lg:text-[17px] max-w-lg leading-relaxed font-medium" : "text-slate-500 text-base lg:text-[17px] max-w-lg leading-relaxed font-medium"}>
             Your personal AI tutor guides you step-by-step, adapts to
             your pace, and connects you with expert mentors—master
             in-demand skills in weeks, not years.
@@ -41,7 +44,7 @@ const Hero = () => {
             <BiRobot className="text-xl" />
             Talk to AI
           </button>
-          <button className="bg-white border border-slate-200 hover:border-slate-300 px-6 py-3 rounded-xl font-bold text-slate-700 text-base transition-all active:scale-95 cursor-pointer">
+          <button className={isDark ? "bg-slate-800 border border-slate-700 hover:border-slate-600 px-6 py-3 rounded-xl font-bold flex items-center text-white text-base transition-all active:scale-95 cursor-pointer" : "bg-white border border-slate-200 hover:border-slate-300 px-6 py-3 rounded-xl font-bold flex items-center text-slate-700 text-base transition-all active:scale-95 cursor-pointer"}>
             Browse Courses <BiRightArrow className="ml-2" />
           </button>
         </div>
@@ -58,7 +61,7 @@ const Hero = () => {
             <BiRobot className="text-xl" />
           </button>
         </div>
-        <div className="hidden lg:block w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden flex flex-col">
+        <div className={isDark ? "hidden lg:block w-full max-w-[420px] bg-slate-800 rounded-[24px] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-700 overflow-hidden flex flex-col" : "hidden lg:block w-full max-w-[420px] bg-white rounded-[24px] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden flex flex-col"}>
 
           {/* Chat Header */}
           <div className="bg-[#0f172a] p-4 flex items-center gap-3">
@@ -75,7 +78,7 @@ const Hero = () => {
           </div>
 
           {/* Chat Messages */}
-          <div className="p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-50/20">
+          <div className={isDark ? "p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-900/50" : "p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-50/20"}>
             <div className="flex gap-3">
               <div className="w-7 h-7 rounded-full bg-blue-500 flex-shrink-0 flex items-center justify-center text-white text-[9px] font-black">A</div>
               <div className="bg-[#fffbeb] border border-[#fef3c7] p-3.5 rounded-2xl rounded-tl-none text-[13px] text-slate-700 leading-relaxed shadow-sm">
@@ -99,12 +102,12 @@ const Hero = () => {
           </div>
 
           {/* Chat Input */}
-          <div className="p-4 bg-white border-t border-slate-50">
-            <div className="flex items-center bg-slate-100 rounded-xl p-1.5">
+          <div className={isDark ? "p-4 bg-slate-800 border-t border-slate-700" : "p-4 bg-white border-t border-slate-50"}>
+            <div className={isDark ? "flex items-center bg-slate-700 rounded-xl p-1.5" : "flex items-center bg-slate-100 rounded-xl p-1.5"}>
               <input
                 type="text"
                 placeholder="Ask Aida anything..."
-                className="bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"
+                className={isDark ? "bg-transparent border-none w-full px-3 outline-none text-white text-[13px] font-medium" : "bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"}
               />
               <button className="bg-[#00c984] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00b274] transition-all cursor-pointer">
                 <BiSend className="w-4 h-4" />
@@ -117,7 +120,7 @@ const Hero = () => {
       {/* Mobile Chat Modal */}
       {isChatOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 lg:hidden">
-          <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col w-full max-w-md mx-4 max-h-[80vh]">
+          <div className={isDark ? "bg-slate-800 rounded-[24px] shadow-2xl border border-slate-700 overflow-hidden flex flex-col w-full max-w-md mx-4 max-h-[80vh]" : "bg-white rounded-[24px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col w-full max-w-md mx-4 max-h-[80vh]"}>
             {/* Modal Header */}
             <div className="bg-[#0f172a] p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -138,7 +141,7 @@ const Hero = () => {
             </div>
 
             {/* Chat Messages */}
-            <div className="p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-50/20">
+            <div className={isDark ? "p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-900/50" : "p-5 h-[320px] overflow-y-auto space-y-5 bg-slate-50/20"}>
               <div className="flex gap-3">
                 <div className="w-7 h-7 rounded-full bg-blue-500 flex-shrink-0 flex items-center justify-center text-white text-[9px] font-black">A</div>
                 <div className="bg-[#fffbeb] border border-[#fef3c7] p-3.5 rounded-2xl rounded-tl-none text-[13px] text-slate-700 leading-relaxed shadow-sm">
@@ -167,7 +170,7 @@ const Hero = () => {
                 <input
                   type="text"
                   placeholder="Ask Aida anything..."
-                  className="bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"
+                  className={isDark ? "bg-transparent border-none w-full px-3 outline-none text-white text-[13px] font-medium" : "bg-transparent border-none w-full px-3 outline-none text-slate-700 text-[13px] font-medium"}
                 />
                 <button className="bg-[#00c984] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00b274] transition-all cursor-pointer">
                   <BiSend className="w-4 h-4" />
@@ -179,7 +182,7 @@ const Hero = () => {
       )}
 
       {/* Decorative Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FDFCF8] via-[#FDFCF8] to-[#E6F9F0] -z-10" />
+      <div className={isDark ? "absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 -z-10" : "absolute inset-0 bg-gradient-to-b from-[#FDFCF8] via-[#FDFCF8] to-[#E6F9F0] -z-10"} />
 
       {/* Decorative Glow remains subtle */}
       <div className="fixed bottom-0 right-0 w-[30%] h-[30%] bg-emerald-50/20 rounded-full blur-[60px] -z-10 pointer-events-none" />

@@ -14,6 +14,7 @@ import { NotificationsContent } from './constants/Admin/NotificationsContent';
 import { instructorService } from '@/services/instructor.service';
 import { Instructor } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { activityTracker } from '@/utils/activityTracker';
 import { ConfirmActionModal } from './ConfirmActionModal';
 
@@ -25,6 +26,8 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const { isAuthenticated, userType } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   // ── Confirm modal state ──────────────────────────────────────────────────
   type PendingAction = { type: 'verify' | 'reject'; instructorId: string; name: string };
@@ -102,7 +105,7 @@ export default function AdminDashboard() {
 
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B] overflow-x-hidden">
+    <div className={`flex min-h-screen font-sans overflow-x-hidden ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-[#F8FAFC] text-[#1E293B]'}`}>
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 z-60 lg:hidden backdrop-blur-sm"
@@ -111,19 +114,19 @@ export default function AdminDashboard() {
       )}
 
       <aside
-        className={`w-64 bg-white border-r border-slate-200 fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${
+        className={`w-64 border-r fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } flex flex-col`}
+        } flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
       >
-        <div className="p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
+        <div className={`p-6 border-b flex items-center justify-between shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-50'}`}>
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
           </div>
           <button
-            className="lg:hidden p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer"
+            className={`lg:hidden p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer ${isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-slate-50 text-slate-600'}`}
             onClick={() => setSidebarOpen(false)}
           >
-            <FiX size={18} className="text-slate-600" />
+            <FiX size={18} className={isDark ? 'text-slate-400' : 'text-slate-600'} />
           </button>
         </div>
 
@@ -174,7 +177,7 @@ export default function AdminDashboard() {
             {/* LEFT: MAIN CONTENT */}
             <div className="lg:col-span-8 space-y-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Pending Instructor Applications
                 </h3>
                 <Link href="/admin/manage-instructors" className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
@@ -182,21 +185,21 @@ export default function AdminDashboard() {
                 </Link>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className={`rounded-2xl border shadow-sm overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
                 <div className="divide-y divide-slate-100">
                   {loadingInstructors ? (
                     <div className="flex items-center justify-center py-12">
-                      <FiLoader className="animate-spin text-slate-400" size={24} />
+                      <FiLoader className={`animate-spin ${isDark ? 'text-slate-400' : 'text-slate-400'}`} size={24} />
                     </div>
                   ) : instructors.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12">
-                      <p className="text-slate-500 text-sm">No pending instructor applications</p>
+                      <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No pending instructor applications</p>
                     </div>
                   ) : (
                     instructors.map((instructor) => (
                       <div key={instructor._id} className="p-4 lg:p-6 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
                             {instructor.profilePicture ? (
                               <img 
                                 src={instructor.profilePicture} 
@@ -204,22 +207,22 @@ export default function AdminDashboard() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-slate-600 font-bold">{instructor.name.charAt(0)}</span>
+                              <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{instructor.name.charAt(0)}</span>
                             )}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-semibold text-slate-800 text-sm lg:text-base truncate">{instructor.name}</h4>
-                            <p className="text-xs text-slate-500 truncate">{instructor.email}</p>
-                            <p className="text-xs text-slate-400 mt-1">{instructor.specialization || 'No specialization'}</p>
+                            <h4 className={`font-semibold text-sm lg:text-base truncate ${isDark ? 'text-white' : 'text-slate-800'}`}>{instructor.name}</h4>
+                            <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{instructor.email}</p>
+                            <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{instructor.specialization || 'No specialization'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs text-slate-400">{formatTimeAgo(instructor.createdAt as any)}</span>
+                          <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{formatTimeAgo(instructor.createdAt as any)}</span>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleVerify(instructor)}
                               disabled={actionLoading === instructor._id}
-                              className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className={`p-2 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-50 text-green-600'}`}
                             >
                               {actionLoading === instructor._id ? (
                                 <FiLoader className="animate-spin" size={18} />
@@ -230,7 +233,7 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => handleReject(instructor)}
                               disabled={actionLoading === instructor._id}
-                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className={`p-2 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-50 text-red-600'}`}
                             >
                               {actionLoading === instructor._id ? (
                                 <FiLoader className="animate-spin" size={18} />
@@ -247,15 +250,15 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex items-center justify-between mb-6 mt-8">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Recent Activity
                 </h3>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 lg:p-6">
+              <div className={`rounded-2xl border shadow-sm p-4 lg:p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
                 <div className="space-y-4">
                   {activities.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">No recent activities</p>
+                    <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent activities</p>
                   ) : (
                     activities.slice(0, 4).map((activity) => {
                       const iconMap: Record<string, any> = {
@@ -281,9 +284,9 @@ export default function AdminDashboard() {
                             <Icon size={18} />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-semibold text-slate-800 text-sm">{activity.action}</h4>
-                            <p className="text-xs text-slate-500 mt-1">{activity.detail}</p>
-                            <span className="text-[10px] text-slate-400 mt-1">{activity.time}</span>
+                            <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{activity.action}</h4>
+                            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{activity.detail}</p>
+                            <span className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{activity.time}</span>
                           </div>
                         </div>
                       );
@@ -295,20 +298,20 @@ export default function AdminDashboard() {
 
             {/* RIGHT SIDEBAR */}
             <div className="lg:col-span-4 hidden lg:flex flex-col gap-10">
-              <div className="bg-blue-600 rounded-4xl p-8 shadow-xl shadow-blue-100">
-                <h3 className="text-white font-black text-xl mb-4">Quick Actions</h3>
+              <div className={`rounded-4xl p-8 shadow-xl ${isDark ? 'bg-blue-700 shadow-blue-900/20' : 'bg-blue-600 shadow-blue-100'}`}>
+                <h3 className={`text-white font-black text-xl mb-4 ${isDark ? '' : ''}`}>Quick Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+                  <button className={`w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}
                     onClick={handleAddAdmin}
                   >
                     <FiPlus size={18} />
                     <span className="font-medium text-sm">Add New Admin</span>
                   </button>
-                  <button className="w-full bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer">
+                  <button className={`w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
                     <FiBook size={18} />
                     <span className="font-medium text-sm">Review Courses</span>
                   </button>
-                  <button className="w-full bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer">
+                  <button className={`w-full py-3 px-4 rounded-xl flex items-center gap-3 transition-colors cursor-pointer ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
                     <FiDollarSign size={18} />
                     <span className="font-medium text-sm">View Revenue</span>
                   </button>
@@ -316,7 +319,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Notifications
                 </h3>
                 <NotificationsContent />
@@ -325,15 +328,15 @@ export default function AdminDashboard() {
           </div>
 
           <div className="lg:hidden mt-12 pb-10">
-            <h3 className="text-lg lg:text-xl font-black text-slate-800 mb-6 tracking-tight">
+            <h3 className={`text-lg lg:text-xl font-black mb-6 tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
               Quick Actions
             </h3>
             <div className="space-y-3">
-              <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-3 cursor-pointer">
+              <button className={`w-full py-3 px-4 rounded-xl flex items-center justify-center gap-3 cursor-pointer ${isDark ? 'bg-blue-700 text-white' : 'bg-blue-600 text-white'}`}>
                 <FiPlus size={18} />
                 <span className="font-medium text-sm">Add New Admin</span>
               </button>
-              <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-3 cursor-pointer">
+              <button className={`w-full py-3 px-4 rounded-xl flex items-center justify-center gap-3 cursor-pointer ${isDark ? 'bg-blue-700 text-white' : 'bg-blue-600 text-white'}`}>
                 <FiBook size={18} />
                 <span className="font-medium text-sm">Review Courses</span>
               </button>

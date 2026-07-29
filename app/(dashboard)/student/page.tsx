@@ -9,9 +9,11 @@ import {
   FiX as X,
   FiBook,
   FiStar,
+  FiAward,
   FiTrendingUp,
 } from "react-icons/fi";
 import { activityTracker } from "@/utils/activityTracker";
+import { useThemeStore } from "@/store/theme.store";
 import { COURSES } from "@/app/components/constants/Students/courses";
 import { recommended } from "@/app/components/constants/Students/recommended";
 import { notification } from "@/app/components/constants/Students/notification";
@@ -31,13 +33,15 @@ export default function Dashboard() {
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [mentorOpen, setMentorOpen] = useState(false);
   const [activities, setActivities] = useState<any[]>([]);
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     setActivities(activityTracker.getFormattedActivities());
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B] overflow-x-hidden">
+    <div className={`flex min-h-screen font-sans overflow-x-hidden ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-[#F8FAFC] text-[#1E293B]'}`}>
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 z-60 lg:hidden backdrop-blur-sm"
@@ -46,19 +50,19 @@ export default function Dashboard() {
       )}
 
       <aside
-        className={`w-64 bg-white border-r border-slate-200 fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${
+        className={`w-64 border-r fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } flex flex-col`}
+        } flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
       >
-        <div className="p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
+        <div className={`p-6 border-b flex items-center justify-between shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-50'}`}>
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
           </div>
           <button
-            className="lg:hidden p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer"
+            className={`lg:hidden p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer ${isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-slate-50 text-slate-600'}`}
             onClick={() => setSidebarOpen(false)}
           >
-            <X size={18} className="text-slate-600" />
+            <X size={18} className={isDark ? 'text-slate-400' : 'text-slate-600'} />
           </button>
         </div>
 
@@ -109,7 +113,7 @@ export default function Dashboard() {
             {/* LEFT: MAIN CONTENT */}
             <div className="lg:col-span-8 space-y-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Continue Learning Omeke Charles
                 </h3>
                 <button className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
@@ -127,28 +131,28 @@ export default function Dashboard() {
             {/* RIGHT SIDEBAR */}
             <div className="lg:col-span-4 hidden lg:flex flex-col gap-10">
               <div className="space-y-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Recommended For You
                 </h3>
                 <RecommendedSection />
               </div>
 
-              <div className="bg-blue-600 rounded-4xl p-8 shadow-xl shadow-blue-100">
+              <div className={`rounded-4xl p-8 shadow-xl ${isDark ? 'bg-blue-700 shadow-blue-900/20' : 'bg-blue-600 shadow-blue-100'}`}>
                 <MentorWidget />
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight uppercase">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight uppercase ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Recent Activity
                 </h3>
                 <div className="space-y-4">
                   {activities.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">No recent activities</p>
+                    <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent activities</p>
                   ) : (
                     activities.slice(0, 5).map((activity) => {
                       const iconMap: Record<string, any> = {
                         'Course enrolled': FiBook,
-                        'Lesson completed': FiCheckCircle2,
+                        'Lesson completed': CheckCircle2,
                         'Achievement unlocked': FiAward,
                         'Progress milestone': FiTrendingUp,
                         'default': FiBook,
@@ -167,8 +171,8 @@ export default function Dashboard() {
                         <div key={activity.id} className="flex gap-4">
                           <div className={`p-2.5 rounded-xl h-fit ${color}`}><Icon size={18} /></div>
                           <div>
-                            <p className="text-[14px] text-[#1E293B] leading-tight">{activity.action} <br /><span className="font-bold text-[#1E293B]">{activity.detail}</span></p>
-                            <span className="text-[11px] text-slate-600 font-medium">{activity.time}</span>
+                            <p className={`text-[14px] leading-tight ${isDark ? 'text-white' : 'text-[#1E293B]'}`}>{activity.action} <br /><span className={`font-bold ${isDark ? 'text-white' : 'text-[#1E293B]'}`}>{activity.detail}</span></p>
+                            <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{activity.time}</span>
                           </div>
                         </div>
                       );
@@ -178,7 +182,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 tracking-tight uppercase">
+                <h3 className={`text-lg lg:text-xl font-black tracking-tight uppercase ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   Notifications
                 </h3>
                 <NotificationsContent />
@@ -187,7 +191,7 @@ export default function Dashboard() {
           </div>
 
           <div className="lg:hidden mt-12 pb-10">
-            <h3 className="text-lg lg:text-xl font-black text-slate-800 mb-6 tracking-tight">
+            <h3 className={`text-lg lg:text-xl font-black mb-6 tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
               Recommended for you Omeke Charles
             </h3>
             <RecommendedSection />  {/* Fixed: Using RecommendedSection component */}

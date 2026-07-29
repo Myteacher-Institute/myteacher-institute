@@ -2,9 +2,12 @@
 
 import { FiAlertTriangle as AlertTriangle, FiCheckCircle as CheckCircle2, FiInfo as Info } from "react-icons/fi";
 import { useNotificationStore } from '@/store/notification.store';
+import { useThemeStore } from '@/store/theme.store';
 
 export const NotificationsContent = () => {
   const { notifications, markAsRead, deleteNotification } = useNotificationStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   const getIcon = (type: string) => {
     if (type === 'warning' || type === 'error') {
@@ -38,7 +41,7 @@ export const NotificationsContent = () => {
           <div
             key={item._id}
             className={`flex gap-4 items-center p-5 rounded-2xl border shadow-sm transition-all ${
-              !item.read ? 'bg-white border-blue-200' : 'bg-slate-50 border-slate-100 opacity-70'
+              !item.read ? (isDark ? 'bg-slate-800 border-blue-900/50' : 'bg-white border-blue-200') : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-70' : 'bg-slate-50 border-slate-100 opacity-70')
             }`}
           >
             <div className="shrink-0">
@@ -47,10 +50,10 @@ export const NotificationsContent = () => {
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="text-[14px] lg:text-[15px] font-bold text-slate-800 leading-tight">
+                  <h4 className={isDark ? "text-[14px] lg:text-[15px] font-bold text-white leading-tight" : "text-[14px] lg:text-[15px] font-bold text-slate-800 leading-tight"}>
                     {item.title}
                   </h4>
-                  <p className="text-[12px] lg:text-[13px] text-slate-500 mt-0.5">
+                  <p className={isDark ? "text-[12px] lg:text-[13px] text-slate-300 mt-0.5" : "text-[12px] lg:text-[13px] text-slate-500 mt-0.5"}>
                     {item.message}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">{formatTimeAgo(item.createdAt)}</p>
