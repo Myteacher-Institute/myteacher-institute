@@ -8,14 +8,91 @@ import {
   CourseResponse,
 } from '../types';
 
+export interface BrowseCourse {
+  _id: string;
+  courseName: string;
+  description: string;
+  price: number;
+  duration: number;
+  courseRequirements: string[];
+  ratings: Array<{ rating: number; comment?: string }>;
+  averageRating: number;
+  instructorName?: string;
+  lessons: number;
+  previewThumbnail: string;
+}
+
+export interface BrowseCoursesResponse {
+  status: 'success' | 'failed';
+  message: string;
+  courses?: BrowseCourse[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+export interface CoursePreview {
+  _id: string;
+  courseName: string;
+  description: string;
+  price: number;
+  duration: number;
+  certificate: string;
+  courseRequirements: string[];
+  ratings: Array<{ rating: number; comment?: string }>;
+  averageRating: number;
+  instructorName?: string;
+  lessons: number;
+  previewThumbnail: string;
+  previewVideos: Array<{
+    videoUrl: string;
+    videoTitle: string;
+    videoDuration: number;
+  }>;
+}
+
+export interface CoursePreviewResponse {
+  status: 'success' | 'failed';
+  message: string;
+  course?: CoursePreview;
+}
+
 export const courseService = {
   async getAllCourses(): Promise<CourseResponse> {
     const response = await axiosInstance.get(API_ENDPOINTS.COURSES.GET_ALL);
     return response.data;
   },
 
+  async browseCourses(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+  }): Promise<BrowseCoursesResponse> {
+    const response = await axiosInstance.get('/api/course/browse', { params });
+    return response.data;
+  },
+
   async getCourseById(courseId: string): Promise<CourseResponse> {
     const response = await axiosInstance.get(API_ENDPOINTS.COURSES.GET_BY_ID(courseId));
+    return response.data;
+  },
+
+  async getMyCourses(): Promise<{
+    status: 'success' | 'failed';
+    message: string;
+    courses?: Course[];
+  }> {
+    const response = await axiosInstance.get('/api/course/my-courses');
+    return response.data;
+  },
+
+  async getCoursePreview(courseId: string): Promise<CoursePreviewResponse> {
+    const response = await axiosInstance.get(`/api/course/${courseId}/preview`);
     return response.data;
   },
 

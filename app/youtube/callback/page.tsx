@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FiLoader, FiCheckCircle, FiX } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
@@ -10,8 +10,14 @@ export default function YouTubeCallbackPage() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
+    // Guard against StrictMode double-invoking this effect in dev — the Google
+    // authorization code is single-use, so the second POST would fail.
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
+
     const handleCallback = async () => {
       const code = searchParams.get("code");
       const state = searchParams.get("state");
@@ -29,7 +35,15 @@ export default function YouTubeCallbackPage() {
         if (res.data.status === "success") {
           setStatus("success");
           setMessage("YouTube authentication successful! Redirecting...");
-          
+
+          // Notify the parent window (course creation page) that auth succeeded,
+          // then close the popup so the pending upload can be retried.
+          if (window.opener) {
+            window.opener.postMessage({ type: 'youtube-auth-success' }, '*');
+            window.close();
+            return;
+          }
+
           // Redirect back to the original URL or course creation page
           setTimeout(() => {
             if (redirectUrl) {
@@ -43,8 +57,8 @@ export default function YouTubeCallbackPage() {
           setStatus("error");
           setMessage(res.data.message || "Authentication failed");
         }
-      } catch (err: any) {
-        const errorMessage = err?.response?.data?.message || err?.message || "An error occurred during authentication";
+      } catch (err: unknown) {
+        const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err as Error)?.message || "An error occurred during authentication";
         setStatus("error");
         
         // Provide more user-friendly error messages

@@ -1,5 +1,4 @@
 import { FiCheckCircle, FiPlus, FiTrash2 } from "react-icons/fi";
-import { Field } from "../Field";
 import { inputCls } from "../../utils";
 import { useThemeStore } from "@/store/theme.store";
 

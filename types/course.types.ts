@@ -37,6 +37,15 @@ export interface CourseVideo {
   file?: File;
 }
 
+export interface Chapter {
+  title: string;
+  explanation: string;
+  videos: CourseVideo[];
+  programmingCodes: ProgrammingCode[];
+  assets: Asset[];
+  quizzes: Quiz[];
+}
+
 export interface InstructorDetails {
   userId: string;
   name: string;
@@ -56,6 +65,7 @@ export interface Course {
   _id: string;
   courseName: string;
   description: string;
+  chapters: Chapter[];
   courseVideos: CourseVideo[];
   programmingCodes: ProgrammingCode[];
   assets: Asset[];
@@ -73,6 +83,7 @@ export interface Course {
 export interface CreateCourseRequest {
   courseName: string;
   description: string;
+  chapters: Chapter[];
   courseVideos: CourseVideo[];
   programmingCodes: ProgrammingCode[];
   assets: Asset[];

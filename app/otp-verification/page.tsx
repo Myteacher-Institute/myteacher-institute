@@ -45,6 +45,15 @@ export default function OtpVerificationPage() {
     console.log('After verifyOtp - isAuthenticated:', isAuthenticated, 'userType:', userType, 'user:', user, 'accessToken:', accessToken);
 
     if (isAuthenticated && userType) {
+      // If the user was headed somewhere specific (e.g. /affiliate-dashboard),
+      // finish the trip there instead of the default dashboard.
+      const pendingRedirect = typeof window !== 'undefined' ? sessionStorage.getItem('pendingRedirect') : null;
+      if (pendingRedirect) {
+        sessionStorage.removeItem('pendingRedirect');
+        router.push(pendingRedirect);
+        return;
+      }
+
       // Both registration and login flows - user is now verified
       switch (userType) {
         case 'admin':

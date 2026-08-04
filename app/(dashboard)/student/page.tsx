@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   FiCheckCircle as CheckCircle2,
   FiPlayCircle as PlayCircle,
@@ -8,22 +9,21 @@ import {
   FiAward as Award,
   FiX as X,
   FiBook,
-  FiStar,
   FiAward,
   FiTrendingUp,
+  FiPlay as PlayIcon,
 } from "react-icons/fi";
-import { activityTracker } from "@/utils/activityTracker";
+import type { IconType } from "react-icons";
+import { activityTracker, Activity } from "@/utils/activityTracker";
 import { useThemeStore } from "@/store/theme.store";
-import { COURSES } from "@/app/components/constants/Students/courses";
-import { recommended } from "@/app/components/constants/Students/recommended";
-import { notification } from "@/app/components/constants/Students/notification";
+import { courseService } from "@/services/course.service";
+import { Course } from "@/types";
 import { StatCard } from "@/app/components/constants/Students/statcards";
 import { CourseCard } from "@/app/components/constants/Students/CourseCard";
 import { MentorWidget } from "@/app/components/constants/Students/MentorWidget";
 import { RecommendedSection } from "@/app/components/constants/Students/RecommendedSection";
 import { NotificationsContent } from "@/app/components/constants/Students/NotificationsContent";
 import { SidebarNavContent } from "@/app/components/constants/Students/SidebarNavContent";
-import { SIDEBAR_ITEMS } from "@/app/components/constants/Students/SidebarItems";
 import { DashboardHeader } from "@/app/components/constants/Students/DashboardHeader";
 import { FloatingActionButton } from "@/app/components/constants/Students/FloatingActionButton";
 
@@ -32,12 +32,36 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [mentorOpen, setMentorOpen] = useState(false);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [coursesError, setCoursesError] = useState("");
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    setActivities(activityTracker.getFormattedActivities());
+    const t = setTimeout(() => {
+      setActivities(activityTracker.getFormattedActivities());
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        const res = await courseService.getMyCourses();
+        if (res.status === "success" && res.courses) {
+          setMyCourses(res.courses);
+        } else {
+          setCoursesError(res.message || "Could not load your courses");
+        }
+      } catch {
+        setCoursesError("Could not load your courses. Please try again.");
+      } finally {
+        setLoadingCourses(false);
+      }
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -122,9 +146,46 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 lg:gap-6">
-                {COURSES.map((course) => (
-                  <CourseCard key={course.id} {...course} />
-                ))}
+                {loadingCourses ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <div key={i} className={`rounded-2xl border p-3 lg:p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                      <div className="flex items-center gap-2 lg:gap-4 mb-3 lg:mb-6">
+                        <div className={`w-8 h-8 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                        <div className={`h-3 lg:h-4 flex-1 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                      </div>
+                      <div className={`h-1 lg:h-2 rounded-full mb-3 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                      <div className={`h-8 lg:h-10 rounded-lg lg:rounded-xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                    </div>
+                  ))
+                ) : coursesError ? (
+                  <div className={`col-span-2 rounded-2xl border p-6 text-center ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{coursesError}</p>
+                  </div>
+                ) : myCourses.length === 0 ? (
+                  <div className={`col-span-2 rounded-2xl border p-6 text-center ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                    <p className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      You have not purchased any courses yet.
+                    </p>
+                    <Link
+                      href="/courses"
+                      className="inline-block bg-blue-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-blue-700 cursor-pointer"
+                    >
+                      Browse Courses
+                    </Link>
+                  </div>
+                ) : (
+                  myCourses.map((course) => (
+                    <CourseCard
+                      key={course._id}
+                      courseId={course._id}
+                      title={course.courseName}
+                      progress={0}
+                      icon={<PlayIcon size={20} strokeWidth={1.5} />}
+                      color="text-blue-600"
+                      bg="bg-blue-50"
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -150,7 +211,7 @@ export default function Dashboard() {
                     <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent activities</p>
                   ) : (
                     activities.slice(0, 5).map((activity) => {
-                      const iconMap: Record<string, any> = {
+                      const iconMap: Record<string, IconType> = {
                         'Course enrolled': FiBook,
                         'Lesson completed': CheckCircle2,
                         'Achievement unlocked': FiAward,

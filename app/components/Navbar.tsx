@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { BiMenu } from 'react-icons/bi';
-import { FiChevronDown, FiUserPlus, FiLogIn, FiGrid, FiLogOut } from 'react-icons/fi';
+import { FiChevronDown, FiUserPlus, FiLogIn, FiGrid, FiLogOut, FiSun, FiMoon } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 import { activityTracker } from '@/utils/activityTracker';
+import Link from "next/link";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function Navbar() {
     const router = useRouter();
 
     const { isAuthenticated, user, userType, logout } = useAuthStore();
-    const { theme } = useThemeStore();
+    const { theme, toggleTheme } = useThemeStore();
     const isDark = theme === 'dark';
 
     // Dashboard link per user type
@@ -99,9 +100,9 @@ export default function Navbar() {
 
             <div className="flex items-center gap-3">
                 <div className={`hidden lg:flex items-center gap-8 text-[15px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
-                    <a href="/affiliate-dashboard" className="hover:text-blue-600 transition-colors">Affiliate</a>
-                    <a href="/courses" className="hover:text-blue-600 transition-colors">Courses</a>
+                    <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+                    <Link href="/affiliate-dashboard" className="hover:text-blue-600 transition-colors">Affiliate</Link>
+                    <Link href="/courses" className="hover:text-blue-600 transition-colors">Courses</Link>
                     {/* Desktop instructor dropdown */}
                     {!isAuthenticated && (
                     <div className="relative" ref={dropdownRef}>
@@ -153,6 +154,15 @@ export default function Navbar() {
                     <a href="/mentor" className="hover:text-blue-600 transition-colors">Mentorship</a>
                     <a href="/tutor" className="hover:text-blue-600 transition-colors">AI Tutor</a>
                 </div>
+                {/* Theme toggle */}
+                <button
+                    onClick={toggleTheme}
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+                >
+                    {isDark ? <FiSun size={18} /> : <FiMoon size={18} />}
+                </button>
                 {isAuthenticated ? (
                     /* ── Authenticated: user menu ── */
                     <div className="relative ml-2" ref={userMenuRef}>
@@ -214,7 +224,7 @@ export default function Navbar() {
             {isMenuOpen && (
                 <div className={`absolute top-20 left-0 w-full border-b lg:hidden z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
                     <div className="flex flex-col items-center gap-4 py-4">
-                        <a href="/courses" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Courses</a>
+                        <Link href="/courses" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Courses</Link>
 
                         {/* Mobile instructor accordion */}
                         <div className="w-full flex flex-col items-center">

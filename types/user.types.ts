@@ -10,6 +10,9 @@ export interface User {
   coursesBought: string[];
   password: string;
   profilePicture?: string;
+  hasAffiliateAccount?: boolean;
+  affiliate_id?: string;
+  affiliate_money?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -45,6 +48,9 @@ export interface Instructor {
     refreshToken?: string;
     expiryDate?: number;
   };
+  hasAffiliateAccount?: boolean;
+  affiliate_id?: string;
+  affiliate_money?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

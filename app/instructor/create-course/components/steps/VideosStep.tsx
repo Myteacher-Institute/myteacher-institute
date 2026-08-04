@@ -8,11 +8,11 @@ import { useThemeStore } from "@/store/theme.store";
 interface VideosStepProps {
   videos: CourseVideo[];
   setVideos: (value: CourseVideo[]) => void;
-  videoUploadState: Record<number, { uploading: boolean; progress: number; error: string }>;
-  setVideoUploadState: (value: Record<number, { uploading: boolean; progress: number; error: string }>) => void;
+  statePrefix: string;
+  videoUploadState: Record<string, { uploading: boolean; progress: number; error: string; stage?: string }>;
   fieldErrors: Record<string, string>;
   onFileSelect: (i: number, file: File) => void;
-  onYouTubeAuth: () => void;
+  onYouTubeAuth: (authUrl?: string) => void;
 }
 
 const emptyVideo = (): CourseVideo => ({
@@ -27,8 +27,8 @@ const emptyVideo = (): CourseVideo => ({
 export const VideosStep = ({
   videos,
   setVideos,
+  statePrefix,
   videoUploadState,
-  setVideoUploadState,
   fieldErrors,
   onFileSelect,
   onYouTubeAuth
@@ -40,9 +40,16 @@ export const VideosStep = ({
 
   const addVideo = () => setVideos([...videos, emptyVideo()]);
   const removeVideo = (i: number) => setVideos(videos.filter((_, idx) => idx !== i));
-  const updateVideo = (i: number, field: keyof CourseVideo, value: any) => {
+  const updateVideo = <K extends keyof CourseVideo>(
+    i: number,
+    field: K,
+    value: CourseVideo[K]
+  ) => {
     const n = [...videos];
-    (n[i] as any)[field] = value;
+    n[i] = {
+      ...n[i],
+      [field]: value
+    };
     setVideos(n);
   };
 
@@ -69,13 +76,13 @@ export const VideosStep = ({
         <div className={isDark ? "text-center py-10 border-2 border-dashed border-slate-700 rounded-2xl mb-4" : "text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl mb-4"}>
           <FiVideo size={32} className={isDark ? "text-slate-600 mx-auto mb-3" : "text-slate-300 mx-auto mb-3"} />
           <p className="text-sm text-slate-400 font-medium">No video lessons yet</p>
-          <p className="text-xs text-slate-300 mt-1">Click "Add Video Lesson" to get started</p>
+          <p className="text-xs text-slate-300 mt-1">Click &quot;Add Video Lesson&quot; to get started</p>
         </div>
       )}
 
       <div className="space-y-4">
         {videos.map((v, i) => {
-          const us = videoUploadState[i];
+          const us = videoUploadState[`${statePrefix}-${i}`];
           return (
             <div key={i} className={isDark ? "border border-slate-700 rounded-2xl p-5 space-y-4" : "border border-slate-200 rounded-2xl p-5 space-y-4"}>
               <div className="flex items-center justify-between">
@@ -130,7 +137,9 @@ export const VideosStep = ({
                 <div className={isDark ? "rounded-xl bg-blue-900/30 border border-blue-800 p-4" : "rounded-xl bg-blue-50 border border-blue-100 p-4"}>
                   <div className="flex items-center gap-3 mb-2">
                     <FiLoader size={16} className="text-blue-600 animate-spin shrink-0" />
-                    <span className="text-sm font-semibold text-blue-700">Uploading to YouTube… {us.progress}%</span>
+                    <span className="text-sm font-semibold text-blue-700">
+                      {us.stage === "preparing" ? "Verifying YouTube connection…" : us.stage === "done" ? "Upload complete!" : `Uploading to YouTube… ${us.progress}%`}
+                    </span>
                   </div>
                   <div className={isDark ? "w-full bg-blue-800 rounded-full h-1.5" : "w-full bg-blue-200 rounded-full h-1.5"}>
                     <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${us.progress}%` }} />
@@ -145,10 +154,10 @@ export const VideosStep = ({
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-red-700">Upload failed</p>
                     <p className="text-xs text-red-500 mt-0.5">{us.error}</p>
-                    {us.error.includes("YouTube authentication") && (
+                    {(us.error.includes("YouTube authentication") || us.error.includes("re-authentication")) && (
                       <button
                         type="button"
-                        onClick={onYouTubeAuth}
+                        onClick={() => onYouTubeAuth()}
                         className="mt-2 flex items-center gap-2 text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition-colors cursor-pointer"
                       >
                         <FiYoutube size={12} /> Authenticate with YouTube

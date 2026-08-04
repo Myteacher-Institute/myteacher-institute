@@ -27,7 +27,7 @@ export const DriveAuthModal = ({ show, onConfirm, onCancel }: DriveAuthModalProp
             You need to authenticate with Google Drive to upload your course assets. This will:
           </p>
           <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
-            <li>Redirect you to Google's secure login page</li>
+            <li>Redirect you to Google&apos;s secure login page</li>
             <li>Request permission to upload files to your Google Drive</li>
             <li>Store your authentication tokens securely</li>
           </ul>

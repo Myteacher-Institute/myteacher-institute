@@ -57,8 +57,18 @@ axiosInstance.interceptors.response.use(
       originalRequest?.url?.includes('/api/admin/verify-otp') ||
       originalRequest?.url?.includes('/api/admin/resend-otp');
 
+    // A 401 with status "reauth_required" (expired/revoked YouTube or Drive OAuth
+    // token) must NOT trigger the session refresh — the payload's authUrl is
+    // needed by the caller to re-authenticate with the external service.
+    const reauthData = error.response?.data as { status?: string; requiresReauth?: boolean; message?: string } | undefined;
+    const isReauthRequired =
+      error.response?.status === 401 &&
+      (reauthData?.status === "reauth_required" ||
+        reauthData?.requiresReauth === true ||
+        String(reauthData?.message ?? "").includes("re-authentication"));
+
     // Handle 401 errors - try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint && !isReauthRequired) {
       originalRequest._retry = true;
       
       try {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axiosInstance from "@/lib/axios";
-import type { Course, CreateCourseRequest } from "@/types";
+import type { Course } from "@/types";
 
 export default function EditCoursePage() {
   const router = useRouter();
@@ -21,8 +21,8 @@ export default function EditCoursePage() {
         } else {
           setError("Failed to load course");
         }
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Failed to load course");
+      } catch (err: unknown) {
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to load course");
       } finally {
         setLoading(false);
       }

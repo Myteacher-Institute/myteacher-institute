@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { FiPaperclip, FiPlus, FiTrash2, FiUpload, FiCheckCircle } from "react-icons/fi";
 import { Field } from "../Field";
 import { inputCls } from "../../utils";
@@ -17,9 +16,9 @@ export const AssetsStep = ({ assets, setAssets, onDriveAuth }: AssetsStepProps) 
 
   const addAsset = () => setAssets([...assets, { name: "", url: "", file: undefined }]);
   const removeAsset = (i: number) => setAssets(assets.filter((_, idx) => idx !== i));
-  const updateAsset = (i: number, field: keyof Asset, value: any) => {
+  const updateAsset = <K extends keyof Asset>(i: number, field: K, value: Asset[K]) => {
     const n = [...assets];
-    (n[i] as any)[field] = value;
+    n[i] = { ...n[i], [field]: value };
     setAssets(n);
   };
 
@@ -53,7 +52,7 @@ export const AssetsStep = ({ assets, setAssets, onDriveAuth }: AssetsStepProps) 
         <div className={isDark ? "text-center py-10 border-2 border-dashed border-slate-700 rounded-2xl mb-4" : "text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl mb-4"}>
           <FiPaperclip size={32} className={isDark ? "text-slate-600 mx-auto mb-3" : "text-slate-300 mx-auto mb-3"} />
           <p className="text-sm text-slate-400 font-medium">No assets yet</p>
-          <p className="text-xs text-slate-300 mt-1">Click "Add Asset" to get started</p>
+          <p className="text-xs text-slate-300 mt-1">Click &quot;Add Asset&quot; to get started</p>
         </div>
       ) : (
         <div className="space-y-4">

@@ -1,3 +1,5 @@
+"use client";
+
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaInstagram } from 'react-icons/fa';
 import { useThemeStore } from '@/store/theme.store';
 

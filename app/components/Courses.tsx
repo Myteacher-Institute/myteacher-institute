@@ -1,6 +1,7 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   FiSearch,
   FiStar,
@@ -12,21 +13,8 @@ import {
 
 import { FaStarHalfAlt } from 'react-icons/fa';
 import { useThemeStore } from '@/store/theme.store';
-
-// --- Types ---
-interface Course {
-  id: number;
-  title: string;
-  instructor: string;
-  description: string;
-  duration: string;
-  lessons: number;
-  rating: number;
-  price: number;
-  tag: string;
-  tagType: 'bestseller' | 'popular' | 'new' | 'creative';
-  image: string;
-}
+import { useAuthStore } from '@/store/auth.store';
+import { courseService, BrowseCourse } from '@/services/course.service';
 
 // --- Style Config ---
 const TAG_CONFIG: Record<string, string> = {
@@ -36,96 +24,23 @@ const TAG_CONFIG: Record<string, string> = {
   creative: "bg-purple-50 text-purple-600 border-purple-100",
 };
 
-// --- Mock Data ---
-const COURSES_DATA: Course[] = [
-  {
-    id: 1,
-    title: "Complete Web Development Bootcamp",
-    instructor: "Dr. Sarah Johnson",
-    description: "Master HTML, CSS, JavaScript, React, and Node.js to become a full-stack developer.",
-    duration: "12 weeks",
-    lessons: 48,
-    rating: 4.9,
-    price: 199,
-    tag: "Best Seller",
-    tagType: "bestseller",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
-  {
-    id: 2,
-    title: "Data Science Fundamentals",
-    instructor: "Prof. Michael Chen",
-    description: "Learn Python, statistics, and machine learning to analyze data and make predictions.",
-    duration: "8 weeks",
-    lessons: 32,
-    rating: 4.7,
-    price: 149,
-    tag: "Beginner Friendly",
-    tagType: "new",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
+const CATEGORIES = ['All', 'Software', 'Data', 'Design', 'Basics'];
+const PAGE_SIZE = 9;
 
-  {
-    id: 3,
-    title: "UI/UX Design Masterclass",
-    instructor: "Emily Davis",
-    description: "Design stunning user interfaces and create seamless user experiences with Figma and Adobe XD.",
-    duration: "10 weeks",
-    lessons: 40,
-    rating: 4.8,
-    price: 179,
-    tag: "Creative",
-    tagType: "creative",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format";
 
-  {
-    id: 4,
-    title: "Introduction to Programming with Python",
-    instructor: "John Doe",
-    description: "Start your programming journey with Python, the most popular and versatile language.",
-    duration: "6 weeks",
-    lessons: 24,
-    rating: 4.6,
-    price: 99,
-    tag: "Popular",
-    tagType: "popular",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
-
-  {
-    id: 5,
-    title: "Advanced JavaScript Concepts",
-    instructor: "Jane Smith",
-    description: "Deep dive into JavaScript with ES6+, asynchronous programming, and design patterns.",
-    duration: "8 weeks",
-    lessons: 30,
-    rating: 4.7,
-    price: 149,
-    tag: "Best Seller",
-    tagType: "bestseller",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
-
-  {
-    id: 6,
-    title: "Full-Stack Development with MERN",
-    instructor: "Dr. Sarah Johnson",
-    description: "Build modern web applications using MongoDB, Express, React, and Node.js.",
-    duration: "12 weeks",
-    lessons: 48,
-    rating: 4.9,
-    price: 199,
-    tag: "Best Seller",
-    tagType: "bestseller",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format"
-  },
-];
+// Derive a display tag from the average rating so cards keep a badge.
+const getTag = (rating: number): { label: string; type: 'bestseller' | 'popular' | 'new' } => {
+  if (rating >= 4.8) return { label: 'Best Seller', type: 'bestseller' };
+  if (rating >= 4.5) return { label: 'Popular', type: 'popular' };
+  return { label: 'New', type: 'new' };
+};
 
 // --- Sub-Component ---
-const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
+const CourseCard: React.FC<{ course: BrowseCourse; onEnroll: (courseId: string) => void }> = ({ course, onEnroll }) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+  const tag = getTag(course.averageRating || 0);
 
   // Helper to render the star rating
   const renderStars = (rating: number) => {
@@ -153,8 +68,8 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
       {/* Image Container */}
       <div className="relative h-44 overflow-hidden">
         <Image
-          src={course.image}
-          alt={course.title}
+          src={course.previewThumbnail || FALLBACK_IMAGE}
+          alt={course.courseName}
           width={512}
           height={176}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -166,15 +81,15 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
       <div className="p-5 flex flex-col grow">
         {/* TAG & STARS ABOVE TITLE */}
         <div className="flex justify-between items-center mb-4">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${TAG_CONFIG[course.tagType]}`}>
-            {course.tag}
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${TAG_CONFIG[tag.type]}`}>
+            {tag.label}
           </span>
-          {renderStars(course.rating)}
+          {renderStars(course.averageRating || 0)}
         </div>
 
         <div className="flex justify-between items-start gap-2 mb-5 cursor-pointer ">
           <h3 className={isDark ? "font-bold text-[17px] text-white leading-tight group-hover:text-blue-400 transition-colors" : "font-bold text-[17px] text-[#0F1C2E] leading-tight group-hover:text-blue-700 transition-colors"}>
-            {course.title}
+            {course.courseName}
           </h3>
         </div>
 
@@ -183,13 +98,13 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
         </p>
 
         <div className={isDark ? "flex justify-between items-center gap-3 text-slate-400 text-[11px] font-medium mb-6" : "flex justify-between items-center gap-3 text-slate-400 text-[11px] font-medium mb-6"}>
-          <div className="flex items-center gap-1"><FiUser size={13} /> {course.instructor}</div>
-          <div className="flex items-center gap-1"><FiClock size={13} /> {course.duration}</div>
+          <div className="flex items-center gap-1"><FiUser size={13} /> {course.instructorName || 'MyTeacher Institute'}</div>
+          <div className="flex items-center gap-1"><FiClock size={13} /> {course.duration} weeks</div>
         </div>
 
         <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
           <span className={isDark ? "text-xl font-black text-white" : "text-xl font-black text-[#0F1C2E]"}>${course.price}</span>
-          <button className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md cursor-pointer ">
+          <button onClick={() => onEnroll(course._id)} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md cursor-pointer ">
             Enroll Now
           </button>
         </div>
@@ -200,9 +115,68 @@ const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
 
 // --- Main Page Component ---
 export default function AllCoursesPage() {
+  const [courses, setCourses] = useState<BrowseCourse[]>([]);
   const [filter, setFilter] = useState('All');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const { theme } = useThemeStore();
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
   const isDark = theme === 'dark';
+
+  // "Enroll Now" — unauthenticated visitors are routed through the guest auth
+  // flow (get-started) and returned here after signing in; authenticated users
+  // open the protected MS-Store-style course purchase page.
+  const handleEnroll = useCallback(
+    (courseId: string) => {
+      if (!isAuthenticated) {
+        router.push(`/get-started?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
+        return;
+      }
+      router.push(`/course/${courseId}`);
+    },
+    [isAuthenticated, router]
+  );
+
+  const fetchCourses = useCallback(
+    async (pageNum: number, searchTerm: string, category: string, append: boolean) => {
+      setLoading(true);
+      try {
+        const res = await courseService.browseCourses({
+          page: pageNum,
+          limit: PAGE_SIZE,
+          search: searchTerm.trim() || undefined,
+          category,
+        });
+        const list = res?.courses ?? [];
+        setCourses((prev) => (append ? [...prev, ...list] : list));
+        setHasMore(!!res?.pagination?.hasMore);
+        setPage(pageNum);
+      } catch (err) {
+        console.error('Failed to fetch courses:', err);
+      } finally {
+        setLoading(false);
+        setInitialLoading(false);
+      }
+    },
+    []
+  );
+
+  // Initial load + search (debounced) + category changes.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCourses(1, search, filter, false);
+    }, search.trim() ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search, filter, fetchCourses]);
+
+  const loadMore = () => {
+    if (loading || !hasMore) return;
+    fetchCourses(page + 1, search, filter, true);
+  };
 
   return (
     <div className={isDark ? "bg-slate-900 min-h-screen font-sans pb-20" : "bg-[#F8FAFC] min-h-screen font-sans pb-20"}>
@@ -220,6 +194,8 @@ export default function AllCoursesPage() {
           <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
           <input
             type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search courses..."
             className={isDark ? "w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-800 border border-slate-700 shadow-sm focus:ring-4 focus:ring-blue-900/30 focus:border-blue-500 outline-none transition-all text-white font-medium" : "w-full pl-14 pr-6 py-4 rounded-2xl bg-white border border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-50 focus:border-blue-200 outline-none transition-all text-slate-600 font-medium"}
           />
@@ -238,7 +214,7 @@ export default function AllCoursesPage() {
 
         {/* Filter Pills */}
         <div className="flex flex-wrap justify-center gap-3">
-          {['All', 'Software', 'Data', 'Design', 'Basics'].map((cat) => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
@@ -255,18 +231,34 @@ export default function AllCoursesPage() {
 
       {/* Grid */}
       <main className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {COURSES_DATA.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
-        </div>
+        {initialLoading && courses.length === 0 ? (
+          <div className="flex justify-center py-24">
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : courses.length === 0 ? (
+          <p className="text-center text-slate-500 text-sm font-medium py-24">
+            No courses found. Try a different search or category.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course) => (
+              <CourseCard key={course._id} course={course} onEnroll={handleEnroll} />
+            ))}
+          </div>
+        )}
 
         {/* Load More Button */}
-        <div className="flex justify-center mt-16">
-          <button className="flex items-center gap-2 px-8 py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all active:scale-95 cursor-pointer ">
-            Load More Courses <FiChevronRight />
-          </button>
-        </div>
+        {!initialLoading && courses.length > 0 && (
+          <div className="flex justify-center mt-16">
+            <button
+              onClick={loadMore}
+              disabled={loading || !hasMore}
+              className="flex items-center gap-2 px-8 py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-white hover:border-slate-300 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Loading...' : 'Load More Courses'} <FiChevronRight />
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

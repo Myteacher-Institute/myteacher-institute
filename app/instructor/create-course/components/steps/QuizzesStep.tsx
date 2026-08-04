@@ -1,8 +1,10 @@
 import { FiHelpCircle, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { Field } from "../Field";
 import { inputCls } from "../../utils";
-import type { Quiz } from "@/types";
+import type { Quiz, QuizQuestion } from "@/types";
 import { useThemeStore } from "@/store/theme.store";
+
+type QuizOption = QuizQuestion["options"][number];
 
 interface QuizzesStepProps {
   quizzes: Quiz[];
@@ -15,9 +17,9 @@ export const QuizzesStep = ({ quizzes, setQuizzes }: QuizzesStepProps) => {
 
   const addQuiz = () => setQuizzes([...quizzes, { title: "", questions: [{ question: "", options: [{ option: "", isCorrect: false }], correctAnswer: "" }] }]);
   const removeQuiz = (i: number) => setQuizzes(quizzes.filter((_, idx) => idx !== i));
-  const updateQuiz = (i: number, field: keyof Quiz, value: any) => {
+  const updateQuiz = <K extends keyof Quiz>(i: number, field: K, value: Quiz[K]) => {
     const n = [...quizzes];
-    (n[i] as any)[field] = value;
+    n[i] = { ...n[i], [field]: value };
     setQuizzes(n);
   };
 
@@ -33,9 +35,9 @@ export const QuizzesStep = ({ quizzes, setQuizzes }: QuizzesStepProps) => {
     setQuizzes(n);
   };
 
-  const updateQuestion = (quizIndex: number, questionIndex: number, field: string, value: any) => {
+  const updateQuestion = <K extends keyof QuizQuestion>(quizIndex: number, questionIndex: number, field: K, value: QuizQuestion[K]) => {
     const n = [...quizzes];
-    (n[quizIndex].questions[questionIndex] as any)[field] = value;
+    n[quizIndex].questions[questionIndex] = { ...n[quizIndex].questions[questionIndex], [field]: value };
     setQuizzes(n);
   };
 
@@ -51,9 +53,9 @@ export const QuizzesStep = ({ quizzes, setQuizzes }: QuizzesStepProps) => {
     setQuizzes(n);
   };
 
-  const updateOption = (quizIndex: number, questionIndex: number, optionIndex: number, field: string, value: any) => {
+  const updateOption = <K extends keyof QuizOption>(quizIndex: number, questionIndex: number, optionIndex: number, field: K, value: QuizOption[K]) => {
     const n = [...quizzes];
-    (n[quizIndex].questions[questionIndex].options[optionIndex] as any)[field] = value;
+    n[quizIndex].questions[questionIndex].options[optionIndex] = { ...n[quizIndex].questions[questionIndex].options[optionIndex], [field]: value };
     setQuizzes(n);
   };
 
@@ -73,7 +75,7 @@ export const QuizzesStep = ({ quizzes, setQuizzes }: QuizzesStepProps) => {
         <div className={isDark ? "text-center py-10 border-2 border-dashed border-slate-700 rounded-2xl mb-4" : "text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl mb-4"}>
           <FiHelpCircle size={32} className={isDark ? "text-slate-600 mx-auto mb-3" : "text-slate-300 mx-auto mb-3"} />
           <p className="text-sm text-slate-400 font-medium">No quizzes yet</p>
-          <p className="text-xs text-slate-300 mt-1">Click "Add Quiz" to get started</p>
+          <p className="text-xs text-slate-300 mt-1">Click &quot;Add Quiz&quot; to get started</p>
         </div>
       ) : (
         <div className="space-y-4">

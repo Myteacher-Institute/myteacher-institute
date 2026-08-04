@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiLoader, FiSettings, FiUser, FiTrash2, FiAlertTriangle, FiMoon, FiSun, FiCheck, FiX, FiUpload } from "react-icons/fi";
+import { FiLoader, FiSettings, FiUser, FiTrash2, FiAlertTriangle, FiMoon, FiSun, FiCheck, FiX, FiUpload, FiShare2, FiCopy } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
 import InstructorSidebar from "@/app/components/InstructorSidebar";
 import DeleteAccountModal from "@/app/components/DeleteAccountModal";
@@ -11,7 +11,7 @@ import { useThemeStore } from "@/store/theme.store";
 
 export default function InstructorSettingsPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "delete" | "bug">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "affiliate" | "delete" | "bug">("profile");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -19,6 +19,67 @@ export default function InstructorSettingsPage() {
   const { logout, user, setUser } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const router = useRouter();
+
+  // Affiliate account state
+  const [affiliateState, setAffiliateState] = useState<"loading" | "active" | "inactive">("loading");
+  const [affiliateId, setAffiliateId] = useState<string>("");
+  const [isActivating, setIsActivating] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const affiliateLink = affiliateId
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/?affiliate=${affiliateId}`
+    : "";
+
+  const loadAffiliateStatus = async () => {
+    try {
+      const res = await axiosInstance.get("/api/affiliate/status?userType=instructor");
+      const affiliate = res.data?.affiliate;
+      if (affiliate?.affiliate_id) {
+        setAffiliateId(affiliate.affiliate_id);
+        setAffiliateState("active");
+      } else {
+        setAffiliateState("inactive");
+      }
+    } catch {
+      setAffiliateState("inactive");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "affiliate") {
+      const t = setTimeout(loadAffiliateStatus, 0);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab]);
+
+  const handleActivateAffiliate = async () => {
+    setIsActivating(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await axiosInstance.post("/api/affiliate/activate", { userType: "instructor" });
+      if (res.data?.affiliate?.affiliate_id) {
+        setAffiliateId(res.data.affiliate.affiliate_id);
+        setAffiliateState("active");
+        setSuccess("Affiliate account activated successfully");
+      } else {
+        setError(res.data?.message || "Failed to activate affiliate account");
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(message || "Failed to activate affiliate account");
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  const handleCopyAffiliateLink = () => {
+    if (!affiliateLink) return;
+    navigator.clipboard.writeText(affiliateLink).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    });
+  };
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -32,10 +93,11 @@ export default function InstructorSettingsPage() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setUploadError("");
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setUploadError("Please upload an image file");
@@ -49,16 +111,24 @@ export default function InstructorSettingsPage() {
       return;
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setProfileForm({ ...profileForm, profilePicture: base64 });
-    };
-    reader.onerror = () => {
-      setUploadError("Failed to process image");
-    };
-    reader.readAsDataURL(file);
+    // Upload the file directly — the backend saves it to disk and returns a URL,
+    // so no base64 ever goes through the JSON profile endpoint.
+    setIsUploadingPicture(true);
+    setUploadError("");
+    try {
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+      const res = await axiosInstance.post('/api/instructor/profile-picture', formData);
+      if (res.data.status === 'success') {
+        setProfileForm(prev => ({ ...prev, profilePicture: res.data.profilePicture }));
+      } else {
+        setUploadError(res.data.message || "Failed to upload image");
+      }
+    } catch (err: any) {
+      setUploadError(err.response?.data?.message || "Failed to upload image");
+    } finally {
+      setIsUploadingPicture(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -108,7 +178,15 @@ export default function InstructorSettingsPage() {
     setSuccess("");
 
     try {
-      const res = await axiosInstance.patch('/api/instructor/profile', profileForm);
+      // Profile picture is uploaded separately via /api/instructor/profile-picture —
+      // don't send it (or a stale value) through the JSON profile update.
+      const res = await axiosInstance.patch('/api/instructor/profile', {
+        name: profileForm.name,
+        email: profileForm.email,
+        phone: profileForm.phone,
+        bio: profileForm.bio,
+        expertise: profileForm.expertise,
+      });
       if (res.data.status === 'success') {
         setSuccess("Profile updated successfully");
         setUser(res.data.instructor, 'instructor');
@@ -219,6 +297,19 @@ export default function InstructorSettingsPage() {
             Edit Profile
           </button>
           <button
+            onClick={() => setActiveTab("affiliate")}
+            className={`px-4 py-3 font-medium transition-colors border-b-2 ${
+              activeTab === "affiliate"
+                ? "border-blue-600 text-blue-600"
+                : isDark
+                ? "border-transparent text-slate-400 hover:text-white"
+                : "border-transparent text-slate-500 hover:text-[#111827]"
+            }`}
+          >
+            <FiShare2 className="inline mr-2" size={18} />
+            Affiliate
+          </button>
+          <button
             onClick={() => setActiveTab("delete")}
             className={`px-4 py-3 font-medium transition-colors border-b-2 ${
               activeTab === "delete"
@@ -323,9 +414,17 @@ export default function InstructorSettingsPage() {
                       type="file"
                       accept="image/*"
                       onChange={handleFileSelect}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={isUploadingPicture}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-wait"
                     />
-                    {profileForm.profilePicture ? (
+                    {isUploadingPicture ? (
+                      <div className="space-y-3 py-2">
+                        <FiLoader size={32} className="mx-auto animate-spin text-blue-500" />
+                        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Uploading picture...
+                        </p>
+                      </div>
+                    ) : profileForm.profilePicture ? (
                       <div className="space-y-3">
                         <img
                           src={profileForm.profilePicture}
@@ -396,6 +495,98 @@ export default function InstructorSettingsPage() {
                 Save Changes
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Affiliate Tab */}
+        {activeTab === "affiliate" && (
+          <div className={`p-6 rounded-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <FiShare2 className="text-blue-600" />
+              Affiliate Account
+            </h3>
+
+            {affiliateState === "loading" && (
+              <div className="flex items-center gap-3 text-slate-500">
+                <FiLoader className="animate-spin text-blue-600" size={20} />
+                <span className="text-sm">Loading affiliate status...</span>
+              </div>
+            )}
+
+            {affiliateState === "inactive" && (
+              <div className="space-y-4">
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'} border ${isDark ? 'border-slate-600' : 'border-slate-200'}`}>
+                  <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    Activate your affiliate account to generate a unique referral
+                    link. You earn commissions when students enroll in courses
+                    through your link.
+                  </p>
+                </div>
+                <button
+                  onClick={handleActivateAffiliate}
+                  disabled={isActivating}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isActivating ? <FiLoader className="animate-spin" size={20} /> : <FiShare2 size={20} />}
+                  Activate Affiliate Account
+                </button>
+              </div>
+            )}
+
+            {affiliateState === "active" && (
+              <div className="space-y-6">
+                <div className={`rounded-xl p-4 bg-green-50 border border-green-200`}>
+                  <p className="text-green-700 text-sm font-medium">
+                    <FiCheck className="inline mr-1" size={16} />
+                    Affiliate account is active
+                  </p>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Your Affiliate ID
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={affiliateId}
+                    className={`w-full px-4 py-3 rounded-xl border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-200 text-[#111827]'} font-mono`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Referral Link
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={affiliateLink}
+                      className={`flex-1 px-4 py-3 rounded-xl border ${isDark ? 'bg-slate-700 border-slate-600 text-blue-400' : 'bg-slate-50 border-slate-200 text-blue-600'} font-medium`}
+                    />
+                    <button
+                      onClick={handleCopyAffiliateLink}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors whitespace-nowrap ${
+                        copiedLink ? 'bg-green-100 text-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      <FiCopy size={18} />
+                      {copiedLink ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'} border ${isDark ? 'border-slate-600' : 'border-slate-200'}`}>
+                  <p className={`text-sm font-semibold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                    Earnings
+                  </p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#111827]'}`}>
+                    ₦{(user as { affiliate_money?: number })?.affiliate_money ?? 0}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

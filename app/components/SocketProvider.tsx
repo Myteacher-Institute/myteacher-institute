@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { FiRefreshCw } from 'react-icons/fi';
 import { useSocket } from '@/hooks/useSocket';
 import { useNotificationStore } from '@/store/notification.store';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { triggerNotificationFeedback } from '@/utils/notificationAudio';
 import { showLocalNotification } from '@/lib/pushNotifications';
 import { initializeAuth } from '@/lib/authInitializer';
@@ -15,6 +17,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { socket, isConnected, connect } = useSocket();
   const { syncWithSocket } = useNotificationStore();
   const { user, userType } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const socketInitialized = useRef(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -69,21 +73,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       if (!token || token.length < 50) {
         return false;
       }
-      
+
       try {
         const parts = token.split('.');
         if (parts.length !== 3) {
           return false;
         }
-        
+
         const payload = JSON.parse(atob(parts[1]));
         const now = Date.now() / 1000;
-        
+
         if (payload.exp && payload.exp < now) {
           console.log('Socket: Token is expired, will attempt refresh');
           return false;
         }
-        
+
         return true;
       } catch (error) {
         console.log('Socket: Token validation failed:', error);
@@ -92,25 +96,25 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const token = getAccessToken();
-    
+
     // If token is invalid, try to refresh it before connecting
     if (!validateToken(token)) {
       console.log('Socket: Token validation failed, attempting refresh before connection');
-      
+
       const attemptConnectionWithRefresh = async () => {
         try {
           const response = await fetch(`${BACKEND_URL}/api/auth/new-access-code`, {
             method: 'GET',
             credentials: 'include',
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.accessToken) {
               console.log('Socket: Token refreshed successfully, now connecting');
               connect(data.accessToken);
               socketInitialized.current = true;
-              
+
               // Update localStorage with new token
               const authStorage = localStorage.getItem('auth-storage');
               if (authStorage) {
@@ -118,21 +122,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
                 parsed.state.accessToken = data.accessToken;
                 localStorage.setItem('auth-storage', JSON.stringify(parsed));
               }
-              
+
               return;
             }
           }
         } catch (error) {
           console.error('Socket: Failed to refresh token during initialization:', error);
         }
-        
+
         console.log('Socket: Could not refresh token, skipping socket connection');
       };
-      
+
       attemptConnectionWithRefresh();
       return;
     }
-    
+
     if (token) {
       console.log('Socket: Attempting connection with valid token');
       connect(token);
@@ -161,20 +165,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     const handleDisconnect = (reason: string) => {
       console.log('Socket: Disconnected due to:', reason);
-      
+
       // If the disconnect was due to server issues, attempt reconnection with delay
       if (reason === 'io server disconnect' || reason === 'transport close') {
         setIsReconnecting(true);
-        
+
         // Clear any existing timeout
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        
+
         // Attempt to reconnect after a delay to allow server to come back
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log('Socket: Attempting to reconnect after server disconnect...');
-          
+
           // Get fresh token
           const getAccessToken = (): string => {
             try {
@@ -202,26 +206,26 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
               if (!token || token.length < 50) {
                 return false;
               }
-              
+
               try {
                 const parts = token.split('.');
                 if (parts.length !== 3) {
                   return false;
                 }
-                
+
                 const payload = JSON.parse(atob(parts[1]));
                 const now = Date.now() / 1000;
-                
+
                 if (payload.exp && payload.exp < now) {
                   return false;
                 }
-                
+
                 return true;
               } catch (error) {
                 return false;
               }
             };
-            
+
             if (validateToken(token)) {
               connect(token);
             } else {
@@ -251,7 +255,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
               });
             }
           }
-          
+
           setIsReconnecting(false);
         }, 3000); // Wait 3 seconds before reconnect attempt
       }
@@ -260,7 +264,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const handleReconnect = () => {
       console.log('Socket: Successfully reconnected');
       setIsReconnecting(false);
-      
+
       // Re-emit user online status
       socket.emit('user:online', { userType });
     };
@@ -281,21 +285,29 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     syncWithSocket(socket, userType);
 
     // Listen for auth store token changes to keep socket in sync
-    const unsubscribe = useAuthStore.subscribe(
-      (state) => state.accessToken,
-      (newToken) => {
-        if (socket && newToken && socket.auth?.token !== newToken) {
+    const unsubscribe = useAuthStore.subscribe((state, prevState) => {
+      const newToken = state.accessToken;
+      if (socket && newToken && state.accessToken !== prevState.accessToken) {
+        const currentSocketToken =
+          socket.auth && typeof socket.auth === 'object'
+            ? socket.auth.token
+            : undefined;
+        if (currentSocketToken !== newToken) {
           console.log('Socket: Access token updated in store, reconnecting...');
           updateSocketToken(newToken);
         }
       }
-    );
+    });
 
     // Listen for new notifications and trigger feedback
-    const handleNewNotification = (data: { notification: any }) => {
-      triggerNotificationFeedback(data.notification.type);
-      
-      // Show local notification if page is not visible
+    const handleNewNotification = (data: { notification: { type: string; title: string; message: string } }) => {
+      const isValidNotificationType = (type: string): type is 'success' | 'error' | 'info' | 'warning' =>
+        type === 'success' || type === 'error' || type === 'info' || type === 'warning';
+
+      triggerNotificationFeedback(
+        isValidNotificationType(data.notification.type) ? data.notification.type : undefined
+      );
+
       if (document.hidden) {
         showLocalNotification(data.notification.title, {
           body: data.notification.message,
@@ -312,5 +324,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [socket, isConnected, userType, syncWithSocket]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {isReconnecting && (
+        <div className="fixed top-4 right-4 z-[100] max-w-sm">
+          <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <FiRefreshCw size={16} className="text-blue-600 animate-spin shrink-0" />
+            <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-[#111827]'}`}>Reconnecting to server…</p>
+          </div>
+        </div>
+      )}
+      {children}
+    </>
+  );
 };

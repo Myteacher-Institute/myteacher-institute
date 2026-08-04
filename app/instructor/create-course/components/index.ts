@@ -10,4 +10,5 @@ export { VideosStep } from './steps/VideosStep';
 export { ProgrammingCodesStep } from './steps/ProgrammingCodesStep';
 export { AssetsStep } from './steps/AssetsStep';
 export { QuizzesStep } from './steps/QuizzesStep';
+export { ChaptersStep } from './steps/ChaptersStep';
 export { ReviewStep } from './steps/ReviewStep';

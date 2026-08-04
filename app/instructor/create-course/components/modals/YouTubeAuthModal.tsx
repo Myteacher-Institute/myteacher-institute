@@ -2,11 +2,12 @@ import { FiYoutube } from "react-icons/fi";
 
 interface YouTubeAuthModalProps {
   show: boolean;
+  reauth?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const YouTubeAuthModal = ({ show, onConfirm, onCancel }: YouTubeAuthModalProps) => {
+export const YouTubeAuthModal = ({ show, reauth = false, onConfirm, onCancel }: YouTubeAuthModalProps) => {
   if (!show) return null;
 
   return (
@@ -17,17 +18,19 @@ export const YouTubeAuthModal = ({ show, onConfirm, onCancel }: YouTubeAuthModal
             <FiYoutube size={24} className="text-red-600" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#111827]">YouTube Authentication Required</h3>
-            <p className="text-sm text-slate-500">To upload videos to YouTube</p>
+            <h3 className="text-lg font-bold text-[#111827]">{reauth ? "YouTube Re-authentication Required" : "YouTube Authentication Required"}</h3>
+            <p className="text-sm text-slate-500">{reauth ? "Your YouTube session has expired" : "To upload videos to YouTube"}</p>
           </div>
         </div>
 
         <div className="bg-slate-50 rounded-xl p-4 space-y-2">
           <p className="text-sm text-[#111827]">
-            You need to authenticate with YouTube to upload your course videos. This will:
+            {reauth
+              ? "Your YouTube connection has expired. Re-authenticate to resume uploading your course videos. This will:"
+              : "You need to authenticate with YouTube to upload your course videos. This will:"}
           </p>
           <ul className="text-sm text-slate-600 space-y-1 ml-4 list-disc">
-            <li>Redirect you to Google's secure login page</li>
+            <li>Redirect you to Google&apos;s secure login page</li>
             <li>Request permission to upload videos to your YouTube account</li>
             <li>Store your authentication tokens securely</li>
           </ul>
@@ -46,7 +49,7 @@ export const YouTubeAuthModal = ({ show, onConfirm, onCancel }: YouTubeAuthModal
             onClick={onConfirm}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors cursor-pointer"
           >
-            <FiYoutube size={16} /> Authenticate
+            <FiYoutube size={16} /> {reauth ? "Re-authenticate" : "Authenticate"}
           </button>
         </div>
       </div>

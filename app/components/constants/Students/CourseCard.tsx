@@ -1,8 +1,26 @@
 import { useThemeStore } from '@/store/theme.store';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
 
-export const CourseCard = ({ title, progress, icon, color, bg }: any) => {
+interface CourseCardProps {
+  title: string;
+  progress: number;
+  icon: ReactNode;
+  color: string;
+  bg: string;
+  courseId?: string;
+}
+
+export const CourseCard = ({ title, progress, icon, color, bg, courseId }: CourseCardProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+  const router = useRouter();
+
+  const handleContinue = () => {
+    if (courseId) {
+      router.push(`/learn/${courseId}`);
+    }
+  };
 
   return (
     <div className={isDark ? "bg-slate-800 p-3 lg:p-6 rounded-2xl border border-slate-700 shadow-sm flex flex-col h-full hover:border-blue-900/50 transition-colors" : "bg-white p-3 lg:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full hover:border-blue-200 transition-colors"}>
@@ -27,7 +45,10 @@ export const CourseCard = ({ title, progress, icon, color, bg }: any) => {
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        <button className="w-full py-2 lg:py-3 bg-blue-600 text-white text-[10px] lg:text-sm font-bold rounded-lg lg:rounded-xl active:scale-95 transition-transform hover:bg-blue-700 cursor-pointer">
+        <button
+          onClick={handleContinue}
+          className="w-full py-2 lg:py-3 bg-blue-600 text-white text-[10px] lg:text-sm font-bold rounded-lg lg:rounded-xl active:scale-95 transition-transform hover:bg-blue-700 cursor-pointer"
+        >
           Continue
         </button>
       </div>

@@ -3,18 +3,40 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import {
-  FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiLoader, FiEdit2, FiEye, FiTrash2, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut
-} from 'react-icons/fi';
-import { activityTracker } from '@/utils/activityTracker';
+import type { IconType } from 'react-icons';
+import { FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiLoader, FiEdit2, FiEye, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut } from 'react-icons/fi';
+import { activityTracker, type Activity } from '@/utils/activityTracker';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 import InstructorSidebar from './InstructorSidebar';
 import axiosInstance from '@/lib/axios';
 import { useSocket } from '@/hooks/useSocket';
+import type { Course, CourseVideo } from '@/types';
 
-const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: any) => {
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  trend: string;
+  icon: IconType;
+  iconColor: string;
+  bgColor: string;
+}
+
+interface InstructorStatistics {
+  totalStudents: number;
+  totalCourses: number;
+  totalEarnings: number;
+  averageRating: number;
+  trends?: {
+    students?: string;
+    courses?: string;
+    earnings?: string;
+    rating?: string;
+  };
+}
+
+const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: StatCardProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   return (
@@ -38,19 +60,19 @@ const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: any) 
 
 export default function InstructorDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities] = useState<Activity[]>(() => activityTracker.getFormattedActivities());
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState<any>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showTopCoursesModal, setShowTopCoursesModal] = useState(false);
-  const [statistics, setStatistics] = useState<any>(null);
+  const [statistics, setStatistics] = useState<InstructorStatistics | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -107,12 +129,12 @@ export default function InstructorDashboard() {
     }
   }, []);
 
-  const getPreviewVideo = (course: any) => {
+  const getPreviewVideo = (course: Course): CourseVideo | null => {
     if (!course.courseVideos || course.courseVideos.length === 0) {
       return null;
     }
     // Find first video where isPreview is true
-    const previewVideo = course.courseVideos.find((v: any) => v.isPreview === true);
+    const previewVideo = course.courseVideos.find((v: CourseVideo) => v.isPreview === true);
     return previewVideo || null;
   };
 
@@ -129,13 +151,13 @@ export default function InstructorDashboard() {
     setActiveDropdown(activeDropdown === index ? null : index);
   };
 
-  const handleEditCourse = async (course: any) => {
+  const handleEditCourse = async (course: Course) => {
     setActiveDropdown(null);
     // Navigate to edit page with course ID and edit flag
     router.push(`/instructor/create-course?courseId=${course._id}&edit=true`);
   };
 
-  const handleViewCourse = (course: any) => {
+  const handleViewCourse = (course: Course) => {
     router.push(`/instructor/course/${course._id}`);
     setActiveDropdown(null);
   };
@@ -165,8 +187,9 @@ export default function InstructorDashboard() {
       } else {
         alert(res.data.message || 'Failed to delete course');
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to delete course');
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      alert(axiosError.response?.data?.message || 'Failed to delete course');
     } finally {
       setIsDeleting(false);
     }
@@ -190,9 +213,11 @@ export default function InstructorDashboard() {
 
   // Initial data fetch - run once on mount
   useEffect(() => {
-    setActivities(activityTracker.getFormattedActivities());
-    fetchInstructorCourses();
-    fetchInstructorStatistics();
+    const timeoutId = setTimeout(() => {
+      fetchInstructorCourses();
+      fetchInstructorStatistics();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [fetchInstructorCourses, fetchInstructorStatistics]);
 
   // Socket event listeners for real-time updates
@@ -303,7 +328,7 @@ export default function InstructorDashboard() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button type="button" aria-label="View notifications" className={isDark ? "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-slate-800 border-slate-700 text-white" : "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-[#FFFFFF] border-slate-100 text-[#111827]"}><FiBell size={22} /><span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white" /></button>
-            <button type="button" onClick={() => router.push('/instructor/create-course')} className="grow sm:grow-0 bg-blue-600 text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200"><FiPlus size={18} /> <span className="whitespace-nowrap">Create New Course</span></button>
+            <button type="button" onClick={() => router.push('/instructor/create-course')} className={isDark ? "grow sm:grow-0 bg-transparent text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 border border-slate-700 hover:border-slate-600" : "grow sm:grow-0 bg-blue-600 text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200"}><FiPlus size={18} /> <span className="whitespace-nowrap">Create New Course</span></button>
           </div>
         </header>
 
@@ -374,13 +399,13 @@ export default function InstructorDashboard() {
                   <p className={isDark ? "text-sm mb-4 text-slate-400" : "text-sm mb-4 text-slate-500"}>No courses yet. Create your first course to start teaching!</p>
                   <button
                     onClick={() => router.push('/instructor/create-course')}
-                    className="bg-blue-600 text-white cursor-pointer px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200 mx-auto hover:bg-blue-700 transition-colors"
+                    className={isDark ? "bg-transparent border border-white text-white cursor-pointer px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200 mx-auto hover:bg-blue-700 transition-colors" : "bg-blue-500 text-white cursor-pointer px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200 mx-auto hover:bg-blue-700 transition-colors"}
                   >
                     <FiPlus size={18} /> Create Course
                   </button>
                 </div>
               ) : (
-                courses.map((course: any, i: number) => {
+                courses.map((course: Course, i: number) => {
                   const previewVideo = getPreviewVideo(course);
                   const embedUrl = previewVideo ? getYouTubeEmbedUrl(previewVideo.videoUrl) : null;
                   
@@ -475,7 +500,7 @@ export default function InstructorDashboard() {
                   <p className={isDark ? "text-sm text-center py-4 text-slate-400" : "text-sm text-center py-4 text-slate-500"}>No recent activities</p>
                 ) : (
                   activities.slice(0, 5).map((activity) => {
-                    const iconMap: Record<string, any> = {
+                    const iconMap: Record<string, IconType> = {
                       'New student enrolled': FiUsers,
                       'New review': FiStar,
                       'Payment': FiDollarSign,
@@ -545,9 +570,9 @@ export default function InstructorDashboard() {
                   <p className={isDark ? "text-sm text-center py-4 text-slate-400" : "text-sm text-center py-4 text-slate-500"}>No courses yet</p>
                 ) : (
                   courses
-                    .sort((a: any, b: any) => (b.appliedUsers?.length || 0) - (a.appliedUsers?.length || 0))
+                    .sort((a: Course, b: Course) => (b.appliedUsers?.length || 0) - (a.appliedUsers?.length || 0))
                     .slice(0, 3)
-                    .map((course: any, index: number) => {
+                    .map((course: Course, index: number) => {
                       const previewVideo = getPreviewVideo(course);
                       const embedUrl = previewVideo ? getYouTubeEmbedUrl(previewVideo.videoUrl) : null;
                       
@@ -631,8 +656,8 @@ export default function InstructorDashboard() {
                 <p className={isDark ? "text-sm text-center py-8 text-slate-400" : "text-sm text-center py-8 text-slate-500"}>No courses yet</p>
               ) : (
                 courses
-                  .sort((a: any, b: any) => (b.appliedUsers?.length || 0) - (a.appliedUsers?.length || 0))
-                  .map((course: any, index: number) => {
+                  .sort((a: Course, b: Course) => (b.appliedUsers?.length || 0) - (a.appliedUsers?.length || 0))
+                  .map((course: Course, index: number) => {
                     const previewVideo = getPreviewVideo(course);
                     const embedUrl = previewVideo ? getYouTubeEmbedUrl(previewVideo.videoUrl) : null;
                     

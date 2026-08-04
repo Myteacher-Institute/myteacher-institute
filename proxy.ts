@@ -74,7 +74,32 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // -- 3. Student dashboard -------------------------------------------------
+  // -- 3. Affiliate dashboard -------------------------------------------------
+  // Requires an account — visitors who are not signed in are sent through the
+  // guest auth flow (get-started) with an intent flag so that page can present
+  // the "create an account" modal (Google or email/password).
+  if (pathname === '/affiliate-dashboard') {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(
+        new URL('/get-started?redirect=/affiliate-dashboard&intent=affiliate', request.url)
+      );
+    }
+    return NextResponse.next();
+  }
+
+  // -- 4. Course purchase page -------------------------------------------------
+  // Protected — the purchase page requires an account so payments are tied to a
+  // logged-in user. Guests are sent through get-started and returned afterwards.
+  if (pathname.startsWith('/course/')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(
+        new URL(`/get-started?redirect=${encodeURIComponent(pathname)}`, request.url)
+      );
+    }
+    return NextResponse.next();
+  }
+
+  // -- 5. Student dashboard -------------------------------------------------
   if (pathname.startsWith('/student')) {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/get-started', request.url));
@@ -85,7 +110,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // -- 4. Instructor protected pages ----------------------------------------
+  // -- 5b. Course learning page -------------------------------------------------
+  // Protected — only a signed-in student can open a course they bought.
+  if (pathname.startsWith('/learn/')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/get-started', request.url));
+    }
+    if (role !== 'user') {
+      return NextResponse.redirect(new URL(getDashboard(role!), request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // -- 6. Instructor protected pages ----------------------------------------
   // /instructor/login etc. are already handled above in section 2.
   if (pathname.startsWith('/instructor')) {
     if (!isAuthenticated) {
@@ -97,7 +134,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // -- 5. Admin protected pages ---------------------------------------------
+  // -- 7. Admin protected pages ---------------------------------------------
   if (pathname.startsWith('/admin')) {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/admin/login', request.url));

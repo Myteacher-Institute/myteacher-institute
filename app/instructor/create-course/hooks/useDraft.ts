@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { DRAFT_KEY } from '../constants';
 
-export const saveDraft = (data: object) => {
+export const saveDraft = (data: unknown) => {
   try {
     const draftString = JSON.stringify(data);
     sessionStorage.setItem(DRAFT_KEY, draftString);
@@ -25,7 +25,7 @@ export const clearDraft = () => {
   } catch {}
 };
 
-export const useDraft = (data: any) => {
+export const useDraft = <T,>(data: T) => {
   useEffect(() => {
     saveDraft(data);
   }, [data]);

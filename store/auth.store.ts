@@ -10,6 +10,13 @@ import { activityTracker } from '../utils/activityTracker';
 import { notificationTracker } from '../utils/notificationTracker';
 import { getSocket } from '@/lib/socket';
 
+type ApiError = { response?: { data?: { message?: string } }; message?: string };
+
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const apiError = error as ApiError;
+  return apiError.response?.data?.message || apiError.message || fallback;
+};
+
 // Helper to set cookies
 const setAuthCookies = (accessToken: string, userType: 'user' | 'admin' | 'instructor' | null) => {
   if (typeof document !== 'undefined') {
@@ -78,10 +85,10 @@ export const useAuthStore = create<AuthActions>()(
           console.log(`this is the response ${JSON.stringify(response)}`)
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to check user',
+            error: error instanceof Error ? error.message : 'Failed to check user',
           });
           return { userExists: false };
         }
@@ -124,10 +131,10 @@ export const useAuthStore = create<AuthActions>()(
               error: response.message || 'Registration failed',
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Registration failed',
+            error: getApiErrorMessage(error, 'Registration failed'),
           });
         }
       },
@@ -150,10 +157,10 @@ export const useAuthStore = create<AuthActions>()(
               instruction: null,
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Login failed',
+            error: getApiErrorMessage(error, 'Login failed'),
             instruction: null,
           });
         }
@@ -165,7 +172,7 @@ export const useAuthStore = create<AuthActions>()(
           const response = await authService.resendOtp(email);
           console.log('Resend OTP response:', response);
           set({ isLoading: false, error: null });
-          
+
           // Handle different response structures
           if (response && (response.status === 'success' || response.message)) {
             return response;
@@ -173,13 +180,13 @@ export const useAuthStore = create<AuthActions>()(
             // If response doesn't have expected structure, treat as success if no error was thrown
             return { status: 'success', message: 'OTP resent successfully' };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
+            error: getApiErrorMessage(error, 'Failed to resend OTP'),
           });
-          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to resend OTP') };
         }
       },
 
@@ -187,7 +194,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null, instruction: null });
         try {
           const response = await authService.verifyPassword({ email, password });
-          
+
           if (response.status === 'success') {
             if (response.isTrusted && response.access_code) {
               // Direct login with trusted device
@@ -217,7 +224,7 @@ export const useAuthStore = create<AuthActions>()(
               } else {
                 userType = 'user';
               }
-              
+
               set({
                 isAuthenticated: true,
                 user: response.authUser,
@@ -227,7 +234,7 @@ export const useAuthStore = create<AuthActions>()(
                 error: null,
                 instruction: null,
               });
-              
+
               const token = response.accessToken || response.access_code;
               if (token) {
                 localStorage.setItem('accessToken', token);
@@ -241,10 +248,10 @@ export const useAuthStore = create<AuthActions>()(
               instruction: null,
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Password verification failed',
+            error: getApiErrorMessage(error, 'Password verification failed'),
             instruction: null,
           });
         }
@@ -255,7 +262,7 @@ export const useAuthStore = create<AuthActions>()(
         try {
           const response = await authService.verifyOtp({ otp });
           console.log('Verify OTP response:', response);
-          
+
           if (response.status === 'success') {
             if (response.nextStep === 'onboarding' && response.userId) {
               // New account - go to onboarding
@@ -274,7 +281,7 @@ export const useAuthStore = create<AuthActions>()(
               } else {
                 userType = 'user';
               }
-              
+
               set({
                 isAuthenticated: true,
                 user: response.authUser,
@@ -285,12 +292,12 @@ export const useAuthStore = create<AuthActions>()(
                 instruction: null,
                 pendingUserId: null,
               });
-              
+
               if (response.accessToken) {
                 localStorage.setItem('accessToken', response.accessToken);
                 setAuthCookies(response.accessToken, userType);
               }
-              
+
               // Emit user online event via socket
               const socket = getSocket();
               if (socket && socket.connected && userType) {
@@ -303,10 +310,10 @@ export const useAuthStore = create<AuthActions>()(
               error: response.message,
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'OTP verification failed',
+            error: getApiErrorMessage(error, 'OTP verification failed'),
           });
         }
       },
@@ -315,7 +322,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authService.completeOnboarding({ userId, name, password, confirmPassword: password });
-          
+
           if (response.status === 'success' && response.authUser) {
             set({
               isAuthenticated: true,
@@ -326,7 +333,7 @@ export const useAuthStore = create<AuthActions>()(
               error: null,
               pendingUserId: null,
             });
-            
+
             if (response.accessToken) {
               localStorage.setItem('accessToken', response.accessToken);
               setAuthCookies(response.accessToken, 'user');
@@ -337,10 +344,10 @@ export const useAuthStore = create<AuthActions>()(
               error: response.message,
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Onboarding failed',
+            error: getApiErrorMessage(error, 'Onboarding failed'),
           });
         }
       },
@@ -349,7 +356,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await adminService.login({ email, password });
-          
+
           // Backend returns { authUser, accessToken, message }
           // If OTP is required, response will have authUser but no accessToken
           if (response.authUser && !response.accessToken) {
@@ -372,14 +379,14 @@ export const useAuthStore = create<AuthActions>()(
               isLoading: false,
               error: null,
             });
-            
+
             localStorage.setItem('accessToken', response.accessToken);
             setAuthCookies(response.accessToken, 'admin');
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Admin login failed',
+            error: getApiErrorMessage(error, 'Admin login failed'),
           });
         }
       },
@@ -388,7 +395,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await adminService.verifyOtp(otp);
-          
+
           if (response.authUser && response.accessToken) {
             set({
               isAuthenticated: true,
@@ -398,20 +405,20 @@ export const useAuthStore = create<AuthActions>()(
               isLoading: false,
               error: null,
             });
-            
+
             localStorage.setItem('accessToken', response.accessToken);
             setAuthCookies(response.accessToken, 'admin');
-            
+
             // Emit admin online event via socket
             const socket = getSocket();
             if (socket && socket.connected) {
               socket.emit('user:online', { userType: 'admin' });
             }
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Admin OTP verification failed',
+            error: getApiErrorMessage(error, 'Admin OTP verification failed'),
           });
         }
       },
@@ -422,7 +429,7 @@ export const useAuthStore = create<AuthActions>()(
           const response = await adminService.resendOtp(email);
           console.log('Admin resend OTP response:', response);
           set({ isLoading: false, error: null });
-          
+
           // Handle different response structures
           if (response && (response.status === 'success' || response.message)) {
             return response;
@@ -430,13 +437,13 @@ export const useAuthStore = create<AuthActions>()(
             // If response doesn't have expected structure, treat as success if no error was thrown
             return { status: 'success', message: 'OTP resent successfully' };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Admin resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
+            error: getApiErrorMessage(error, 'Failed to resend OTP'),
           });
-          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to resend OTP') };
         }
       },
 
@@ -446,12 +453,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await adminService.sendResetCode(email);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to send reset code',
+            error: getApiErrorMessage(error, 'Failed to send reset code'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to send reset code' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to send reset code') };
         }
       },
 
@@ -461,12 +468,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await adminService.resetPassword(code, password);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to reset password',
+            error: getApiErrorMessage(error, 'Failed to reset password'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to reset password' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to reset password') };
         }
       },
 
@@ -474,7 +481,7 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await instructorService.login({ email, password });
-          
+
           // Backend returns { instructor, accessToken, message }
           // If OTP is required, response will have instructor but no accessToken
           if (response.instructor && !response.accessToken) {
@@ -497,14 +504,14 @@ export const useAuthStore = create<AuthActions>()(
               isLoading: false,
               error: null,
             });
-            
+
             localStorage.setItem('accessToken', response.accessToken);
             setAuthCookies(response.accessToken, 'instructor');
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Instructor login failed',
+            error: getApiErrorMessage(error, 'Instructor login failed'),
           });
         }
       },
@@ -513,17 +520,17 @@ export const useAuthStore = create<AuthActions>()(
         set({ isLoading: true, error: null });
         try {
           const response = await instructorService.apply(data);
-          
+
           if (response.status === 'success') {
             set({
               isLoading: false,
               error: null,
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Instructor application failed',
+            error: getApiErrorMessage(error, 'Instructor application failed'),
           });
         }
       },
@@ -531,12 +538,23 @@ export const useAuthStore = create<AuthActions>()(
       instructorVerifyOtp: async (otp: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await instructorService.verifyOtp(otp);
+
+          type OtpResponse = {
+            success?: boolean;
+            message: string;
+            status?: string;
+            instructor?: AuthUser;
+            accessToken?: string;
+            authUser?: AuthUser;
+            access_code?: string;
+          };
+
+          const response = await instructorService.verifyOtp(otp) as OtpResponse;
 
           // Backend may return { success: true } or { status: 'success' }
-          const isSuccess = response.success === true || (response as any).status === 'success';
-          const instructor = response.instructor ?? (response as any).authUser;
-          const accessToken = response.accessToken ?? (response as any).access_code;
+          const isSuccess = response.success === true || response.status === 'success';
+          const instructor = response.instructor ?? response.authUser;
+          const accessToken = response.accessToken ?? response.access_code;
 
           if (isSuccess && instructor && accessToken) {
             set({
@@ -565,10 +583,10 @@ export const useAuthStore = create<AuthActions>()(
               error: response.message || 'OTP verification failed',
             });
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'OTP verification failed',
+            error: getApiErrorMessage(error, 'OTP verification failed'),
           });
         }
       },
@@ -579,7 +597,7 @@ export const useAuthStore = create<AuthActions>()(
           const response = await instructorService.resendOtp(email);
           console.log('Instructor resend OTP response:', response);
           set({ isLoading: false, error: null });
-          
+
           // Handle different response structures
           if (response && (response.status === 'success' || response.message)) {
             return response;
@@ -587,13 +605,13 @@ export const useAuthStore = create<AuthActions>()(
             // If response doesn't have expected structure, treat as success if no error was thrown
             return { status: 'success', message: 'OTP resent successfully' };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Instructor resend OTP error:', error);
           set({
             isLoading: false,
-            error: error.response?.data?.message || error.message || 'Failed to resend OTP',
+            error: getApiErrorMessage(error, 'Failed to resend OTP'),
           });
-          return { status: 'failed', message: error.response?.data?.message || error.message || 'Failed to resend OTP' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to resend OTP') };
         }
       },
 
@@ -603,12 +621,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await instructorService.sendResetCode(email);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to send reset code',
+            error: getApiErrorMessage(error, 'Failed to send reset code'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to send reset code' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to send reset code') };
         }
       },
 
@@ -618,12 +636,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await instructorService.resendResetCode(email);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to resend reset code',
+            error: getApiErrorMessage(error, 'Failed to resend reset code'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to resend reset code' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to resend reset code') };
         }
       },
 
@@ -633,12 +651,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await instructorService.resetPassword(code, password);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to reset password',
+            error: getApiErrorMessage(error, 'Failed to reset password'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to reset password' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to reset password') };
         }
       },
 
@@ -648,12 +666,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await userService.sendResetInstructions(email);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to send reset instructions',
+            error: getApiErrorMessage(error, 'Failed to send reset instructions'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to send reset instructions' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to send reset instructions'), };
         }
       },
 
@@ -663,12 +681,12 @@ export const useAuthStore = create<AuthActions>()(
           const response = await userService.resetPasswordWithCode(code, password, confirmPassword);
           set({ isLoading: false, error: null });
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Failed to reset password',
+            error: getApiErrorMessage(error, 'Failed to reset password'),
           });
-          return { status: 'failed', message: error.response?.data?.message || 'Failed to reset password' };
+          return { status: 'failed', message: getApiErrorMessage(error, 'Failed to reset password') };
         }
       },
 
@@ -713,6 +731,17 @@ export const useAuthStore = create<AuthActions>()(
 
       setUserType: (userType: 'user' | 'admin' | 'instructor' | null) => {
         set({ userType });
+        if (typeof document !== 'undefined') {
+          const token = localStorage.getItem('accessToken');
+          if (token) {
+            document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=lax`;
+            if (userType) {
+              document.cookie = `userType=${userType}; path=/; max-age=86400; SameSite=lax`;
+            } else {
+              document.cookie = 'userType=; path=/; max-age=0';
+            }
+          }
+        }
       },
 
       clearInstruction: () => {
@@ -736,6 +765,7 @@ export const useAuthStore = create<AuthActions>()(
             isLoading: false,
           });
         } catch (error) {
+          console.log(error)
           set({
             isAuthenticated: false,
             user: null,
@@ -756,7 +786,7 @@ export const useAuthStore = create<AuthActions>()(
         userType: state.userType,
         accessToken: state.accessToken,
       }),
-      migrate: (persistedState: any, version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
         // Handle future migrations if needed
         if (version === 0) {
           // Migration from version 0 to 1

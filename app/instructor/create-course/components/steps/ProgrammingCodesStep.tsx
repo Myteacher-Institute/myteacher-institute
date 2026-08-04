@@ -20,9 +20,9 @@ export const ProgrammingCodesStep = ({ programmingCodes, setProgrammingCodes }: 
 
   const addProgrammingCode = () => setProgrammingCodes([...programmingCodes, { code: "", language: "", explanation: "", fileName: "" }]);
   const removeProgrammingCode = (i: number) => setProgrammingCodes(programmingCodes.filter((_, idx) => idx !== i));
-  const updateProgrammingCode = (i: number, field: keyof ProgrammingCode, value: any) => {
+  const updateProgrammingCode = <K extends keyof ProgrammingCode>(i: number, field: K, value: ProgrammingCode[K]) => {
     const n = [...programmingCodes];
-    (n[i] as any)[field] = value;
+    n[i] = { ...n[i], [field]: value };
     setProgrammingCodes(n);
   };
 
@@ -42,7 +42,7 @@ export const ProgrammingCodesStep = ({ programmingCodes, setProgrammingCodes }: 
         <div className={isDark ? "text-center py-10 border-2 border-dashed border-slate-700 rounded-2xl mb-4" : "text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl mb-4"}>
           <FiCode size={32} className={isDark ? "text-slate-600 mx-auto mb-3" : "text-slate-300 mx-auto mb-3"} />
           <p className="text-sm text-slate-400 font-medium">No code snippets yet</p>
-          <p className="text-xs text-slate-300 mt-1">Click "Add Code Snippet" to get started</p>
+          <p className="text-xs text-slate-300 mt-1">Click &quot;Add Code Snippet&quot; to get started</p>
         </div>
       ) : (
         <div className="space-y-4">

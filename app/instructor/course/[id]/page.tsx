@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FiLoader, FiEdit2, FiUsers, FiPlay, FiDownload, FiFileText, FiCode, FiHelpCircle, FiMenu } from "react-icons/fi";
+import { AxiosError } from "axios";
+import { FiEdit2, FiUsers, FiPlay, FiDownload, FiFileText, FiCode, FiHelpCircle, FiMenu } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
 import { useAuthStore } from "@/store/auth.store";
 import InstructorSidebar from "@/app/components/InstructorSidebar";
 import { LogoutConfirmModal } from "@/app/components/LogoutConfirmModal";
+import { stripHtml } from "@/lib/htmlUtils";
+import type { Course, CourseVideo, ProgrammingCode, Asset, Quiz, AppliedUser } from "@/types";
 
 export default function CourseViewPage() {
   const router = useRouter();
@@ -14,7 +17,7 @@ export default function CourseViewPage() {
   const courseId = params.id as string;
   const { logout } = useAuthStore();
 
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -39,8 +42,9 @@ export default function CourseViewPage() {
         } else {
           setError("Failed to load course");
         }
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to load course");
+      } catch (err) {
+        const message = err instanceof AxiosError ? err.response?.data?.message : undefined;
+        setError(message || "Failed to load course");
       } finally {
         setIsLoading(false);
       }
@@ -220,7 +224,7 @@ export default function CourseViewPage() {
         {/* Course Overview */}
         <div className="bg-[#FFFFFF] rounded-3xl lg:rounded-4xl border border-slate-50 p-5 lg:p-8 shadow-sm mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold text-[#111827] mb-4">{course.courseName}</h1>
-          <p className="text-slate-600 mb-6 leading-relaxed">{course.description}</p>
+          <p className="text-slate-600 mb-6 leading-relaxed">{stripHtml(course.description)}</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-slate-50 rounded-xl p-4">
@@ -250,7 +254,7 @@ export default function CourseViewPage() {
               Course Videos
             </h2>
             <div className="space-y-6">
-              {course.courseVideos.map((video: any, index: number) => {
+              {course.courseVideos.map((video: CourseVideo, index: number) => {
                 const embedUrl = getYouTubeEmbedUrl(video.videoUrl);
                 return (
                   <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
@@ -321,10 +325,10 @@ export default function CourseViewPage() {
               Programming Codes
             </h2>
             <div className="space-y-4">
-              {course.programmingCodes.map((code: any, index: number) => (
+              {course.programmingCodes.map((code: ProgrammingCode, index: number) => (
                 <div key={index} className="bg-slate-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-[#111827] mb-2">{code.title}</h3>
-                  <p className="text-sm text-slate-600 mb-3">{code.description}</p>
+                  <h3 className="font-semibold text-[#111827] mb-2">{code.fileName || code.language}</h3>
+                  <p className="text-sm text-slate-600 mb-3">{code.explanation}</p>
                   <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm">
                     <code>{code.code}</code>
                   </pre>
@@ -342,7 +346,7 @@ export default function CourseViewPage() {
               Course Assets
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {course.assets.map((asset: any, index: number) => {
+              {course.assets.map((asset: Asset, index: number) => {
                 const viewUrl = getDriveViewUrl(asset.url);
                 return (
                   <a
@@ -376,29 +380,36 @@ export default function CourseViewPage() {
               Quizzes
             </h2>
             <div className="space-y-6">
-              {course.quizzes.map((quiz: any, quizIndex: number) => (
+              {course.quizzes.map((quiz: Quiz, quizIndex: number) => (
                 <div key={quizIndex} className="border border-slate-200 rounded-xl p-4">
                   <h3 className="font-semibold text-[#111827] mb-4">
-                    Q{quizIndex + 1}: {quiz.question}
+                    {quiz.title || `Quiz ${quizIndex + 1}`}
                   </h3>
-                  <div className="space-y-2">
-                    {quiz.options.map((option: string, optIndex: number) => (
-                      <div
-                        key={optIndex}
-                        className={`p-3 rounded-lg border ${
-                          optIndex === quiz.correctAnswer
-                            ? "bg-green-50 border-green-300 text-green-700"
-                            : "bg-slate-50 border-slate-200 text-slate-700"
-                        }`}
-                      >
-                        <span className="font-medium mr-2">{String.fromCharCode(65 + optIndex)}.</span>
-                        {option}
-                        {optIndex === quiz.correctAnswer && (
-                          <span className="ml-2 text-green-600 font-medium">(Correct)</span>
-                        )}
+                  {quiz.questions.map((question, questionIndex) => (
+                    <div key={questionIndex} className="space-y-2 mb-4 last:mb-0">
+                      <p className="font-medium text-slate-800">
+                        Q{questionIndex + 1}: {question.question}
+                      </p>
+                      <div className="space-y-2">
+                        {question.options.map((option, optIndex) => (
+                          <div
+                            key={optIndex}
+                            className={`p-3 rounded-lg border ${
+                              option.isCorrect
+                                ? "bg-green-50 border-green-300 text-green-700"
+                                : "bg-slate-50 border-slate-200 text-slate-700"
+                            }`}
+                          >
+                            <span className="font-medium mr-2">{String.fromCharCode(65 + optIndex)}.</span>
+                            {option.option}
+                            {option.isCorrect && (
+                              <span className="ml-2 text-green-600 font-medium">(Correct)</span>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -413,14 +424,14 @@ export default function CourseViewPage() {
               Enrolled Students ({course.appliedUsers.length})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {course.appliedUsers.map((user: any, index: number) => (
+              {course.appliedUsers.map((user: AppliedUser, index: number) => (
                 <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                    {user.name?.charAt(0) || "U"}
+                    {user.userName?.charAt(0) || "U"}
                   </div>
                   <div>
-                    <p className="font-medium text-[#111827]">{user.name}</p>
-                    <p className="text-xs text-slate-500">{user.email}</p>
+                    <p className="font-medium text-[#111827]">{user.userName}</p>
+                    <p className="text-xs text-slate-500">{user.userEmail}</p>
                   </div>
                 </div>
               ))}

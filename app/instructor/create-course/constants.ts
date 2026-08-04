@@ -3,10 +3,7 @@ export const DRAFT_KEY = "create_course_draft";
 export const STEPS = [
   "Basic Info",
   "Requirements",
-  "Course Videos",
-  "Programming Codes",
-  "Assets",
-  "Quizzes",
+  "Chapters",
   "Review & Submit"
 ];
 

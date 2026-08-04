@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import {
 
-  FiArrowLeft, FiArrowRight, FiCheckCircle, FiLoader, FiX, FiYoutube, FiVideo, FiUpload, FiHelpCircle
+  FiArrowLeft, FiArrowRight, FiCheckCircle, FiLoader, FiHelpCircle
 
 } from "react-icons/fi";
 
@@ -16,16 +16,36 @@ import { courseService } from "@/services/course.service";
 
 import axiosInstance from "@/lib/axios";
 
-import type { CreateCourseRequest, CourseVideo, ProgrammingCode, Asset, Quiz } from "@/types";
+import { getSocket } from "@/lib/socket";
+
+import type { CreateCourseRequest, CourseVideo, Chapter, Asset } from "@/types";
 
 import { activityTracker } from "@/utils/activityTracker";
 import { useThemeStore } from "@/store/theme.store";
 
 
 
+declare global {
+
+  interface Window {
+
+    youtubeAuthUrl?: string;
+
+    driveAuthUrl?: string;
+
+    pendingVideoUpload?: { ci: number; vi: number; g: number; file: File };
+
+    pendingReauth?: { authUrl?: string; videoIndex: number; video: CourseVideo; retryCount: number } | null;
+
+  }
+
+}
+
+
+
 // Import from refactored modules
 
-import { DRAFT_KEY, STEPS } from "./constants";
+import { STEPS } from "./constants";
 
 import { saveDraft, loadDraft, clearDraft } from "./hooks/useDraft";
 
@@ -34,10 +54,6 @@ import { useOAuth } from "./hooks/useOAuth";
 import {
 
   StepIndicator,
-
-  Field,
-
-  ReviewRow,
 
   YouTubeAuthModal,
 
@@ -49,46 +65,43 @@ import {
 
   RequirementsStep,
 
-  VideosStep,
-
-  ProgrammingCodesStep,
-
-  AssetsStep,
-
-  QuizzesStep,
+  ChaptersStep,
 
   ReviewStep
 
 } from "./components";
 
-import { inputCls } from "./utils";
 
 
+// Result a socket waiter resolves with once the background worker finishes.
 
-// ── Empty video template ──────────────────────────────────────────────────────
+type UploadResult = {
 
-const emptyVideo = (): CourseVideo => ({
+  ok: boolean;
 
-  videoUrl: "",
+  status?: string;
 
-  videoTitle: "",
+  message?: string;
 
-  videoDescription: "",
+  authUrl?: string;
 
-  videoDuration: 0,
+  requiresReauth?: boolean;
 
-  isProgrammingVideo: false,
+  videoId?: string;
 
-  isPreview: false,
+  videoUrl?: string;
 
-});
+  url?: string;
+
+  fileId?: string;
+
+};
 
 
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CreateCoursePage() {
-
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -116,7 +129,7 @@ export default function CreateCoursePage() {
 
   const [showUploadConfirmModal, setShowUploadConfirmModal] = useState(false);
 
-  const [pendingUploadFile, setPendingUploadFile] = useState<{ i: number; file: File } | null>(null);
+  const [pendingUploadFile, setPendingUploadFile] = useState<{ ci: number; vi: number; g: number; file: File } | null>(null);
 
   const [showDeletionErrorsModal, setShowDeletionErrorsModal] = useState(false);
 
@@ -150,7 +163,9 @@ export default function CreateCoursePage() {
 
     handleDriveAuth,
 
-    confirmDriveAuth
+    confirmDriveAuth,
+
+    onYouTubeAuthSuccessRef
 
   } = useOAuth();
 
@@ -176,37 +191,235 @@ export default function CreateCoursePage() {
 
 
 
-  // Step 2 — Videos (upload state is transient — not persisted)
+  // Step 2 — Chapters (each chapter owns its videos / codes / assets / quizzes)
 
-  const [videos, setVideos] = useState<CourseVideo[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+
+  const [activeChapter, setActiveChapter] = useState(0);
 
   const [videoUploadState, setVideoUploadState] = useState<
 
-    Record<number, { uploading: boolean; progress: number; error: string }>
+    Record<string, { uploading: boolean; progress: number; error: string; stage?: string }>
 
   >({});
 
-  const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [assetUploadState, setAssetUploadState] = useState<
+
+    Record<number, { uploading: boolean; progress: number; error: string; stage?: string }>
+
+  >({});
+
+  const [isYouTubeReauth, setIsYouTubeReauth] = useState(false);
+
+  // Completion waiters — the upload handlers register a resolver keyed by
+  // "youtube-<index>" / "drive-<index>" BEFORE posting, then await it. The
+  // socket listeners below resolve it when the background worker emits done/failed.
+  const uploadWaitersRef = useRef<Record<string, (result: UploadResult) => void>>({});
+
+  const chaptersRef = useRef<Chapter[]>([]);
+
+  useEffect(() => { chaptersRef.current = chapters; }, [chapters]);
+
+  // Maps a global flat upload index (echoed back by the server) to its
+  // chapter/video (or chapter/asset) location, so socket events can be routed.
+  const uploadTargetRef = useRef<Record<number, { ci: number; vi: number }>>({});
+
+  const assetTargetRef = useRef<Record<number, { ci: number; ai: number }>>({});
 
 
 
-  // Step 3 — Programming Codes
+  // ── Live upload progress via socket ────────────────────────────────────────
 
-  const [programmingCodes, setProgrammingCodes] = useState<ProgrammingCode[]>([]);
+  // The server runs the actual YouTube/Drive upload on a background worker and
+  // emits progress/done/failed events over socket.io. Progress is purely visual;
+  // done/failed also resolve the waiters registered by the upload handlers.
+  useEffect(() => {
+    const videoStateKey = (g: number) => {
+      const target = uploadTargetRef.current[g];
+      return target ? `${target.ci}-${target.vi}` : String(g);
+    };
 
+    const handleYtProgress = (data: { videoIndex?: number; percent?: number; stage?: string }) => {
+      const videoIndex = data.videoIndex;
+      if (typeof videoIndex !== "number") return;
 
+      const key = videoStateKey(videoIndex);
+      setVideoUploadState(prev => {
+        const current = prev[key];
+        if (!current?.uploading) return prev;
+        const pct = data.stage === "done"
+          ? 100
+          : typeof data.percent === "number" && data.percent > current.progress
+            ? data.percent
+            : current.progress;
+        return { ...prev, [key]: { ...current, progress: pct, stage: data.stage ?? current.stage } };
+      });
+    };
 
-  // Step 4 — Assets
+    const handleYtDone = (data: { videoIndex?: number; videoId?: string; videoUrl?: string }) => {
+      const videoIndex = data.videoIndex;
+      if (typeof videoIndex !== "number") return;
 
-  const [assets, setAssets] = useState<Asset[]>([]);
+      const key = videoStateKey(videoIndex);
+      setVideoUploadState(prev => ({
+        ...prev,
+        [key]: { uploading: false, progress: 100, error: "", stage: "done" },
+      }));
+      const target = uploadTargetRef.current[videoIndex];
+      if (target) {
+        setChapters(prev => {
+          const next = prev.map((ch, ci) => {
+            if (ci !== target.ci) return ch;
+            const nextVideos = ch.videos.map((v, vi) =>
+              vi === target.vi ? { ...v, videoUrl: data.videoUrl || "", file: undefined } : v
+            );
+            return { ...ch, videos: nextVideos };
+          });
+          return next;
+        });
+      }
 
-  const assetFileInputRef = useRef<HTMLInputElement | null>(null);
+      const resolve = uploadWaitersRef.current[`youtube-${videoIndex}`];
+      if (resolve) {
+        delete uploadWaitersRef.current[`youtube-${videoIndex}`];
+        resolve({ ok: true, videoId: data.videoId, videoUrl: data.videoUrl });
+      }
+    };
 
+    const handleYtFailed = (data: { videoIndex?: number; status?: string; message?: string; authUrl?: string; requiresReauth?: boolean }) => {
+      const videoIndex = data.videoIndex;
+      if (typeof videoIndex !== "number") return;
 
+      const msg = data.message || "Upload failed";
+      const key = videoStateKey(videoIndex);
+      setVideoUploadState(prev => ({
+        ...prev,
+        [key]: { uploading: false, progress: 0, error: msg, stage: "failed" },
+      }));
 
-  // Step 5 — Quizzes
+      const resolve = uploadWaitersRef.current[`youtube-${videoIndex}`];
+      if (resolve) {
+        delete uploadWaitersRef.current[`youtube-${videoIndex}`];
+        resolve({
+          ok: false,
+          status: data.status || "failed",
+          message: msg,
+          authUrl: data.authUrl,
+          requiresReauth: data.requiresReauth,
+        });
+      }
+    };
 
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+    const handleDriveProgress = (data: { assetIndex?: number; percent?: number; stage?: string }) => {
+      const assetIndex = data.assetIndex;
+      if (typeof assetIndex !== "number") return;
+
+      setAssetUploadState(prev => {
+        const current = prev[assetIndex];
+        if (!current?.uploading) return prev;
+        const pct = data.stage === "done"
+          ? 100
+          : typeof data.percent === "number" && data.percent > current.progress
+            ? data.percent
+            : current.progress;
+        return { ...prev, [assetIndex]: { ...current, progress: pct, stage: data.stage ?? current.stage } };
+      });
+    };
+
+    const handleDriveDone = (data: { assetIndex?: number; url?: string; fileId?: string }) => {
+      const assetIndex = data.assetIndex;
+      if (typeof assetIndex !== "number") return;
+
+      setAssetUploadState(prev => ({
+        ...prev,
+        [assetIndex]: { uploading: false, progress: 100, error: "", stage: "done" },
+      }));
+      const target = assetTargetRef.current[assetIndex];
+      if (target) {
+        setChapters(prev => {
+          const next = prev.map((ch, ci) => {
+            if (ci !== target.ci) return ch;
+            const nextAssets = ch.assets.map((a, ai) =>
+              ai === target.ai ? { ...a, url: data.url || "", file: undefined } : a
+            );
+            return { ...ch, assets: nextAssets };
+          });
+          return next;
+        });
+      }
+
+      const resolve = uploadWaitersRef.current[`drive-${assetIndex}`];
+      if (resolve) {
+        delete uploadWaitersRef.current[`drive-${assetIndex}`];
+        resolve({ ok: true, url: data.url, fileId: data.fileId });
+      }
+    };
+
+    const handleDriveFailed = (data: { assetIndex?: number; message?: string }) => {
+      const assetIndex = data.assetIndex;
+      if (typeof assetIndex !== "number") return;
+
+      const msg = data.message || "Upload failed";
+      setAssetUploadState(prev => ({
+        ...prev,
+        [assetIndex]: { uploading: false, progress: 0, error: msg, stage: "failed" },
+      }));
+
+      const resolve = uploadWaitersRef.current[`drive-${assetIndex}`];
+      if (resolve) {
+        delete uploadWaitersRef.current[`drive-${assetIndex}`];
+        resolve({ ok: false, status: "failed", message: msg });
+      }
+    };
+
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    const attach = (): boolean => {
+      const socket = getSocket();
+      if (!socket?.connected) return false;
+      socket.on("youtube-upload:progress", handleYtProgress);
+      socket.on("youtube-upload:done", handleYtDone);
+      socket.on("youtube-upload:failed", handleYtFailed);
+      socket.on("drive-upload:progress", handleDriveProgress);
+      socket.on("drive-upload:done", handleDriveDone);
+      socket.on("drive-upload:failed", handleDriveFailed);
+      return true;
+    };
+
+    if (!attach()) {
+      pollTimer = setInterval(() => {
+        if (attach() && pollTimer) clearInterval(pollTimer);
+      }, 1500);
+    }
+
+    return () => {
+      if (pollTimer) clearInterval(pollTimer);
+      const socket = getSocket();
+      if (socket) {
+        socket.off("youtube-upload:progress", handleYtProgress);
+        socket.off("youtube-upload:done", handleYtDone);
+        socket.off("youtube-upload:failed", handleYtFailed);
+        socket.off("drive-upload:progress", handleDriveProgress);
+        socket.off("drive-upload:done", handleDriveDone);
+        socket.off("drive-upload:failed", handleDriveFailed);
+      }
+    };
+  }, []);
+
+  // Resolve when the background worker finishes an enqueued upload. Registers the
+  // waiter BEFORE the POST so a fast (in-process fallback) worker can't beat us.
+  const waitForUpload = (type: "youtube" | "drive", index: number, timeoutMs = 20 * 60 * 1000): Promise<UploadResult> => {
+    return new Promise(resolve => {
+      const key = `${type}-${index}`;
+      const timer = setTimeout(() => {
+        delete uploadWaitersRef.current[key];
+        resolve({ ok: false, status: "timeout", message: "Upload timed out. Please try again." });
+      }, timeoutMs);
+      uploadWaitersRef.current[key] = (result) => {
+        clearTimeout(timer);
+        resolve(result);
+      };
+    });
+  };
 
 
 
@@ -242,15 +455,11 @@ export default function CreateCoursePage() {
 
             setRequirements(formData.requirements || [""]);
 
-            setVideos(formData.videos || []);
+            setChapters(formData.chapters || []);
 
-            setProgrammingCodes(formData.programmingCodes || []);
+            setActiveChapter(0);
 
-            setAssets(formData.assets || []);
-
-            setQuizzes(formData.quizzes || []);
-
-            setStep(formData.step || 0);
+            setStep(Math.min(formData.step || 0, STEPS.length - 1));
 
             
 
@@ -298,17 +507,25 @@ export default function CreateCoursePage() {
 
             setRequirements(courseData.courseRequirements || [""]);
 
-            setVideos(courseData.courseVideos || []);
+            const legacyChapters = courseData.chapters?.length
+              ? courseData.chapters
+              : [
+                  {
+                    title: "Chapter 1",
+                    explanation: "",
+                    videos: courseData.courseVideos || [],
+                    programmingCodes: courseData.programmingCodes || [],
+                    assets: courseData.assets || [],
+                    quizzes: courseData.quizzes || [],
+                  },
+                ];
+            setChapters(legacyChapters);
 
-            setProgrammingCodes(courseData.programmingCodes || []);
-
-            setAssets(courseData.assets || []);
-
-            setQuizzes(courseData.quizzes || []);
+            setActiveChapter(0);
 
           }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
 
           console.error("Failed to load course for editing:", err);
 
@@ -324,7 +541,7 @@ export default function CreateCoursePage() {
 
         if (draft) {
 
-          setStep(draft.step ?? 0);
+          setStep(Math.min(draft.step ?? 0, STEPS.length - 1));
 
           setCourseName(draft.courseName ?? "");
 
@@ -338,13 +555,9 @@ export default function CreateCoursePage() {
 
           setRequirements(draft.requirements ?? [""]);
 
-          setVideos(draft.videos ?? []);
+          setChapters(draft.chapters ?? []);
 
-          setProgrammingCodes(draft.programmingCodes ?? []);
-
-          setAssets(draft.assets ?? []);
-
-          setQuizzes(draft.quizzes ?? []);
+          setActiveChapter(0);
 
         }
 
@@ -364,9 +577,9 @@ export default function CreateCoursePage() {
 
   useEffect(() => {
 
-    saveDraft({ step, courseName, description, price, duration, certificate, requirements, videos, programmingCodes, assets, quizzes });
+    saveDraft({ step, courseName, description, price, duration, certificate, requirements, chapters });
 
-  }, [step, courseName, description, price, duration, certificate, requirements, videos, programmingCodes, assets, quizzes]);
+  }, [step, courseName, description, price, duration, certificate, requirements, chapters]);
 
 
 
@@ -446,19 +659,26 @@ export default function CreateCoursePage() {
 
   const validateStep2 = () => {
 
-    // Videos are optional, but if added they must have either a URL or a file, and a title
+    // Chapters are optional, but if any exist they must have a title; a video
+    // is only valid when it has either a URL or a file, and a title.
 
     const errs: Record<string, string> = {};
 
-    videos.forEach((v, i) => {
+    chapters.forEach((ch, ci) => {
 
-      if (!v.videoUrl.trim() && !v.file) {
+      if (!ch.title.trim()) errs[`chapter_title_${ci}`] = "Chapter title is required";
 
-        errs[`video_url_${i}`] = "Video URL or file is required";
+      ch.videos.forEach((v, vi) => {
 
-      }
+        if (!v.videoUrl.trim() && !v.file) {
 
-      if (!v.videoTitle.trim()) errs[`video_title_${i}`] = "Video title is required";
+          errs[`video_url_${ci}-${vi}`] = "Video URL or file is required";
+
+        }
+
+        if (!v.videoTitle.trim()) errs[`video_title_${ci}-${vi}`] = "Video title is required";
+
+      });
 
     });
 
@@ -490,23 +710,43 @@ export default function CreateCoursePage() {
 
 
 
-  // ── Video helpers ─────────────────────────────────────────────────────────
+  // ── Chapter helpers ───────────────────────────────────────────────────────
 
-  const handleVideoFileSelect = (i: number, file: File) => {
-
-    const n = [...videos];
-
-    n[i] = { ...n[i], file };
-
-    if (!n[i].videoTitle) {
-
-      n[i].videoTitle = file.name.replace(/\.[^/.]+$/, "");
-
+  // Global flat index of a video across all chapters (the server echoes this
+  // number back on socket events, so we can route uploads back to chapters).
+  const globalVideoIndex = (ci: number, vi: number) => {
+    const chs = chaptersRef.current;
+    let g = 0;
+    for (let c = 0; c < chs.length; c++) {
+      if (c === ci) return g + vi;
+      g += chs[c].videos.length;
     }
-
-    setVideos(n);
-
+    return g + vi;
   };
+
+  const globalAssetIndex = (ci: number, ai: number) => {
+    const chs = chaptersRef.current;
+    let g = 0;
+    for (let c = 0; c < chs.length; c++) {
+      if (c === ci) return g + ai;
+      g += chs[c].assets.length;
+    }
+    return g + ai;
+  };
+
+  // String key for upload-state, mapping a global flat index to its chapter/video.
+  const videoUploadKey = (g: number) => {
+    const target = uploadTargetRef.current[g];
+    return target ? `${target.ci}-${target.vi}` : String(g);
+  };
+
+  const flattenVideos = (chs: Chapter[]) => chs.flatMap(c => c.videos);
+
+  const flattenAssets = (chs: Chapter[]) => chs.flatMap(c => c.assets);
+
+  const flattenCodes = (chs: Chapter[]) => chs.flatMap(c => c.programmingCodes);
+
+  const flattenQuizzes = (chs: Chapter[]) => chs.flatMap(c => c.quizzes);
 
 
 
@@ -526,13 +766,7 @@ export default function CreateCoursePage() {
 
     requirements,
 
-    videos,
-
-    programmingCodes,
-
-    assets,
-
-    quizzes,
+    chapters,
 
     step,
 
@@ -546,9 +780,13 @@ export default function CreateCoursePage() {
 
   // Handle file selection - show confirmation modal
 
-  const handleFileSelect = (i: number, file: File) => {
+  const handleFileSelect = (ci: number, vi: number, file: File) => {
 
-    setPendingUploadFile({ i, file });
+    const g = globalVideoIndex(ci, vi);
+
+    uploadTargetRef.current[g] = { ci, vi };
+
+    setPendingUploadFile({ ci, vi, g, file });
 
     setShowUploadConfirmModal(true);
 
@@ -564,19 +802,19 @@ export default function CreateCoursePage() {
 
     
 
-    const { i, file } = pendingUploadFile;
+    const { ci, vi, g, file } = pendingUploadFile;
 
     setShowUploadConfirmModal(false);
 
     setPendingUploadFile(null);
 
-
+    const stateKey = `${ci}-${vi}`;
 
     setVideoUploadState((prev) => ({
 
       ...prev,
 
-      [i]: { uploading: true, progress: 0, error: "" },
+      [stateKey]: { uploading: true, progress: 0, error: "" },
 
     }));
 
@@ -584,15 +822,19 @@ export default function CreateCoursePage() {
 
     // Pre-fill title from filename if empty
 
-    const n = [...videos];
+    setChapters(prev => prev.map((ch, c) => {
 
-    if (!n[i].videoTitle) {
+      if (c !== ci) return ch;
 
-      n[i].videoTitle = file.name.replace(/\.[^/.]+$/, "");
+      const nextVideos = ch.videos.map((v, vx) =>
 
-    }
+        vx === vi && !v.videoTitle ? { ...v, videoTitle: file.name.replace(/\.[^/.]+$/, "") } : v
 
-    setVideos(n);
+      );
+
+      return { ...ch, videos: nextVideos };
+
+    }));
 
 
 
@@ -612,17 +854,17 @@ export default function CreateCoursePage() {
 
         setShowYouTubeAuthModal(true);
 
-        (window as any).youtubeAuthUrl = authCheck.data.authUrl;
+        window.youtubeAuthUrl = authCheck.data.authUrl;
 
         // Store the file and index for after auth
 
-        (window as any).pendingVideoUpload = { i, file };
+        window.pendingVideoUpload = { ci, vi, g, file };
 
         setVideoUploadState((prev) => ({
 
           ...prev,
 
-          [i]: { uploading: false, progress: 0, error: "" },
+          [stateKey]: { uploading: false, progress: 0, error: "" },
 
         }));
 
@@ -632,17 +874,25 @@ export default function CreateCoursePage() {
 
 
 
+      // Register the completion waiter BEFORE posting so a fast worker
+      // (in-process fallback) can't finish before we start waiting.
+      const uploadPromise = waitForUpload("youtube", g);
+
+
+
       const formData = new FormData();
 
       formData.append("video", file);
 
-      formData.append("title", videos[i].videoTitle || file.name);
+      formData.append("title", chaptersRef.current[ci]?.videos[vi]?.videoTitle || file.name);
 
-      formData.append("description", videos[i].videoDescription || "");
+      formData.append("description", chaptersRef.current[ci]?.videos[vi]?.videoDescription || "");
 
       formData.append("privacyStatus", "unlisted");
 
       formData.append("tags", "course");
+
+      formData.append("clientVideoIndex", String(g));
 
 
 
@@ -658,7 +908,7 @@ export default function CreateCoursePage() {
 
             ...prev,
 
-            [i]: { uploading: true, progress: pct, error: "" },
+            [stateKey]: { uploading: true, progress: pct, error: "" },
 
           }));
 
@@ -668,43 +918,92 @@ export default function CreateCoursePage() {
 
 
 
-      if (res.data.status === "success" && res.data.videoUrl) {
+      if (res.data.status !== "queued") {
 
-        const updated = [...videos];
-
-        updated[i] = { ...updated[i], videoUrl: res.data.videoUrl, file: undefined };
-
-        setVideos(updated);
-
-        setVideoUploadState((prev) => ({
-
-          ...prev,
-
-          [i]: { uploading: false, progress: 100, error: "" },
-
-        }));
-
-      } else {
-
+        // Server didn't accept the job — drop the waiter so it can't leak.
+        const drop = uploadWaitersRef.current[`youtube-${g}`];
+        if (drop) { delete uploadWaitersRef.current[`youtube-${g}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
         throw new Error(res.data.message || "Upload failed");
 
       }
 
-    } catch (err: any) {
 
-      const msg =
 
-        err?.response?.data?.message ||
+      // Upload enqueued — hand over to server-side progress events
+      setVideoUploadState((prev) => ({
 
-        err?.message ||
+        ...prev,
 
-        "Upload failed. Please try again.";
+        [stateKey]: { uploading: true, progress: 0, stage: "preparing", error: "" },
+
+      }));
+
+
+
+      const result = await uploadPromise;
+
+
+
+      if (!result.ok) {
+
+        if (result.status === "reauth_required" || result.requiresReauth || (result.message || "").toLowerCase().includes("re-authentication")) {
+
+          window.pendingReauth = {
+
+            authUrl: result.authUrl,
+
+            videoIndex: g,
+
+            video: chaptersRef.current[ci]?.videos[vi],
+
+            retryCount: ((window.pendingReauth as { retryCount?: number })?.retryCount || 0) + 1
+
+          };
+
+          setVideoUploadState((prev) => ({
+
+            ...prev,
+
+            [stateKey]: { uploading: false, progress: 0, error: result.message || "" },
+
+          }));
+
+          setIsYouTubeReauth(true);
+
+          handleYouTubeAuth(undefined, result.authUrl);
+
+          return;
+
+        }
+
+        throw new Error(result.message || "Upload failed");
+
+      }
+
+
+
+      // Success — the socket handler already set videoUrl on the chapter; keep state consistent
+      setVideoUploadState((prev) => ({
+
+        ...prev,
+
+        [stateKey]: { uploading: false, progress: 100, error: "", stage: "done" },
+
+      }));
+
+
+
+    } catch (err: unknown) {
+
+      const responseData = (err as { response?: { data?: { status?: string; authUrl?: string; message?: string } } })?.response?.data;
+
+      const msg = responseData?.message || (err as Error)?.message || "Upload failed. Please try again.";
 
       setVideoUploadState((prev) => ({
 
         ...prev,
 
-        [i]: { uploading: false, progress: 0, error: msg },
+        [stateKey]: { uploading: false, progress: 0, error: msg },
 
       }));
 
@@ -740,7 +1039,7 @@ export default function CreateCoursePage() {
 
           setShowYouTubeAuthModal(true);
 
-          (window as any).youtubeAuthUrl = youtubeAuthCheck.data.authUrl;
+          window.youtubeAuthUrl = youtubeAuthCheck.data.authUrl;
 
         }
 
@@ -752,7 +1051,17 @@ export default function CreateCoursePage() {
 
       // Check Google Drive authentication before uploading assets
 
-      const assetsWithFiles = assets.filter(a => a.file);
+      const assetsWithFiles: { asset: Asset; ci: number; ai: number; g: number }[] = [];
+
+      chapters.forEach((ch, ci) => {
+
+        ch.assets.forEach((a, ai) => {
+
+          if (a.file) assetsWithFiles.push({ asset: a, ci, ai, g: globalAssetIndex(ci, ai) });
+
+        });
+
+      });
 
       if (assetsWithFiles.length > 0) {
 
@@ -768,7 +1077,7 @@ export default function CreateCoursePage() {
 
             setShowDriveAuthModal(true);
 
-            (window as any).driveAuthUrl = driveAuthCheck.data.authUrl;
+            window.driveAuthUrl = driveAuthCheck.data.authUrl;
 
           } else {
 
@@ -790,9 +1099,9 @@ export default function CreateCoursePage() {
 
         const deletePayload = {
 
-          courseVideos: videos.map(v => ({ ...v, file: undefined })),
+          courseVideos: flattenVideos(chapters).map(v => ({ ...v, file: undefined })),
 
-          assets: assets.map(a => ({ ...a, file: undefined }))
+          assets: flattenAssets(chapters).map(a => ({ ...a, file: undefined }))
 
         };
 
@@ -832,31 +1141,44 @@ export default function CreateCoursePage() {
 
       // First, upload all videos with files to YouTube
 
-      const videosWithFiles = videos.filter(v => v.file);
+      const videosWithFiles: { video: CourseVideo; ci: number; vi: number; g: number }[] = [];
 
-      const updatedVideos = [...videos];
+      chapters.forEach((ch, ci) => {
+
+        ch.videos.forEach((v, vi) => {
+
+          if (v.file) videosWithFiles.push({ video: v, ci, vi, g: globalVideoIndex(ci, vi) });
+
+        });
+
+      });
+
+      let updatedChapters = chapters;
 
       
 
-      for (let i = 0; i < videosWithFiles.length; i++) {
+      for (const { video, ci, vi, g } of videosWithFiles) {
 
-        const video = videosWithFiles[i];
+        const stateKey = `${ci}-${vi}`;
 
-        const videoIndex = videos.indexOf(video);
-
-        
+        uploadTargetRef.current[g] = { ci, vi };
 
         setVideoUploadState(prev => ({
 
           ...prev,
 
-          [videoIndex]: { uploading: true, progress: 0, error: "" }
+          [stateKey]: { uploading: true, progress: 0, error: "" }
 
         }));
 
 
 
         try {
+
+          // Register the waiter BEFORE posting (worker may finish fast)
+          const uploadPromise = waitForUpload("youtube", g);
+
+
 
           const formData = new FormData();
 
@@ -869,6 +1191,8 @@ export default function CreateCoursePage() {
           formData.append("privacyStatus", "unlisted");
 
           formData.append("tags", "course");
+
+          formData.append("clientVideoIndex", String(g));
 
 
 
@@ -884,7 +1208,7 @@ export default function CreateCoursePage() {
 
                 ...prev,
 
-                [videoIndex]: { uploading: true, progress: pct, error: "" }
+                [stateKey]: { uploading: true, progress: pct, error: "" }
 
               }));
 
@@ -894,33 +1218,92 @@ export default function CreateCoursePage() {
 
 
 
-          if (res.data.status === "success" && res.data.videoUrl) {
+          if (res.data.status !== "queued") {
 
-            updatedVideos[videoIndex] = { ...video, videoUrl: res.data.videoUrl, file: undefined };
-
-            setVideoUploadState(prev => ({
-
-              ...prev,
-
-              [videoIndex]: { uploading: false, progress: 100, error: "" }
-
-            }));
-
-          } else {
-
+            const drop = uploadWaitersRef.current[`youtube-${g}`];
+            if (drop) { delete uploadWaitersRef.current[`youtube-${g}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
             throw new Error(res.data.message || "Upload failed");
 
           }
 
-        } catch (err: any) {
 
-          const msg = err?.response?.data?.message || err?.message || "Upload failed";
+
+          // Enqueued — hand over to server-side progress events
+          setVideoUploadState(prev => ({
+
+            ...prev,
+
+            [stateKey]: { uploading: true, progress: 0, stage: "preparing", error: "" }
+
+          }));
+
+
+
+          const result = await uploadPromise;
+
+
+
+          if (!result.ok) {
+
+            if (result.status === "reauth_required" || result.requiresReauth || (result.message || "").toLowerCase().includes("re-authentication")) {
+
+              setVideoUploadState(prev => ({
+
+                ...prev,
+
+                [stateKey]: { uploading: false, progress: 0, error: result.message || "" }
+
+              }));
+
+
+
+              // Store the auth URL and video index for retry after auth
+              window.pendingReauth = {
+                authUrl: result.authUrl,
+                videoIndex: g,
+                video,
+                retryCount: ((window.pendingReauth as { retryCount?: number })?.retryCount || 0) + 1
+              };
+
+              setIsYouTubeReauth(true);
+
+              // Trigger YouTube authentication with the provided auth URL
+              if (result.authUrl) {
+                window.youtubeAuthUrl = result.authUrl;
+                setShowYouTubeAuthModal(true);
+              } else {
+                // No auth URL provided — fetch a fresh one
+                handleYouTubeAuth();
+              }
+
+              throw new Error(`Re-authentication required for video ${video.videoTitle}`);
+            }
+
+            throw new Error(result.message || "Upload failed");
+          }
+
+          updatedChapters = updatedChapters.map((ch, c) =>
+            c !== ci ? ch
+              : { ...ch, videos: ch.videos.map((v, vx) => vx === vi ? { ...v, videoUrl: result.videoUrl || "", file: undefined } : v) }
+          );
 
           setVideoUploadState(prev => ({
 
             ...prev,
 
-            [videoIndex]: { uploading: false, progress: 0, error: msg }
+            [stateKey]: { uploading: false, progress: 100, error: "", stage: "done" }
+
+          }));
+
+        } catch (err: unknown) {
+          const responseData = (err as { response?: { data?: { status?: string; authUrl?: string; message?: string } } })?.response?.data;
+          const msg = responseData?.message || (err as Error)?.message || "Upload failed";
+
+          setVideoUploadState(prev => ({
+
+            ...prev,
+
+            [stateKey]: { uploading: false, progress: 0, error: msg }
 
           }));
 
@@ -932,31 +1315,30 @@ export default function CreateCoursePage() {
 
 
 
-      setVideos(updatedVideos);
+      setChapters(updatedChapters);
 
 
 
       // Next, upload all assets with files to Google Drive
 
-      const updatedAssets = [...assets];
+      for (const { asset, ci, ai, g } of assetsWithFiles) {
 
-      
-
-      for (let i = 0; i < assetsWithFiles.length; i++) {
-
-        const asset = assetsWithFiles[i];
-
-        const assetIndex = assets.indexOf(asset);
-
-        
+        assetTargetRef.current[g] = { ci, ai };
 
         try {
+
+          // Register the waiter BEFORE posting (worker may finish fast)
+          const uploadPromise = waitForUpload("drive", g);
+
+
 
           const formData = new FormData();
 
           formData.append("file", asset.file!);
 
           formData.append("name", asset.name || asset.file!.name);
+
+          formData.append("clientAssetIndex", String(g));
 
 
 
@@ -968,19 +1350,51 @@ export default function CreateCoursePage() {
 
 
 
-          if (res.data.status === "success" && res.data.url) {
+          if (res.data.status !== "queued") {
 
-            updatedAssets[assetIndex] = { ...asset, url: res.data.url, file: undefined };
-
-          } else {
-
+            const drop = uploadWaitersRef.current[`drive-${g}`];
+            if (drop) { delete uploadWaitersRef.current[`drive-${g}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
             throw new Error(res.data.message || "Upload failed");
 
           }
 
-        } catch (err: any) {
 
-          const msg = err?.response?.data?.message || err?.message || "Upload failed";
+
+          // Enqueued — hand over to server-side progress events
+          setAssetUploadState(prev => ({
+
+            ...prev,
+
+            [g]: { uploading: true, progress: 0, stage: "preparing", error: "" }
+
+          }));
+
+
+
+          const result = await uploadPromise;
+
+
+
+          if (!result.ok) throw new Error(result.message || "Upload failed");
+
+
+
+          updatedChapters = updatedChapters.map((ch, c) =>
+            c !== ci ? ch
+              : { ...ch, assets: ch.assets.map((a, ax) => ax === ai ? { ...a, url: result.url || "", file: undefined } : a) }
+          );
+
+          setAssetUploadState(prev => ({
+
+            ...prev,
+
+            [g]: { uploading: false, progress: 100, error: "", stage: "done" }
+
+          }));
+
+        } catch (err: unknown) {
+
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err as Error)?.message || "Upload failed";
 
           throw new Error(`Failed to upload asset ${asset.name}: ${msg}`);
 
@@ -990,7 +1404,7 @@ export default function CreateCoursePage() {
 
 
 
-      setAssets(updatedAssets);
+      setChapters(updatedChapters);
 
 
 
@@ -1010,13 +1424,23 @@ export default function CreateCoursePage() {
 
         courseRequirements: requirements.filter((r) => r.trim()),
 
-        courseVideos: updatedVideos.map(v => ({ ...v, file: undefined })),
+        chapters: updatedChapters.map(c => ({
 
-        programmingCodes,
+          ...c,
 
-        assets: updatedAssets.map(a => ({ ...a, file: undefined })),
+          videos: c.videos.map(v => ({ ...v, file: undefined })),
 
-        quizzes,
+          assets: c.assets.map(a => ({ ...a, file: undefined })),
+
+        })),
+
+        courseVideos: flattenVideos(updatedChapters).map(v => ({ ...v, file: undefined })),
+
+        programmingCodes: flattenCodes(updatedChapters),
+
+        assets: flattenAssets(updatedChapters).map(a => ({ ...a, file: undefined })),
+
+        quizzes: flattenQuizzes(updatedChapters),
 
       };
 
@@ -1106,9 +1530,9 @@ export default function CreateCoursePage() {
 
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
 
-      setSubmitError(err?.message || "Something went wrong. Please try again.");
+      setSubmitError((err as Error)?.message || "Something went wrong. Please try again.");
 
     } finally {
 
@@ -1156,9 +1580,9 @@ export default function CreateCoursePage() {
 
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
-      setDeletionErrors([error.response?.data?.message || "Failed to retry deletion"]);
+      setDeletionErrors([(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to retry deletion"]);
 
     } finally {
 
@@ -1170,22 +1594,111 @@ export default function CreateCoursePage() {
 
 
 
-  // Override confirmYouTubeAuth to auto-retry deletion after auth
+  const retryPendingYouTubeUpload = async (pendingReauth: { videoIndex: number; video: CourseVideo; retryCount: number }) => {
+    const { videoIndex, video } = pendingReauth;
 
-  const handleConfirmYouTubeAuth = async (formData: any) => {
+    const stateKey = videoUploadKey(videoIndex);
 
+    setVideoUploadState(prev => ({
+      ...prev,
+      [stateKey]: { uploading: true, progress: 0, error: "" }
+    }));
+
+    const formDataForUpload = new FormData();
+    formDataForUpload.append("video", video.file!);
+    formDataForUpload.append("title", video.videoTitle || video.file!.name);
+    formDataForUpload.append("description", video.videoDescription || "");
+    formDataForUpload.append("privacyStatus", "unlisted");
+    formDataForUpload.append("tags", "course");
+    formDataForUpload.append("clientVideoIndex", String(videoIndex));
+
+    let reauthTriggered = false;
+
+    try {
+      // Register the waiter BEFORE posting (worker may finish fast)
+      const uploadPromise = waitForUpload("youtube", videoIndex);
+
+      const res = await axiosInstance.post("/api/youtube/upload", formDataForUpload, {
+        timeout: 0,
+        onUploadProgress: (e) => {
+          const pct = e.total ? Math.round((e.loaded * 100) / e.total) : 0;
+          setVideoUploadState(prev => ({
+            ...prev,
+            [stateKey]: { uploading: true, progress: pct, error: "" }
+          }));
+        },
+      });
+
+      if (res.data.status !== "queued") {
+        const drop = uploadWaitersRef.current[`youtube-${videoIndex}`];
+        if (drop) { delete uploadWaitersRef.current[`youtube-${videoIndex}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
+        throw new Error(res.data.message || "Upload failed");
+      }
+
+      setVideoUploadState(prev => ({
+        ...prev,
+        [stateKey]: { uploading: true, progress: 0, stage: "preparing", error: "" }
+      }));
+
+      const result = await uploadPromise;
+
+      if (!result.ok) {
+        if (result.status === "reauth_required" || result.requiresReauth || (result.message || "").toLowerCase().includes("re-authentication")) {
+          reauthTriggered = true;
+          window.pendingReauth = {
+            authUrl: result.authUrl,
+            videoIndex,
+            video,
+            retryCount: pendingReauth.retryCount + 1
+          };
+          setVideoUploadState(prev => ({
+            ...prev,
+            [stateKey]: { uploading: false, progress: 0, error: result.message || "" }
+          }));
+          setIsYouTubeReauth(true);
+          if (result.authUrl) {
+            window.youtubeAuthUrl = result.authUrl;
+            setShowYouTubeAuthModal(true);
+          } else {
+            handleYouTubeAuth();
+          }
+          return;
+        }
+        throw new Error(result.message || "Upload failed");
+      }
+
+      setVideoUploadState(prev => ({
+        ...prev,
+        [stateKey]: { uploading: false, progress: 100, error: "", stage: "done" }
+      }));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err as Error)?.message || "Upload failed";
+      setVideoUploadState(prev => ({
+        ...prev,
+        [stateKey]: { uploading: false, progress: 0, error: msg }
+      }));
+    } finally {
+      // Clear the pending reauth (unless we just queued a new reauth round)
+      if (!reauthTriggered) {
+        window.pendingReauth = null;
+      }
+    }
+  };
+
+  // Override confirmYouTubeAuth to auto-retry deletion after auth and handle video upload retry
+  const handleConfirmYouTubeAuth = async (formData: Record<string, unknown>) => {
     await confirmYouTubeAuth(formData);
 
-    if (shouldRetryAfterAuth) {
-
-      // Wait a moment for tokens to be saved
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      await handleRetryDeletion();
-
+    // If there's a pending upload, retry it once the OAuth popup reports success
+    const pendingReauth = window.pendingReauth;
+    if (pendingReauth && pendingReauth.videoIndex !== undefined) {
+      onYouTubeAuthSuccessRef.current = () => { retryPendingYouTubeUpload(pendingReauth); };
+      return;
     }
 
+    if (shouldRetryAfterAuth) {
+      onYouTubeAuthSuccessRef.current = () => { handleRetryDeletion(); };
+    }
   };
 
 
@@ -1289,6 +1802,34 @@ export default function CreateCoursePage() {
     );
 
   }
+
+
+
+  // ── Bottom progress bar (visible during uploads / submission) ──────────────
+
+  const activeUploads = Object.entries(videoUploadState).filter(([, s]) => s.uploading);
+
+  const activeAssetUploads = Object.entries(assetUploadState).filter(([, s]) => s.uploading);
+
+  const showBottomProgress = isSubmitting || activeUploads.length > 0 || activeAssetUploads.length > 0;
+
+  const activeUpload = activeUploads[0]?.[1] ?? activeAssetUploads[0]?.[1];
+
+  const activeUploadPct = activeUpload?.progress ?? 0;
+
+  const activeUploadStage = activeUpload?.stage;
+
+  const isAssetPhase = activeUploads.length === 0 && activeAssetUploads.length > 0;
+
+  const stageLabel = activeUploadStage === "preparing"
+    ? "Verifying connection..."
+    : activeUploadStage === "finalizing"
+      ? "Finalizing upload..."
+      : activeUploadStage === "done"
+        ? "Upload complete!"
+        : isAssetPhase
+          ? "Uploading file to Google Drive..."
+          : "Uploading video to YouTube...";
 
 
 
@@ -1410,49 +1951,23 @@ export default function CreateCoursePage() {
 
           {step === 2 && (
 
-            <VideosStep
+            <ChaptersStep
 
-              videos={videos}
+              chapters={chapters}
 
-              setVideos={setVideos}
+              setChapters={setChapters}
+
+              activeChapter={activeChapter}
+
+              setActiveChapter={setActiveChapter}
 
               videoUploadState={videoUploadState}
 
-              setVideoUploadState={setVideoUploadState}
-
               fieldErrors={fieldErrors}
 
-              onFileSelect={handleFileSelect}
+              onVideoFileSelect={handleFileSelect}
 
-              onYouTubeAuth={handleYouTubeAuth}
-
-            />
-
-          )}
-
-
-
-          {step === 3 && (
-
-            <ProgrammingCodesStep
-
-              programmingCodes={programmingCodes}
-
-              setProgrammingCodes={setProgrammingCodes}
-
-            />
-
-          )}
-
-
-
-          {step === 4 && (
-
-            <AssetsStep
-
-              assets={assets}
-
-              setAssets={setAssets}
+              onYouTubeAuth={(authUrl?: string) => { setIsYouTubeReauth(true); handleYouTubeAuth(undefined, authUrl); }}
 
               onDriveAuth={handleDriveAuth}
 
@@ -1462,21 +1977,7 @@ export default function CreateCoursePage() {
 
 
 
-          {step === 5 && (
-
-            <QuizzesStep
-
-              quizzes={quizzes}
-
-              setQuizzes={setQuizzes}
-
-            />
-
-          )}
-
-
-
-          {step === 6 && (
+          {step === 3 && (
 
             <ReviewStep
 
@@ -1492,13 +1993,7 @@ export default function CreateCoursePage() {
 
               requirements={requirements}
 
-              videos={videos}
-
-              programmingCodes={programmingCodes}
-
-              assets={assets}
-
-              quizzes={quizzes}
+              chapters={chapters}
 
               submitError={submitError}
 
@@ -1598,9 +2093,11 @@ export default function CreateCoursePage() {
 
         show={showYouTubeAuthModal}
 
+        reauth={isYouTubeReauth}
+
         onConfirm={() => handleConfirmYouTubeAuth(getFormData())}
 
-        onCancel={() => setShowYouTubeAuthModal(false)}
+        onCancel={() => { setShowYouTubeAuthModal(false); setIsYouTubeReauth(false); }}
 
       />
 
@@ -1620,7 +2117,7 @@ export default function CreateCoursePage() {
 
         file={pendingUploadFile?.file || null}
 
-        lessonIndex={pendingUploadFile?.i || 0}
+        lessonIndex={pendingUploadFile?.vi || 0}
 
         onConfirm={confirmVideoUpload}
 
@@ -1684,7 +2181,7 @@ export default function CreateCoursePage() {
 
             <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
 
-              Click "Authenticate" to re-authenticate with YouTube and get fresh tokens. After authentication, you can retry the deletion or manually clean up the resources from those platforms.
+              Click &quot;Authenticate&quot; to re-authenticate with YouTube and get fresh tokens. After authentication, you can retry the deletion or manually clean up the resources from those platforms.
 
             </p>
 
@@ -1722,9 +2219,9 @@ export default function CreateCoursePage() {
 
                   }
 
-                } catch (err: any) {
+                } catch (err: unknown) {
 
-                  console.error("YouTube auth error:", err);
+                  console.error("YouTube auth error:", err as Error);
 
                   alert("Failed to initiate YouTube authentication. Please try again.");
 
@@ -1778,6 +2275,28 @@ export default function CreateCoursePage() {
 
         </div>
 
+      )}
+
+      {/* Fixed bottom progress loader — stays visible while the server uploads videos */}
+      {showBottomProgress && (
+        <div className={`fixed bottom-0 left-0 right-0 z-50 border-t px-4 py-3 backdrop-blur-md ${isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-slate-200'}`}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 mb-2">
+              <FiLoader size={16} className="text-blue-600 animate-spin shrink-0" />
+              <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#111827]'}`}>{stageLabel}</p>
+              <span className={`ml-auto text-sm font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>{activeUploadPct}%</span>
+            </div>
+            <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+              <div
+                className="h-full bg-gradient-to-r from-blue-600 to-green-500 rounded-full transition-all duration-500"
+                style={{ width: `${activeUploadPct}%` }}
+              />
+            </div>
+            <p className={`text-[11px] mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Do not close or refresh this page while uploading — large videos can take a few minutes.
+            </p>
+          </div>
+        </div>
       )}
 
     </div>

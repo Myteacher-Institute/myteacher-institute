@@ -4,3 +4,4 @@ export { courseService } from './course.service';
 export { userService } from './user.service';
 export { instructorService } from './instructor.service';
 export { adminService } from './admin.service';
+export { paymentService } from './payment.service';

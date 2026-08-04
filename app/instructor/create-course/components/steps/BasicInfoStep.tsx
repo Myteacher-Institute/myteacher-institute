@@ -3,6 +3,8 @@ import { Field } from "../Field";
 import { CERTIFICATE_OPTIONS } from "../../constants";
 import { inputCls } from "../../utils";
 import { useThemeStore } from "@/store/theme.store";
+import { RichTextEditor } from "@/app/components/RichTextEditor";
+import { countWords } from "@/lib/htmlUtils";
 
 interface BasicInfoStepProps {
   courseName: string;
@@ -57,13 +59,13 @@ export const BasicInfoStep = ({
       </Field>
 
       <Field label="Description" error={fieldErrors.description}>
-        <textarea
+        <RichTextEditor
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
           placeholder="Describe what students will learn, who it's for, and what makes it unique..."
-          rows={4}
-          className={`${inputCls(fieldErrors.description, isDark)} resize-none`}
+          maxWords={700}
         />
+        <p className="text-[11px] text-slate-400 mt-1">{countWords(description)}/700 words</p>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">

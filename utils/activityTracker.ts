@@ -1,4 +1,4 @@
-interface Activity {
+export interface Activity {
   id: string;
   action: string;
   detail: string;
