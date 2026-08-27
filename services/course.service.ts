@@ -53,6 +53,13 @@ export interface CoursePreview {
     videoTitle: string;
     videoDuration: number;
   }>;
+  appliedUsers: Array<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+    ipAddress: string;
+    appliedAt: string;
+  }>;
 }
 
 export interface CoursePreviewResponse {
@@ -115,6 +122,15 @@ export const courseService = {
 
   async deleteCourse(courseId: string): Promise<CourseResponse> {
     const response = await axiosInstance.delete(API_ENDPOINTS.COURSES.DELETE(courseId));
+    return response.data;
+  },
+
+  async rateCourse(courseId: string, rating: number, comment: string): Promise<{
+    status: 'success' | 'failed';
+    message: string;
+    averageRating?: number;
+  }> {
+    const response = await axiosInstance.post(`/api/course/${courseId}/rating`, { rating, comment });
     return response.data;
   },
 };

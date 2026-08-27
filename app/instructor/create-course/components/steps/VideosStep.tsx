@@ -54,10 +54,13 @@ export const VideosStep = ({
   };
 
   const handleVideoFileSelect = (i: number, file: File) => {
-    updateVideo(i, "file", file);
-    if (!videos[i].videoTitle) {
-      updateVideo(i, "videoTitle", file.name.replace(/\.[^/.]+$/, ""));
-    }
+    const n = [...videos];
+    n[i] = {
+      ...n[i],
+      file,
+      videoTitle: n[i].videoTitle || file.name.replace(/\.[^/.]+$/, ""),
+    };
+    setVideos(n);
   };
 
   return (
@@ -117,12 +120,12 @@ export const VideosStep = ({
                     <>
                       <FiUpload size={24} className="text-blue-400 mx-auto mb-2" />
                       <p className={isDark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-[#111827]"}>Drag & drop or click to upload</p>
-                      <p className="text-xs text-slate-400 mt-1">MP4, MOV, AVI, MKV — up to 2 GB</p>
+                      <p className="text-xs text-slate-400 mt-1">MP4, MP3, MOV, AVI, MKV — up to 2 GB</p>
                     </>
                   )}
                   <input
                     type="file"
-                    accept="video/*"
+                    accept="video/*,audio/mp3"
                     className="hidden"
                     ref={(el) => { fileInputRefs.current[i] = el; }}
                     onChange={(e) => {

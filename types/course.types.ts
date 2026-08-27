@@ -61,6 +61,14 @@ export interface AppliedUser {
   appliedAt: Date;
 }
 
+export interface CourseRating {
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  ratedAt: Date;
+}
+
 export interface Course {
   _id: string;
   courseName: string;
@@ -72,6 +80,8 @@ export interface Course {
   quizzes: Quiz[];
   courseRequirements: string[];
   appliedUsers: AppliedUser[];
+  ratings: CourseRating[];
+  averageRating: number;
   price: number;
   duration: number;
   certificate: string;

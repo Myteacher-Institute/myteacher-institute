@@ -1,49 +1,59 @@
 "use client";
 
+import React from "react";
 import { FiBell as Bell, FiMenu as MenuIcon, FiX as X } from "react-icons/fi";
+import { useAuthStore } from "@/store/auth.store";
 import { useThemeStore } from "@/store/theme.store";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
-export const DashboardHeader = ({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  notifyOpen, 
+interface HeaderPropT {
+  setSidebarOpen?: (value: boolean) => void;
+  notifyOpen: boolean;
+  setNotifyOpen: (value: boolean) => void;
+  NotificationsContent: React.ComponentType;
+}
+
+export const DashboardHeader = ({
+  setSidebarOpen,
+  notifyOpen,
   setNotifyOpen,
-  NotificationsContent 
-}: any) => {
+  NotificationsContent
+}: HeaderPropT) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-  const handleNotifyToggle = () => {
-    if (window.innerWidth < 1024) {
-      setNotifyOpen(!notifyOpen);
-    }
+  const router = useRouter();
+  const { user } = useAuthStore();
+
+  const handleNotifyClick = () => {
+    router.push('/student/notifications');
   };
 
   return (
     <header className={`h-16 backdrop-blur-md border-b flex items-center justify-between px-4 lg:px-8 sticky top-0 z-50 ${isDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white/80 border-slate-100'}`}>
       <div className="flex items-center gap-3">
-        <button
-          className={`lg:hidden p-2 rounded-lg cursor-pointer ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
-          onClick={() => setSidebarOpen(true)}
-        >
-          <MenuIcon size={22} className={isDark ? 'text-slate-300' : 'text-slate-700'} />
-        </button>
+        {setSidebarOpen && (
+          <button
+            className={`lg:hidden p-2 rounded-lg cursor-pointer ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+            onClick={() => setSidebarOpen(true)}
+          >
+            <MenuIcon size={22} className={isDark ? 'text-slate-300' : 'text-slate-700'} />
+          </button>
+        )}
         <h2 className={`font-bold text-sm lg:text-base whitespace-nowrap ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          Hello, Omeke Charles!
+          {user?.name}
         </h2>
       </div>
 
       <div className="flex items-center gap-3 lg:gap-5 relative">
         <div className="relative">
           <button
-            onClick={handleNotifyToggle}
-            className={`p-2.5 rounded-xl transition-colors lg:cursor-default ${notifyOpen
-                ? isDark
-                ? 'bg-blue-900/30 text-blue-400'
-                : 'bg-blue-50 text-blue-600'
-                : isDark
-                ? 'text-slate-400 hover:bg-slate-800 lg:hover:bg-transparent cursor-pointer'
-                : 'text-slate-400 hover:bg-slate-50 lg:hover:bg-transparent cursor-pointer'
-              }`}
+            onClick={handleNotifyClick}
+            className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
+              isDark
+                ? 'text-slate-400 hover:bg-slate-800'
+                : 'text-slate-400 hover:bg-slate-50'
+            }`}
           >
             <Bell size={19} strokeWidth={2} />
             <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
@@ -67,13 +77,16 @@ export const DashboardHeader = ({
 
         <div className={`flex items-center gap-2 lg:gap-3 pl-3 border-l ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
           <span className={`hidden md:block text-xs font-bold uppercase tracking-tight ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-            Omeke Charles
+            {user?.name}
           </span>
           <div className={`w-9 h-9 rounded-xl overflow-hidden shadow-inner shrink-0 border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-200'}`}>
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Charles"
+            <Image
+              src={user?.profilePicture ? user?.profilePicture : "https://api.dicebear.com/7.x/avataaars/svg?seed=Charles"}
               alt="Omeke Charles Avatar"
+              width={36}
+              height={36}
               className="w-full h-full object-cover"
+              unoptimized
             />
           </div>
         </div>

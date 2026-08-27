@@ -258,7 +258,7 @@ export default function Navbar() {
                                 </div>
                             )}
                         </div>
-                        <a href="/request-mentor" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Mentorship</a>
+                        <a href="/mentors" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Mentorship</a>
                         <a href="/ai-tutor" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>AI Tutor</a>
 
                         {/* Mobile auth section */}

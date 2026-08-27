@@ -12,11 +12,7 @@
     "web_fetch": "prompt",
     "web_search": "prompt",
     "task_tracker": "prompt",
-    "memory": "allow",
-    "request_user_input": "allow",
-    "start_planning": "prompt",
-    "code_search": "allow",
-    "mcp": "allow"
+    "memory": "allow"
   },
   "constraints": {},
   "mcp": {

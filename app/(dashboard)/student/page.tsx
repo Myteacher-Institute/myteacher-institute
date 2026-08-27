@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FiCheckCircle as CheckCircle2,
   FiPlayCircle as PlayCircle,
   FiClock as Clock,
   FiAward as Award,
-  FiX as X,
   FiBook,
   FiAward,
   FiTrendingUp,
@@ -16,16 +16,25 @@ import {
 import type { IconType } from "react-icons";
 import { activityTracker, Activity } from "@/utils/activityTracker";
 import { useThemeStore } from "@/store/theme.store";
+import { useAuthStore } from "@/store/auth.store";
 import { courseService } from "@/services/course.service";
+import { studentService, StudentStats } from "@/services/student.service";
 import { Course } from "@/types";
 import { StatCard } from "@/app/components/constants/Students/statcards";
 import { CourseCard } from "@/app/components/constants/Students/CourseCard";
 import { MentorWidget } from "@/app/components/constants/Students/MentorWidget";
 import { RecommendedSection } from "@/app/components/constants/Students/RecommendedSection";
 import { NotificationsContent } from "@/app/components/constants/Students/NotificationsContent";
-import { SidebarNavContent } from "@/app/components/constants/Students/SidebarNavContent";
+import StudentSidebar from "@/app/components/StudentSidebar";
 import { DashboardHeader } from "@/app/components/constants/Students/DashboardHeader";
 import { FloatingActionButton } from "@/app/components/constants/Students/FloatingActionButton";
+import { RecommendationModal } from "@/app/components/constants/Students/RecommendationModal";
+import CursorFollower from "@/app/components/CursorFollower";
+
+interface UserProfile {
+  recommendations?: string[];
+  recommendationsProvided?: boolean;
+}
 
 // --- MAIN DASHBOARD ---
 export default function Dashboard() {
@@ -36,7 +45,12 @@ export default function Dashboard() {
   const [myCourses, setMyCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [coursesError, setCoursesError] = useState("");
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [stats, setStats] = useState<StudentStats | null>(null);
+  const [statsError, setStatsError] = useState("");
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const { theme } = useThemeStore();
+  const { logout } = useAuthStore();
   const isDark = theme === 'dark';
 
   useEffect(() => {
@@ -64,73 +78,122 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        const res = await studentService.getStats();
+        if (res.status === "success" && res.stats) {
+          setStats(res.stats);
+        } else {
+          setStatsError(res.message || "Could not load your statistics");
+        }
+      } catch {
+        setStatsError("Could not load your statistics. Please try again.");
+      } finally {
+        setLoadingStats(false);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        const res = await studentService.getProfile();
+        if (res.status === "success" && res.user) {
+          // Show recommendation modal if user hasn't provided recommendations
+          // Only check backend status to ensure consistency with MongoDB
+          if (!res.user.recommendationsProvided) {
+            setShowRecommendationModal(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleRecommendationsSubmit = async (recommendations: string[]) => {
+    try {
+      const res = await studentService.updateRecommendations(recommendations);
+      if (res.status === "success") {
+        setShowRecommendationModal(false);
+      }
+    } catch (error) {
+      console.error('Error updating recommendations:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    activityTracker.clearActivities();
+    await logout();
+    window.location.href = '/get-started';
+  };
+
   return (
     <div className={`flex min-h-screen font-sans overflow-x-hidden ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-[#F8FAFC] text-[#1E293B]'}`}>
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/40 z-60 lg:hidden backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <CursorFollower />
+      <StudentSidebar
+        isSidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activePath="/student"
+        onLogout={handleLogout}
+      />
 
-      <aside
-        className={`w-64 border-r fixed h-full z-70 transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
-      >
-        <div className={`p-6 border-b flex items-center justify-between shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-50'}`}>
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
-          </div>
-          <button
-            className={`lg:hidden p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer ${isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-slate-50 text-slate-600'}`}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X size={18} className={isDark ? 'text-slate-400' : 'text-slate-600'} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-4">
-          <SidebarNavContent />
-        </div>
-      </aside>
-
-      <main className="lg:ml-64 flex-1 flex flex-col min-w-0 z-10 relative">
-        <DashboardHeader 
-          sidebarOpen={sidebarOpen}
+      <main className="lg:ml-72 flex-1 flex flex-col min-w-0 z-10 relative">
+        <DashboardHeader
           setSidebarOpen={setSidebarOpen}
           notifyOpen={notifyOpen}
           setNotifyOpen={setNotifyOpen}
-          NotificationsContent={NotificationsContent}  // Fixed: Changed from notification to NotificationsContent
+          NotificationsContent={NotificationsContent}
         />
 
         <div className="p-4 md:p-6 lg:p-8 max-w-full lg:max-w-7xl mx-auto w-full">
           {/* STATS */}
-          <div className="flex lg:grid lg:grid-cols-4 gap-3 lg:gap-6 mb-8 lg:mb-10 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide snap-x">
-            <StatCard
-              label="Completed Courses"
-              value="12"
-              icon={<CheckCircle2 size={20} strokeWidth={2.5} />}
-              iconBgColor="bg-green-500"
-            />
-            <StatCard
-              label="Active Learning"
-              value="4"
-              icon={<PlayCircle size={20} strokeWidth={2.5} />}
-              iconBgColor="bg-blue-500"
-            />
-            <StatCard
-              label="Hours Studied"
-              value="124"
-              icon={<Clock size={20} strokeWidth={2.5} />}
-              iconBgColor="bg-purple-500"
-            />
-            <StatCard
-              label="Badges & Awards"
-              value="8"
-              icon={<Award size={20} strokeWidth={2.5} />}
-              iconBgColor="bg-yellow-500"
-            />
+          <div className="flex lg:grid lg:grid-cols-4 gap-3 lg:gap-6 mb-8 lg:mb-10 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {loadingStats ? (
+              [1, 2, 3, 4].map((i) => (
+                <div key={i} className={`min-w-[200px] rounded-2xl border p-4 lg:p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-lg animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                    <div className={`h-4 w-24 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                  </div>
+                  <div className={`h-8 w-16 rounded-lg animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                </div>
+              ))
+            ) : statsError ? (
+              <div className={`col-span-4 rounded-2xl border p-6 text-center ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+                <p className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{statsError}</p>
+              </div>
+            ) : stats ? (
+              <>
+                <StatCard
+                  label="Completed Courses"
+                  value={stats.completedCourses.toString()}
+                  icon={<CheckCircle2 size={20} strokeWidth={2.5} />}
+                  iconBgColor="bg-green-500"
+                />
+                <StatCard
+                  label="Active Learning"
+                  value={stats.activeLearning.toString()}
+                  icon={<PlayCircle size={20} strokeWidth={2.5} />}
+                  iconBgColor="bg-blue-500"
+                />
+                <StatCard
+                  label="Hours Studied"
+                  value={stats.hoursStudied.toString()}
+                  icon={<Clock size={20} strokeWidth={2.5} />}
+                  iconBgColor="bg-purple-500"
+                />
+                <StatCard
+                  label="Badges & Awards"
+                  value={stats.badgesAndAwards.toString()}
+                  icon={<Award size={20} strokeWidth={2.5} />}
+                  iconBgColor="bg-yellow-500"
+                />
+              </>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
@@ -138,7 +201,7 @@ export default function Dashboard() {
             <div className="lg:col-span-8 space-y-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className={`text-lg lg:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  Continue Learning Omeke Charles
+                  Continue Learning
                 </h3>
                 <button className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
                   View All
@@ -174,17 +237,34 @@ export default function Dashboard() {
                     </Link>
                   </div>
                 ) : (
-                  myCourses.map((course) => (
-                    <CourseCard
-                      key={course._id}
-                      courseId={course._id}
-                      title={course.courseName}
-                      progress={0}
-                      icon={<PlayIcon size={20} strokeWidth={1.5} />}
-                      color="text-blue-600"
-                      bg="bg-blue-50"
-                    />
-                  ))
+                  myCourses.map((course) => {
+                    // Calculate progress from localStorage
+                    let progress = 0;
+                    try {
+                      const completedRaw = localStorage.getItem(`learn_completed_${course._id}`);
+                      if (completedRaw) {
+                        const completed = new Set(JSON.parse(completedRaw));
+                        // Estimate total lessons based on course structure
+                        const totalLessons = course.chapters?.reduce((sum, ch) => sum + (ch.videos?.length || 0), 0) || 
+                                            course.courseVideos?.length || 1;
+                        progress = totalLessons > 0 ? Math.round((completed.size / totalLessons) * 100) : 0;
+                      }
+                    } catch (e) {
+                      console.error('Error calculating progress:', e);
+                    }
+                    
+                    return (
+                      <CourseCard
+                        key={course._id}
+                        courseId={course._id}
+                        title={course.courseName}
+                        progress={progress}
+                        icon={<PlayIcon size={20} strokeWidth={1.5} />}
+                        color="text-blue-600"
+                        bg="bg-blue-50"
+                      />
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -253,14 +333,20 @@ export default function Dashboard() {
 
           <div className="lg:hidden mt-12 pb-10">
             <h3 className={`text-lg lg:text-xl font-black mb-6 tracking-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
-              Recommended for you Omeke Charles
+              Recommended for you
             </h3>
-            <RecommendedSection />  {/* Fixed: Using RecommendedSection component */}
+            <RecommendedSection />
           </div>
         </div>
       </main>
 
       <FloatingActionButton mentorOpen={mentorOpen} setMentorOpen={setMentorOpen} />
+
+      <RecommendationModal
+        isOpen={showRecommendationModal}
+        onClose={() => setShowRecommendationModal(false)}
+        onSubmit={handleRecommendationsSubmit}
+      />
 
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {

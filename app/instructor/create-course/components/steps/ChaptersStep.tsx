@@ -112,7 +112,14 @@ export const ChaptersStep = ({
         <div className={isDark ? "text-center py-10 border-2 border-dashed border-slate-700 rounded-2xl mb-4" : "text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl mb-4"}>
           <FiBookOpen size={32} className={isDark ? "text-slate-600 mx-auto mb-3" : "text-slate-300 mx-auto mb-3"} />
           <p className="text-sm text-slate-400 font-medium">No chapters yet</p>
-          <p className="text-xs text-slate-300 mt-1">Click &quot;Add Chapter&quot; to get started</p>
+          <p className="text-xs text-slate-300 mt-1 mb-4">Organize your course into chapters — each holds its own videos, code, assets and quizzes</p>
+          <button
+            type="button"
+            onClick={addChapter}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 px-4 py-2.5 rounded-xl border border-dashed border-indigo-400/50 hover:bg-indigo-50 transition-colors cursor-pointer"
+          >
+            <FiPlus size={16} /> Add Chapter
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">

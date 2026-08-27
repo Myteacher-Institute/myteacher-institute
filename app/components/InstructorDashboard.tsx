@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { IconType } from 'react-icons';
-import { FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiMenu, FiLoader, FiEdit2, FiEye, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut } from 'react-icons/fi';
+import { FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiTrash2, FiMenu, FiLoader, FiEdit2, FiEye, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut } from 'react-icons/fi';
 import { activityTracker, type Activity } from '@/utils/activityTracker';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -36,6 +36,25 @@ interface InstructorStatistics {
   };
 }
 
+interface CourseCreationJobStatus {
+  jobId: string;
+  jobType?: 'create' | 'edit';
+  courseName: string;
+  status: string;
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
+  error?: string;
+  courseId?: string;
+}
+
+const COURSE_CREATION_STAGE_LABELS: Record<string, string> = {
+  'uploading-videos': 'Uploading videos to YouTube',
+  'uploading-assets': 'Uploading assets to Google Drive',
+  'creating-course': 'Creating course',
+};
+
 const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: StatCardProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -59,8 +78,15 @@ const StatCard = ({ label, value, trend, icon: Icon, iconColor, bgColor }: StatC
 };
 
 export default function InstructorDashboard() {
+  const { logout, user } = useAuthStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+  const router = useRouter();
+  const { socket } = useSocket();
+
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activities] = useState<Activity[]>(() => activityTracker.getFormattedActivities());
+  const [isMounted, setIsMounted] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -75,12 +101,8 @@ export default function InstructorDashboard() {
   const [statistics, setStatistics] = useState<InstructorStatistics | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
-
-  const { logout, user } = useAuthStore();
-  const { theme } = useThemeStore();
-  const isDark = theme === 'dark';
-  const router = useRouter();
-  const { socket } = useSocket();
+  const [courseCreations, setCourseCreations] = useState<CourseCreationJobStatus[]>([]);
+  const hasActiveCreationsRef = useRef(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -129,6 +151,19 @@ export default function InstructorDashboard() {
     }
   }, []);
 
+  const fetchActiveCourseCreations = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get('/api/course/creation/active');
+      if (res.data.status === 'success') {
+        const jobs: CourseCreationJobStatus[] = res.data.jobs || [];
+        hasActiveCreationsRef.current = jobs.some(j => j.status !== 'failed');
+        setCourseCreations(jobs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch active course creations:', error);
+    }
+  }, []);
+
   const getPreviewVideo = (course: Course): CourseVideo | null => {
     if (!course.courseVideos || course.courseVideos.length === 0) {
       return null;
@@ -162,12 +197,12 @@ export default function InstructorDashboard() {
     setActiveDropdown(null);
   };
 
-  // const handleDeleteClick = (course: any) => {
-  //   setCourseToDelete(course);
-  //   setShowDeleteModal(true);
-  //   setDeletePassword('');
-  //   setActiveDropdown(null);
-  // };
+  const handleDeleteClick = (course: Course) => {
+    setCourseToDelete(course);
+    setShowDeleteModal(true);
+    setDeletePassword('');
+    setActiveDropdown(null);
+  };
 
   const handleDeleteConfirm = async () => {
     if (!courseToDelete || !deletePassword) return;
@@ -177,7 +212,7 @@ export default function InstructorDashboard() {
       const res = await axiosInstance.delete(`/api/course/delete/${courseToDelete._id}`, {
         data: { password: deletePassword }
       });
-      
+        
       if (res.data.status === 'success') {
         // Refresh courses list
         fetchInstructorCourses();
@@ -216,9 +251,37 @@ export default function InstructorDashboard() {
     const timeoutId = setTimeout(() => {
       fetchInstructorCourses();
       fetchInstructorStatistics();
+      fetchActiveCourseCreations();
     }, 0);
     return () => clearTimeout(timeoutId);
-  }, [fetchInstructorCourses, fetchInstructorStatistics]);
+  }, [fetchInstructorCourses, fetchInstructorStatistics, fetchActiveCourseCreations]);
+
+  // Refresh activities on socket events
+  const refreshActivities = useCallback(() => {
+    setActivities(activityTracker.getFormattedActivities());
+  }, []);
+
+  // Load activities from localStorage on mount and periodically update time ago strings
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  
+    setActivities(activityTracker.getFormattedActivities());
+    
+    const intervalId = setInterval(() => {
+      setActivities(activityTracker.getFormattedActivities());
+    }, 60000); // Update every minute
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Poll active course-creation jobs while any are in flight (server uploads
+  // continue even if the create-course tab was closed).
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (hasActiveCreationsRef.current) fetchActiveCourseCreations();
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [fetchActiveCourseCreations]);
 
   // Socket event listeners for real-time updates
   useEffect(() => {
@@ -227,33 +290,64 @@ export default function InstructorDashboard() {
     const handleCourseCreated = () => {
       fetchInstructorCourses();
       fetchInstructorStatisticsSilent();
+      refreshActivities();
     };
 
     const handleCourseUpdated = () => {
       fetchInstructorCourses();
+      refreshActivities();
     };
 
     const handleCourseDeleted = () => {
       fetchInstructorCourses();
       fetchInstructorStatisticsSilent();
+      refreshActivities();
     };
 
     const handleCourseRated = () => {
       fetchInstructorStatisticsSilent();
     };
 
+    const handleCourseCreationProgress = (data: CourseCreationJobStatus) => {
+      hasActiveCreationsRef.current = data.status !== 'failed';
+      setCourseCreations(prev => {
+        const existing = prev.some(j => j.jobId === data.jobId);
+        return existing ? prev.map(j => j.jobId === data.jobId ? { ...j, ...data } : j) : [...prev, data];
+      });
+    };
+
+    const handleCourseCreationDone = (data: { jobId: string }) => {
+      setCourseCreations(prev => {
+        const remaining = prev.filter(j => j.jobId !== data.jobId);
+        hasActiveCreationsRef.current = remaining.some(j => j.status !== 'failed');
+        return remaining;
+      });
+      fetchInstructorCourses();
+      fetchInstructorStatisticsSilent();
+    };
+
+    const handleCourseCreationFailed = (data: { jobId: string; message: string }) => {
+      setCourseCreations(prev => prev.map(j => j.jobId === data.jobId ? { ...j, status: 'failed', error: data.message } : j));
+    };
+
     socket.on('course:created', handleCourseCreated);
     socket.on('course:updated', handleCourseUpdated);
     socket.on('course:deleted', handleCourseDeleted);
     socket.on('course:rated', handleCourseRated);
+    socket.on('course-creation:progress', handleCourseCreationProgress);
+    socket.on('course-creation:done', handleCourseCreationDone);
+    socket.on('course-creation:failed', handleCourseCreationFailed);
 
     return () => {
       socket.off('course:created', handleCourseCreated);
       socket.off('course:updated', handleCourseUpdated);
       socket.off('course:deleted', handleCourseDeleted);
       socket.off('course:rated', handleCourseRated);
+      socket.off('course-creation:progress', handleCourseCreationProgress);
+      socket.off('course-creation:done', handleCourseCreationDone);
+      socket.off('course-creation:failed', handleCourseCreationFailed);
     };
-  }, [socket, fetchInstructorCourses, fetchInstructorStatisticsSilent]);
+  }, [socket, fetchInstructorCourses, fetchInstructorStatisticsSilent, refreshActivities]);
 
   return (
     <div className={isDark ? "flex min-h-screen font-poppins relative bg-slate-900" : "flex min-h-screen font-poppins relative bg-[#FDFDFD]"}>
@@ -358,6 +452,50 @@ export default function InstructorDashboard() {
             </>
           )}
         </div>
+
+        {courseCreations.length > 0 && (
+          <section className={isDark ? "rounded-3xl lg:rounded-4xl border p-5 lg:p-8 shadow-sm bg-slate-800 border-slate-700 mb-10" : "rounded-3xl lg:rounded-4xl border p-5 lg:p-8 shadow-sm bg-[#FFFFFF] border-slate-50 mb-10"}>
+            <div className="flex items-center gap-3 mb-6">
+              <FiLoader size={20} className="animate-spin text-[#2563EB]" />
+              <h3 className={isDark ? "font-bold text-lg lg:text-xl text-white" : "font-bold text-lg lg:text-xl text-[#111827]"}>
+                {courseCreations.every((j) => j.jobType === 'edit') ? 'Course Update in Progress' : 'Course Creation in Progress'}
+              </h3>
+            </div>
+            <div className="space-y-6">
+              {courseCreations.map((job) => {
+                const failed = job.status === 'failed';
+                const stageLabel = COURSE_CREATION_STAGE_LABELS[job.stage] || job.stage;
+                return (
+                  <div key={job.jobId}>
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                      <div className="min-w-0">
+                        <p className={isDark ? "font-semibold text-sm truncate text-white" : "font-semibold text-sm truncate text-[#111827]"}>{job.courseName}</p>
+                        <p className={isDark ? "text-xs mt-0.5 text-slate-400" : "text-xs mt-0.5 text-slate-600"}>
+                          {failed ? 'Failed' : `${stageLabel}${job.total > 0 ? ` · ${job.current}/${job.total} items` : ''}`}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 px-3 py-1 text-[11px] font-bold rounded-full ${failed ? 'bg-red-50 text-red-600' : 'bg-[#E7F9F1] text-[#5CC68C]'}`}>
+                        {failed ? 'Failed' : `${job.percent}%`}
+                      </span>
+                    </div>
+                    <div className={isDark ? "h-2 rounded-full overflow-hidden bg-slate-700" : "h-2 rounded-full overflow-hidden bg-slate-100"}>
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${failed ? 'bg-red-500' : 'bg-[#2563EB]'}`}
+                        style={{ width: `${failed ? 100 : Math.min(100, job.percent)}%` }}
+                      />
+                    </div>
+                    {failed && job.error && (
+                      <p className="text-xs text-red-500 mt-2">{job.error}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p className={isDark ? "text-[11px] mt-5 text-slate-400" : "text-[11px] mt-5 text-slate-500"}>
+              Uploads continue in the background — you can safely leave this page.
+            </p>
+          </section>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <section className={isDark ? "lg:col-span-2 rounded-3xl lg:rounded-4xl border p-5 lg:p-8 shadow-sm bg-slate-800 border-slate-700" : "lg:col-span-2 rounded-3xl lg:rounded-4xl border p-5 lg:p-8 shadow-sm bg-[#FFFFFF] border-slate-50"}>
@@ -469,7 +607,7 @@ export default function InstructorDashboard() {
                               >
                                 <FiEye size={16} /> View
                               </button>
-                              {/* <button
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteClick(course);
@@ -477,7 +615,7 @@ export default function InstructorDashboard() {
                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                               >
                                 <FiTrash2 size={16} /> Delete
-                              </button> */}
+                              </button>
                             </div>
                           )}
                         </div>
@@ -496,7 +634,7 @@ export default function InstructorDashboard() {
                 <button className="text-[#2563EB] cursor-pointer font-bold text-sm">View all</button>
               </div>
               <div className="space-y-6">
-                {activities.length === 0 ? (
+                {!isMounted || activities.length === 0 ? (
                   <p className={isDark ? "text-sm text-center py-4 text-slate-400" : "text-sm text-center py-4 text-slate-500"}>No recent activities</p>
                 ) : (
                   activities.slice(0, 5).map((activity) => {

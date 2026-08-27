@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiMoreHorizontal, FiEdit2, FiEye, FiTrash2, FiPlus, FiMenu } from 'react-icons/fi';
+import { FiMoreHorizontal, FiEdit2, FiEye, FiPlus, FiMenu } from 'react-icons/fi';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -10,18 +10,18 @@ import axiosInstance from '@/lib/axios';
 import DeleteModal from '@/app/components/DeleteModal';
 import InstructorSidebar from '@/app/components/InstructorSidebar';
 import { LogoutConfirmModal } from '@/app/components/LogoutConfirmModal';
+import type { Course, CourseVideo } from '@/types';
 
 export default function AllCoursesPage() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [allCourses, setAllCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState<any>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deletionErrors, setDeletionErrors] = useState<string[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -61,7 +61,10 @@ export default function AllCoursesPage() {
   }, []);
 
   useEffect(() => {
-    fetchInstructorCourses();
+    const timeoutId = setTimeout(() => {
+      fetchInstructorCourses();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [user?._id, fetchInstructorCourses]);
 
   // Intersection Observer for progressive loading
@@ -97,11 +100,11 @@ export default function AllCoursesPage() {
     return () => observer.disconnect();
   }, [allCourses, loadedCourseIds, courses]);
 
-  const getPreviewVideo = (course: any) => {
+  const getPreviewVideo = (course: Course): CourseVideo | null => {
     if (!course.courseVideos || course.courseVideos.length === 0) {
       return null;
     }
-    const previewVideo = course.courseVideos.find((v: any) => v.isPreview === true);
+    const previewVideo = course.courseVideos.find((v: CourseVideo) => v.isPreview === true);
     return previewVideo || null;
   };
 
@@ -120,7 +123,7 @@ export default function AllCoursesPage() {
           return `https://www.youtube.com/embed/${videoId}`;
         }
       }
-    } catch (e) {
+    } catch {
       console.error('Invalid YouTube URL:', videoUrl);
     }
     return null;
@@ -130,11 +133,11 @@ export default function AllCoursesPage() {
     setActiveDropdown(activeDropdown === index ? null : index);
   };
 
-  const handleEditCourse = (course: any) => {
+  const handleEditCourse = (course: Course) => {
     router.push(`/instructor/edit-course/${course._id}`);
   };
 
-  const handleViewCourse = (course: any) => {
+  const handleViewCourse = (course: Course) => {
     router.push(`/instructor/course/${course._id}`);
   };
 
@@ -150,7 +153,6 @@ export default function AllCoursesPage() {
     }
 
     setIsDeleting(true);
-    setDeletionErrors([]);
 
     try {
       const res = await axiosInstance.delete(`/api/course/delete/${courseToDelete._id}`, {
@@ -163,17 +165,12 @@ export default function AllCoursesPage() {
         setCourseToDelete(null);
         fetchInstructorCourses();
       } else {
-        if (res.data.deletionErrors && res.data.deletionErrors.length > 0) {
-          setDeletionErrors(res.data.deletionErrors);
-        }
+        alert(res.data.message || 'Failed to delete course');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete course error:', error);
-      if (error.response?.data?.deletionErrors) {
-        setDeletionErrors(error.response.data.deletionErrors);
-      } else {
-        setDeletionErrors(['Failed to delete course. Please try again.']);
-      }
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      alert(axiosError.response?.data?.message || 'Failed to delete course. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -261,7 +258,7 @@ export default function AllCoursesPage() {
                 </button>
               </div>
             ) : (
-              allCourses.map((course: any, i: number) => {
+              allCourses.map((course: Course, i: number) => {
                 const isLoaded = loadedCourseIds.has(i);
                 const previewVideo = getPreviewVideo(course);
                 const embedUrl = previewVideo ? getYouTubeEmbedUrl(previewVideo.videoUrl) : null;
@@ -314,7 +311,7 @@ export default function AllCoursesPage() {
                               <FiMoreHorizontal size={20} />
                             </button>
                             {activeDropdown === i && (
-                              <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50">
+                              <div className={isDark ? "absolute right-0 top-full mt-2 w-40 rounded-xl shadow-lg border py-2 z-50 bg-slate-800 border-slate-700" : "absolute right-0 top-full mt-2 w-40 rounded-xl shadow-lg border py-2 z-50 bg-white border-slate-100"}>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -375,7 +372,6 @@ export default function AllCoursesPage() {
             onClose={() => {
               setShowDeleteModal(false);
               setDeletePassword('');
-              setDeletionErrors([]);
               setCourseToDelete(null);
             }}
             onConfirm={handleDeleteConfirm}
@@ -383,7 +379,6 @@ export default function AllCoursesPage() {
             deletePassword={deletePassword}
             setDeletePassword={setDeletePassword}
             isDeleting={isDeleting}
-            deletionErrors={deletionErrors}
           />
         )}
       </main>

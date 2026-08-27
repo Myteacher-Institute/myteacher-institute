@@ -8,6 +8,7 @@ import { python } from "@codemirror/lang-python";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { useThemeStore } from "@/store/theme.store";
+import { RichTextEditor } from "@/app/components/RichTextEditor";
 
 interface ProgrammingCodesStepProps {
   programmingCodes: ProgrammingCode[];
@@ -123,12 +124,13 @@ export const ProgrammingCodesStep = ({ programmingCodes, setProgrammingCodes }: 
               </Field>
 
               <Field label="Explanation">
-                <textarea
+                <RichTextEditor
                   value={code.explanation}
-                  onChange={(e) => updateProgrammingCode(i, "explanation", e.target.value)}
-                  placeholder="Explain what this code does..."
-                  rows={2}
-                  className={`${inputCls(undefined, isDark)} resize-none`}
+                  onChange={(html) => updateProgrammingCode(i, "explanation", html)}
+                  placeholder="Explain what this code does... You can add lists, links, and format the text."
+                  minHeight={80}
+                  maxHeight={200}
+                  maxWords={300}
                 />
               </Field>
             </div>

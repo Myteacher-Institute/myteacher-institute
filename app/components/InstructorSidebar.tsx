@@ -59,7 +59,7 @@ export default function InstructorSidebar({ isSidebarOpen, setSidebarOpen, activ
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-3">
             <Image 
-              src={`${(user as any)?.profilePicture || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400'}`} 
+              src={`${(user as unknown as { profilePicture?: string })?.profilePicture || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400'}`} 
               width={80} 
               height={80} 
               className="w-20 h-20 rounded-full object-cover p-1 border border-slate-100" 

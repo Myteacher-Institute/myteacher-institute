@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiLoader, FiSettings, FiUser, FiTrash2, FiAlertTriangle, FiMoon, FiSun, FiCheck, FiX, FiUpload, FiShare2, FiCopy } from "react-icons/fi";
+import Image from "next/image";
+import { FiLoader, FiUser, FiTrash2, FiAlertTriangle, FiMoon, FiSun, FiCheck, FiX, FiUpload, FiShare2, FiCopy, FiAward, FiMessageCircle } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
 import InstructorSidebar from "@/app/components/InstructorSidebar";
 import DeleteAccountModal from "@/app/components/DeleteAccountModal";
 import { useAuthStore } from "@/store/auth.store";
 import { useThemeStore } from "@/store/theme.store";
+import { mentorService } from "@/services/mentor.service";
 
 export default function InstructorSettingsPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "affiliate" | "delete" | "bug">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "mentor" | "affiliate" | "delete" | "bug">("profile");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -19,6 +21,86 @@ export default function InstructorSettingsPage() {
   const { logout, user, setUser } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const router = useRouter();
+
+  // ===== Become a Mentor state =====
+  const [mentorState, setMentorState] = useState<"loading" | "active" | "inactive">("loading");
+  const [isTogglingMentor, setIsTogglingMentor] = useState(false);
+  const [mentorForm, setMentorForm] = useState({
+    whatsappNumber: "",
+    mentorshipBio: "",
+    mentorshipPrice: "",
+  });
+
+  const loadMentorStatus = async () => {
+    try {
+      const res = await mentorService.getMentorStatus();
+      if (res.isMentor) {
+        setMentorState("active");
+        setMentorForm({
+          whatsappNumber: res.mentorProfile?.whatsappNumber || "",
+          mentorshipBio: res.mentorProfile?.mentorshipBio || "",
+          mentorshipPrice: res.mentorProfile?.mentorshipPrice ? String(res.mentorProfile.mentorshipPrice) : "",
+        });
+      } else {
+        setMentorState("inactive");
+      }
+    } catch {
+      setMentorState("inactive");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "mentor") {
+      const t = setTimeout(loadMentorStatus, 0);
+      return () => clearTimeout(t);
+    }
+  }, [activeTab]);
+
+  const handleToggleMentorship = async (activate: boolean) => {
+    setIsTogglingMentor(true);
+    setError("");
+    setSuccess("");
+    try {
+      if (activate) {
+        if (!mentorForm.whatsappNumber.trim()) {
+          setError("WhatsApp number is required to activate mentorship");
+          setIsTogglingMentor(false);
+          return;
+        }
+        if (!mentorForm.mentorshipPrice || Number(mentorForm.mentorshipPrice) <= 0) {
+          setError("Enter your price per session to activate mentorship");
+          setIsTogglingMentor(false);
+          return;
+        }
+
+        const res = await mentorService.becomeMentor({
+          isMentor: true,
+          whatsappNumber: mentorForm.whatsappNumber.trim(),
+          mentorshipBio: mentorForm.mentorshipBio.trim() || undefined,
+          mentorshipPrice: Number(mentorForm.mentorshipPrice),
+        });
+        if (res.status === 'success') {
+          setMentorState("active");
+          setSuccess(res.message || "Mentorship activated successfully");
+        } else {
+          setError(res.message || "Failed to activate mentorship");
+        }
+      } else {
+        const res = await mentorService.becomeMentor({ isMentor: false });
+        if (res.status === 'success') {
+          setMentorState("inactive");
+          setSuccess(res.message || "Mentorship deactivated");
+        } else {
+          setError(res.message || "Failed to deactivate mentorship");
+        }
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(message || "Failed to update mentorship status");
+    } finally {
+      setIsTogglingMentor(false);
+    }
+  };
 
   // Affiliate account state
   const [affiliateState, setAffiliateState] = useState<"loading" | "active" | "inactive">("loading");
@@ -82,13 +164,21 @@ export default function InstructorSettingsPage() {
   };
 
   // Profile form state
+  const instructorUser = (user ?? {}) as {
+    name?: string;
+    email?: string;
+    phone?: string;
+    bio?: string;
+    expertise?: string[];
+    profilePicture?: string;
+  };
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: (user as any)?.phone || "",
-    bio: (user as any)?.bio || "",
-    expertise: (user as any)?.expertise || [],
-    profilePicture: (user as any)?.profilePicture || ""
+    name: instructorUser.name || "",
+    email: instructorUser.email || "",
+    phone: instructorUser.phone || "",
+    bio: instructorUser.bio || "",
+    expertise: instructorUser.expertise || [] as string[],
+    profilePicture: instructorUser.profilePicture || ""
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -124,8 +214,9 @@ export default function InstructorSettingsPage() {
       } else {
         setUploadError(res.data.message || "Failed to upload image");
       }
-    } catch (err: any) {
-      setUploadError(err.response?.data?.message || "Failed to upload image");
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setUploadError(message || "Failed to upload image");
     } finally {
       setIsUploadingPicture(false);
     }
@@ -193,8 +284,9 @@ export default function InstructorSettingsPage() {
       } else {
         setError(res.data.message || "Failed to update profile");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update profile");
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(message || "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -215,8 +307,9 @@ export default function InstructorSettingsPage() {
       } else {
         setError(res.data.message || "Failed to report bug");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to report bug");
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(message || "Failed to report bug");
     } finally {
       setIsLoading(false);
     }
@@ -295,6 +388,19 @@ export default function InstructorSettingsPage() {
           >
             <FiUser className="inline mr-2" size={18} />
             Edit Profile
+          </button>
+          <button
+            onClick={() => setActiveTab("mentor")}
+            className={`px-4 py-3 font-medium transition-colors border-b-2 ${
+              activeTab === "mentor"
+                ? "border-blue-600 text-blue-600"
+                : isDark
+                ? "border-transparent text-slate-400 hover:text-white"
+                : "border-transparent text-slate-500 hover:text-[#111827]"
+            }`}
+          >
+            <FiAward className="inline mr-2" size={18} />
+            Become a Mentor
           </button>
           <button
             onClick={() => setActiveTab("affiliate")}
@@ -426,9 +532,11 @@ export default function InstructorSettingsPage() {
                       </div>
                     ) : profileForm.profilePicture ? (
                       <div className="space-y-3">
-                        <img
+                        <Image
                           src={profileForm.profilePicture}
                           alt="Profile preview"
+                          width={96}
+                          height={96}
                           className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-slate-300"
                         />
                         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -495,6 +603,183 @@ export default function InstructorSettingsPage() {
                 Save Changes
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Become a Mentor Tab */}
+        {activeTab === "mentor" && (
+          <div className={`p-6 rounded-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <FiAward className="text-blue-600" />
+              Become a Mentor
+            </h3>
+
+            {mentorState === "loading" && (
+              <div className="flex items-center gap-3 text-slate-500">
+                <FiLoader className="animate-spin text-blue-600" size={20} />
+                <span className="text-sm">Loading mentorship status...</span>
+              </div>
+            )}
+
+            {mentorState === "inactive" && (
+              <div className="space-y-6">
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'} border ${isDark ? 'border-slate-600' : 'border-slate-200'}`}>
+                  <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    Activate your mentorship account to appear in the mentors directory.
+                    Students will discover you, request your guidance, and pay for sessions
+                    directly — 70% of every payment goes to you. A valid WhatsApp number is
+                    required so students can chat with you once a mentorship starts.
+                  </p>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    WhatsApp Number (international format)
+                  </label>
+                  <input
+                    type="tel"
+                    value={mentorForm.whatsappNumber}
+                    onChange={(e) => setMentorForm({ ...mentorForm, whatsappNumber: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500'
+                        : 'bg-white border-slate-200 text-[#111827] placeholder-slate-400 focus:border-blue-500'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    placeholder="+2348012345678"
+                  />
+                  <p className={`text-xs mt-2 flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <FiMessageCircle size={14} /> We verify this number is on WhatsApp before activating your account
+                  </p>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Price per Session (₦)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={mentorForm.mentorshipPrice}
+                    onChange={(e) => setMentorForm({ ...mentorForm, mentorshipPrice: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500'
+                        : 'bg-white border-slate-200 text-[#111827] placeholder-slate-400 focus:border-blue-500'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    placeholder="e.g. 25000"
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Mentorship Bio
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={mentorForm.mentorshipBio}
+                    onChange={(e) => setMentorForm({ ...mentorForm, mentorshipBio: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500'
+                        : 'bg-white border-slate-200 text-[#111827] placeholder-slate-400 focus:border-blue-500'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none`}
+                    placeholder="Describe what students can expect from your mentorship — goals you help with, your experience, session structure..."
+                  />
+                </div>
+                <button
+                  onClick={() => handleToggleMentorship(true)}
+                  disabled={isTogglingMentor}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isTogglingMentor ? <FiLoader className="animate-spin" size={20} /> : <FiAward size={20} />}
+                  Activate Mentorship
+                </button>
+              </div>
+            )}
+
+            {mentorState === "active" && (
+              <div className="space-y-6">
+                <div className="rounded-xl p-4 bg-green-50 border border-green-200">
+                  <p className="text-green-700 text-sm font-medium">
+                    <FiCheck className="inline mr-1" size={16} />
+                    Mentorship account is active — students can now find and request you as their mentor
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      WhatsApp Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={mentorForm.whatsappNumber}
+                      onChange={(e) => setMentorForm({ ...mentorForm, whatsappNumber: e.target.value })}
+                      className={`w-full px-4 py-3 rounded-xl border ${
+                        isDark
+                          ? 'bg-slate-700 border-slate-600 text-white'
+                          : 'bg-white border-slate-200 text-[#111827]'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Price per Session (₦)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={mentorForm.mentorshipPrice}
+                      onChange={(e) => setMentorForm({ ...mentorForm, mentorshipPrice: e.target.value })}
+                      className={`w-full px-4 py-3 rounded-xl border ${
+                        isDark
+                          ? 'bg-slate-700 border-slate-600 text-white'
+                          : 'bg-white border-slate-200 text-[#111827]'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Mentorship Bio
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={mentorForm.mentorshipBio}
+                    onChange={(e) => setMentorForm({ ...mentorForm, mentorshipBio: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? 'bg-slate-700 border-slate-600 text-white'
+                        : 'bg-white border-slate-200 text-[#111827]'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none`}
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleToggleMentorship(true)}
+                    disabled={isTogglingMentor}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isTogglingMentor ? <FiLoader className="animate-spin" size={20} /> : <FiCheck size={20} />}
+                    Update Mentor Profile
+                  </button>
+                  <button
+                    onClick={() => router.push('/instructor/mentor-requests')}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer ${
+                      isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    View Requests
+                  </button>
+                  <button
+                    onClick={() => handleToggleMentorship(false)}
+                    disabled={isTogglingMentor}
+                    className="border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ml-auto"
+                  >
+                    {isTogglingMentor ? <FiLoader className="animate-spin" size={20} /> : <FiX size={20} />}
+                    Deactivate
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -660,7 +945,7 @@ export default function InstructorSettingsPage() {
                 </label>
                 <select
                   value={bugForm.priority}
-                  onChange={(e) => setBugForm({ ...bugForm, priority: e.target.value as any })}
+                  onChange={(e) => setBugForm({ ...bugForm, priority: e.target.value as "low" | "medium" | "high" | "critical" })}
                   className={`w-full px-4 py-3 rounded-xl border ${
                     isDark 
                       ? 'bg-slate-700 border-slate-600 text-white focus:border-orange-500' 

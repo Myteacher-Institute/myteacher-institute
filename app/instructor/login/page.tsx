@@ -156,17 +156,17 @@ export default function InstructorLoginPage() {
 
             {/* Links */}
             <div className="mt-6 text-center space-y-2 w-full">
-              <Link href="/instructor/reset-password" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
+              <Link href="/instructor/reset-password" className={ isDark ? "text-sm text-[#fff] hover:underline cursor-pointer block" : "text-sm text-[#223D85] hover:underline cursor-pointer block"}>
                 Forgot password?
               </Link>
-              <Link href="/instructor/apply" className="text-sm text-[#223D85] hover:underline cursor-pointer block">
+              <Link href="/instructor/apply" className={ isDark ? "text-sm text-[#fff] hover:underline cursor-pointer block" : "text-sm text-[#223D85] hover:underline cursor-pointer block"}>
                 Apply to become an Instructor
               </Link>
               <div className='text-sm text-[#71717a]'>--- Or ----</div>
-              <Link href="/admin/login" className="text-sm text-[#223D85] hover:underline cursor-pointer block">
+              <Link href="/admin/login" className={ isDark ? "text-sm text-[#fff] hover:underline cursor-pointer block" : "text-sm text-[#223D85] hover:underline cursor-pointer block"}>
                 Login As Admin
               </Link>
-              <Link href="/get-started" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
+              <Link href="/get-started" className={ isDark ? "text-sm text-[#fff] hover:text-[#111111] cursor-pointer block" : "text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block"}>
                 ← Back to User Login
               </Link>
             </div>

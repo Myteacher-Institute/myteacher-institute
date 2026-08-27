@@ -14,6 +14,8 @@ export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { checkUserExists, login, verifyOtp, isLoading, error, clearInstruction } = useAuthStore();
+  // verifyOtp is kept for future use
+  void verifyOtp;
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const [email, setEmail] = useState('');
@@ -77,7 +79,7 @@ export default function AuthPage() {
     const result = verifyPasswordSchema.safeParse({ email, password });
     if (!result.success) {
       const errors: Record<string, string> = {};
-      result.error.issues.forEach((err: any) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           errors[err.path[0] as string] = err.message;
         }
@@ -112,6 +114,7 @@ export default function AuthPage() {
 
         {/* Left Section: Image Split */}
         <div className="w-full relative min-h-[300px] md:min-h-full bg-[#eaeaea]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1000&auto=format&fit=crop"
             alt="Student with VR Headset"
@@ -125,7 +128,8 @@ export default function AuthPage() {
           {/* Logo Assembly - Precise Vector Dimensions */}
           {/* FIXED: Added mb-10 for clean layout spacing before the heading */}
           <div className="flex items-center gap-3 mb-10 flex-shrink-0">
-            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-[180px] h-10 object-contain" />
           </div>
 
           {/* Form Header */}
@@ -260,13 +264,13 @@ export default function AuthPage() {
 
           {/* Links */}
           <div className="mt-6 text-center space-y-2 w-full">
-            <Link href="/reset-password" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
+            <Link href="/reset-password" className={isDark ? "text-sm text-[#fff] hover:text-[#ccc] cursor-pointer block" : "text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block"}>
               Forgot password?
             </Link>
 
             <div className="divider mt-4 border-t border-[#b3b3b3]"></div>
 
-            <Link href="/instructor/login" className="text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block">
+            <Link href="/instructor/login" className={isDark ? "text-sm text-[#fff] hover:text-[#ccc] cursor-pointer block" : "text-sm text-[#71717a] hover:text-[#111111] cursor-pointer block"}>
               Login as Instructor
             </Link>
           </div>

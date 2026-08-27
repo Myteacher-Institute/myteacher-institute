@@ -11,7 +11,6 @@ interface DeleteModalProps {
   deletePassword: string;
   setDeletePassword: (password: string) => void;
   isDeleting: boolean;
-  deletionErrors: string[];
 }
 
 export default function DeleteModal({
@@ -22,7 +21,6 @@ export default function DeleteModal({
   deletePassword,
   setDeletePassword,
   isDeleting,
-  deletionErrors,
 }: DeleteModalProps) {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -47,17 +45,6 @@ export default function DeleteModal({
             className={isDark ? "w-full px-4 py-3 rounded-xl border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-slate-700 text-white" : "w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"}
           />
         </div>
-
-        {deletionErrors.length > 0 && (
-          <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-100">
-            <p className="text-sm font-medium text-red-800 mb-2">Deletion errors:</p>
-            <ul className="text-xs text-red-600 space-y-1">
-              {deletionErrors.map((error, index) => (
-                <li key={index}>• {error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <div className="flex gap-3">
           <button

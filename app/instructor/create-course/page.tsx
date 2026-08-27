@@ -8,17 +8,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import {
 
-  FiArrowLeft, FiArrowRight, FiCheckCircle, FiLoader, FiHelpCircle
+  FiArrowLeft, FiArrowRight, FiCheckCircle, FiLoader
 
 } from "react-icons/fi";
-
-import { courseService } from "@/services/course.service";
 
 import axiosInstance from "@/lib/axios";
 
 import { getSocket } from "@/lib/socket";
 
-import type { CreateCourseRequest, CourseVideo, Chapter, Asset } from "@/types";
+import type { CourseVideo, Chapter, Asset } from "@/types";
 
 import { activityTracker } from "@/utils/activityTracker";
 import { useThemeStore } from "@/store/theme.store";
@@ -101,6 +99,22 @@ type UploadResult = {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+// Restored state comes from JSON (draft/sessionStorage) where File objects
+// collapse to `{}`. Clear every phantom `file` so a restored course never
+// submits garbage or shows a false "selected" state; files must be re-picked.
+const sanitizeRestoredChapters = (chapters: unknown): Chapter[] => {
+  if (!Array.isArray(chapters)) return [];
+  return chapters.map((c) => {
+    const ch = c as Chapter | null | undefined;
+    if (!ch || typeof ch !== 'object') return ch as unknown as Chapter;
+    return {
+      ...ch,
+      videos: (ch.videos || []).map((v) => ({ ...v, file: undefined })),
+      assets: (ch.assets || []).map((a) => ({ ...a, file: undefined })),
+    };
+  });
+};
+
 export default function CreateCoursePage() {
   const router = useRouter();
 
@@ -130,18 +144,6 @@ export default function CreateCoursePage() {
   const [showUploadConfirmModal, setShowUploadConfirmModal] = useState(false);
 
   const [pendingUploadFile, setPendingUploadFile] = useState<{ ci: number; vi: number; g: number; file: File } | null>(null);
-
-  const [showDeletionErrorsModal, setShowDeletionErrorsModal] = useState(false);
-
-  const [deletionErrors, setDeletionErrors] = useState<string[]>([]);
-
-  const [failedVideoUrls, setFailedVideoUrls] = useState<string[]>([]);
-
-  const [isRetryingDeletion, setIsRetryingDeletion] = useState(false);
-
-  const [shouldRetryAfterAuth, setShouldRetryAfterAuth] = useState(false);
-
-  const [skipDeletion, setSkipDeletion] = useState(false);
 
 
 
@@ -455,7 +457,7 @@ export default function CreateCoursePage() {
 
             setRequirements(formData.requirements || [""]);
 
-            setChapters(formData.chapters || []);
+            setChapters(sanitizeRestoredChapters(formData.chapters));
 
             setActiveChapter(0);
 
@@ -555,7 +557,7 @@ export default function CreateCoursePage() {
 
           setRequirements(draft.requirements ?? [""]);
 
-          setChapters(draft.chapters ?? []);
+          setChapters(sanitizeRestoredChapters(draft.chapters));
 
           setActiveChapter(0);
 
@@ -580,38 +582,6 @@ export default function CreateCoursePage() {
     saveDraft({ step, courseName, description, price, duration, certificate, requirements, chapters });
 
   }, [step, courseName, description, price, duration, certificate, requirements, chapters]);
-
-
-
-  // ── Warn user before leaving if upload is in progress ───────────────────────
-
-  useEffect(() => {
-
-    const hasUploadingVideo = Object.values(videoUploadState).some(state => state.uploading);
-
-    
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-
-      if (hasUploadingVideo) {
-
-        e.preventDefault();
-
-        e.returnValue = "A video upload is in progress. Leaving this page will cancel the upload.";
-
-        return "A video upload is in progress. Leaving this page will cancel the upload.";
-
-      }
-
-    };
-
-
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-
-  }, [videoUploadState]);
 
 
 
@@ -670,7 +640,7 @@ export default function CreateCoursePage() {
 
       ch.videos.forEach((v, vi) => {
 
-        if (!v.videoUrl.trim() && !v.file) {
+        if (!v.videoUrl.trim() && !(v.file instanceof File)) {
 
           errs[`video_url_${ci}-${vi}`] = "Video URL or file is required";
 
@@ -1025,23 +995,130 @@ export default function CreateCoursePage() {
 
     try {
 
-      // Check YouTube authentication before uploading videos
+      // Edit mode uploads synchronously, so we verify YouTube/Drive auth up
+      // front. New courses use the background pipeline, which handles auth
+      // server-side and fails the job with a clear message if re-auth is needed.
+      if (isEditMode) {
 
-      const youtubeAuthCheck = await axiosInstance.get("/api/youtube/auth");
+        const youtubeAuthCheck = await axiosInstance.get("/api/youtube/auth");
 
-      if (!youtubeAuthCheck.data.authenticated) {
+        if (!youtubeAuthCheck.data.authenticated) {
 
-        setIsSubmitting(false);
+          setIsSubmitting(false);
 
-        // Trigger YouTube authentication modal
+          // Trigger YouTube authentication modal
 
-        if (youtubeAuthCheck.data.authUrl) {
+          if (youtubeAuthCheck.data.authUrl) {
 
-          setShowYouTubeAuthModal(true);
+            setShowYouTubeAuthModal(true);
 
-          window.youtubeAuthUrl = youtubeAuthCheck.data.authUrl;
+            window.youtubeAuthUrl = youtubeAuthCheck.data.authUrl;
+
+          }
+
+          return;
 
         }
+
+      }
+
+
+
+      // Newly-created courses use the background, resumable pipeline: one
+      // multipart POST with the metadata JSON plus all video/asset files. The
+      // server persists a job, uploads sequentially, and creates the course
+      // even if this tab is closed, so we redirect to the dashboard right away.
+      if (!isEditMode) {
+
+        const videosWithFiles: { video: CourseVideo; ci: number; vi: number; g: number }[] = [];
+
+        const assetsWithFiles: { asset: Asset; ci: number; ai: number; g: number }[] = [];
+
+        chapters.forEach((ch, ci) => {
+
+          ch.videos.forEach((v, vi) => {
+
+            if (v.file instanceof File) videosWithFiles.push({ video: v, ci, vi, g: globalVideoIndex(ci, vi) });
+
+          });
+
+          ch.assets.forEach((a, ai) => {
+
+            if (a.file instanceof File) assetsWithFiles.push({ asset: a, ci, ai, g: globalAssetIndex(ci, ai) });
+
+          });
+
+        });
+
+
+
+        const creationPayload = {
+
+          courseName: courseName.trim(),
+
+          description: description.trim(),
+
+          price: Number(price),
+
+          duration: Number(duration),
+
+          certificate,
+
+          courseRequirements: requirements.filter((r) => r.trim()),
+
+          chapters: chapters.map(c => ({
+
+            ...c,
+
+            videos: c.videos.map(v => ({ ...v, file: undefined })),
+
+            assets: c.assets.map(a => ({ ...a, file: undefined })),
+
+          })),
+
+          courseVideos: flattenVideos(chapters).map(v => ({ ...v, file: undefined })),
+
+          programmingCodes: flattenCodes(chapters),
+
+          assets: flattenAssets(chapters).map(a => ({ ...a, file: undefined })),
+
+          quizzes: flattenQuizzes(chapters),
+
+        };
+
+
+
+        const formData = new FormData();
+
+        console.log("[course-creation-client] videosWithFiles:", videosWithFiles.map(({ video, g, ci, vi }) => ({ g, ci, vi, name: video.file?.name, title: video.videoTitle })));
+        console.log("[course-creation-client] assetsWithFiles:", assetsWithFiles.map(({ asset, g, ci, ai }) => ({ g, ci, ai, name: asset.file?.name, assetName: asset.name })));
+        console.log("[course-creation-client] isEditMode:", isEditMode, "| chapters total videos:", chapters.reduce((n, c) => n + c.videos.length, 0), "| total assets:", chapters.reduce((n, c) => n + c.assets.length, 0));
+
+        formData.append("metadata", JSON.stringify(creationPayload));
+
+        for (const { video, g } of videosWithFiles) formData.append(`video_${g}`, video.file!);
+
+        for (const { asset, g } of assetsWithFiles) formData.append(`asset_${g}`, asset.file!);
+
+
+
+        const res = await axiosInstance.post("/api/course/creation", formData, { timeout: 0 });
+
+
+
+        if (res.data.status === "success" && res.data.jobId) {
+
+          activityTracker.addActivity("Course creation started", `Started creating course: ${courseName.trim()}`, "instructor");
+
+          clearDraft();
+
+          router.push("/instructor");
+
+          return;
+
+        }
+
+        setSubmitError(res.data.message || "Failed to start course creation");
 
         return;
 
@@ -1049,368 +1126,32 @@ export default function CreateCoursePage() {
 
 
 
-      // Check Google Drive authentication before uploading assets
+      // ── Edit mode: background, resumable pipeline (mirrors create) ──
+      // The server persists an edit job, uploads the new files in the background
+      // and applies the update, so the dashboard shows progress and the instructor
+      // can leave the page safely.
+
+      const videosWithFiles: { video: CourseVideo; ci: number; vi: number; g: number }[] = [];
 
       const assetsWithFiles: { asset: Asset; ci: number; ai: number; g: number }[] = [];
 
       chapters.forEach((ch, ci) => {
 
-        ch.assets.forEach((a, ai) => {
-
-          if (a.file) assetsWithFiles.push({ asset: a, ci, ai, g: globalAssetIndex(ci, ai) });
-
-        });
-
-      });
-
-      if (assetsWithFiles.length > 0) {
-
-        const driveAuthCheck = await axiosInstance.get("/api/drive/auth");
-
-        if (!driveAuthCheck.data.authenticated) {
-
-          setIsSubmitting(false);
-
-          // Trigger Google Drive authentication modal
-
-          if (driveAuthCheck.data.authUrl) {
-
-            setShowDriveAuthModal(true);
-
-            window.driveAuthUrl = driveAuthCheck.data.authUrl;
-
-          } else {
-
-            setSubmitError("Failed to get Google Drive authentication URL");
-
-          }
-
-          return;
-
-        }
-
-      }
-
-
-
-      // In edit mode, first delete old videos/assets before uploading new ones
-
-      if (isEditMode && editCourseId && !skipDeletion) {
-
-        const deletePayload = {
-
-          courseVideos: flattenVideos(chapters).map(v => ({ ...v, file: undefined })),
-
-          assets: flattenAssets(chapters).map(a => ({ ...a, file: undefined }))
-
-        };
-
-        
-
-        const deleteRes = await axiosInstance.post(`/api/course/delete-only/${editCourseId}`, deletePayload);
-
-        
-
-        if (deleteRes.data.status === "success" && deleteRes.data.deletionErrors && deleteRes.data.deletionErrors.length > 0) {
-
-          setDeletionErrors(deleteRes.data.deletionErrors);
-
-          const videoErrors = deleteRes.data.deletionErrors.filter((err: string) => err.includes("YouTube video"));
-
-          const failedUrls = videoErrors.map((err: string) => {
-
-            const match = err.match(/https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+/);
-
-            return match ? match[0] : "";
-
-          }).filter((url: string) => url);
-
-          setFailedVideoUrls(failedUrls);
-
-          setShowDeletionErrorsModal(true);
-
-          setIsSubmitting(false);
-
-          return;
-
-        }
-
-      }
-
-
-
-      // First, upload all videos with files to YouTube
-
-      const videosWithFiles: { video: CourseVideo; ci: number; vi: number; g: number }[] = [];
-
-      chapters.forEach((ch, ci) => {
-
         ch.videos.forEach((v, vi) => {
 
-          if (v.file) videosWithFiles.push({ video: v, ci, vi, g: globalVideoIndex(ci, vi) });
+          if (v.file instanceof File) videosWithFiles.push({ video: v, ci, vi, g: globalVideoIndex(ci, vi) });
+
+        });
+
+        ch.assets.forEach((a, ai) => {
+
+          if (a.file instanceof File) assetsWithFiles.push({ asset: a, ci, ai, g: globalAssetIndex(ci, ai) });
 
         });
 
       });
 
-      let updatedChapters = chapters;
-
-      
-
-      for (const { video, ci, vi, g } of videosWithFiles) {
-
-        const stateKey = `${ci}-${vi}`;
-
-        uploadTargetRef.current[g] = { ci, vi };
-
-        setVideoUploadState(prev => ({
-
-          ...prev,
-
-          [stateKey]: { uploading: true, progress: 0, error: "" }
-
-        }));
-
-
-
-        try {
-
-          // Register the waiter BEFORE posting (worker may finish fast)
-          const uploadPromise = waitForUpload("youtube", g);
-
-
-
-          const formData = new FormData();
-
-          formData.append("video", video.file!);
-
-          formData.append("title", video.videoTitle || video.file!.name);
-
-          formData.append("description", video.videoDescription || "");
-
-          formData.append("privacyStatus", "unlisted");
-
-          formData.append("tags", "course");
-
-          formData.append("clientVideoIndex", String(g));
-
-
-
-          const res = await axiosInstance.post("/api/youtube/upload", formData, {
-
-            timeout: 0,
-
-            onUploadProgress: (e) => {
-
-              const pct = e.total ? Math.round((e.loaded * 100) / e.total) : 0;
-
-              setVideoUploadState(prev => ({
-
-                ...prev,
-
-                [stateKey]: { uploading: true, progress: pct, error: "" }
-
-              }));
-
-            },
-
-          });
-
-
-
-          if (res.data.status !== "queued") {
-
-            const drop = uploadWaitersRef.current[`youtube-${g}`];
-            if (drop) { delete uploadWaitersRef.current[`youtube-${g}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
-            throw new Error(res.data.message || "Upload failed");
-
-          }
-
-
-
-          // Enqueued — hand over to server-side progress events
-          setVideoUploadState(prev => ({
-
-            ...prev,
-
-            [stateKey]: { uploading: true, progress: 0, stage: "preparing", error: "" }
-
-          }));
-
-
-
-          const result = await uploadPromise;
-
-
-
-          if (!result.ok) {
-
-            if (result.status === "reauth_required" || result.requiresReauth || (result.message || "").toLowerCase().includes("re-authentication")) {
-
-              setVideoUploadState(prev => ({
-
-                ...prev,
-
-                [stateKey]: { uploading: false, progress: 0, error: result.message || "" }
-
-              }));
-
-
-
-              // Store the auth URL and video index for retry after auth
-              window.pendingReauth = {
-                authUrl: result.authUrl,
-                videoIndex: g,
-                video,
-                retryCount: ((window.pendingReauth as { retryCount?: number })?.retryCount || 0) + 1
-              };
-
-              setIsYouTubeReauth(true);
-
-              // Trigger YouTube authentication with the provided auth URL
-              if (result.authUrl) {
-                window.youtubeAuthUrl = result.authUrl;
-                setShowYouTubeAuthModal(true);
-              } else {
-                // No auth URL provided — fetch a fresh one
-                handleYouTubeAuth();
-              }
-
-              throw new Error(`Re-authentication required for video ${video.videoTitle}`);
-            }
-
-            throw new Error(result.message || "Upload failed");
-          }
-
-          updatedChapters = updatedChapters.map((ch, c) =>
-            c !== ci ? ch
-              : { ...ch, videos: ch.videos.map((v, vx) => vx === vi ? { ...v, videoUrl: result.videoUrl || "", file: undefined } : v) }
-          );
-
-          setVideoUploadState(prev => ({
-
-            ...prev,
-
-            [stateKey]: { uploading: false, progress: 100, error: "", stage: "done" }
-
-          }));
-
-        } catch (err: unknown) {
-          const responseData = (err as { response?: { data?: { status?: string; authUrl?: string; message?: string } } })?.response?.data;
-          const msg = responseData?.message || (err as Error)?.message || "Upload failed";
-
-          setVideoUploadState(prev => ({
-
-            ...prev,
-
-            [stateKey]: { uploading: false, progress: 0, error: msg }
-
-          }));
-
-          throw new Error(`Failed to upload video ${video.videoTitle}: ${msg}`);
-
-        }
-
-      }
-
-
-
-      setChapters(updatedChapters);
-
-
-
-      // Next, upload all assets with files to Google Drive
-
-      for (const { asset, ci, ai, g } of assetsWithFiles) {
-
-        assetTargetRef.current[g] = { ci, ai };
-
-        try {
-
-          // Register the waiter BEFORE posting (worker may finish fast)
-          const uploadPromise = waitForUpload("drive", g);
-
-
-
-          const formData = new FormData();
-
-          formData.append("file", asset.file!);
-
-          formData.append("name", asset.name || asset.file!.name);
-
-          formData.append("clientAssetIndex", String(g));
-
-
-
-          const res = await axiosInstance.post("/api/drive/upload", formData, {
-
-            timeout: 0,
-
-          });
-
-
-
-          if (res.data.status !== "queued") {
-
-            const drop = uploadWaitersRef.current[`drive-${g}`];
-            if (drop) { delete uploadWaitersRef.current[`drive-${g}`]; drop({ ok: false, status: "failed", message: res.data.message || "Upload failed" }); }
-            throw new Error(res.data.message || "Upload failed");
-
-          }
-
-
-
-          // Enqueued — hand over to server-side progress events
-          setAssetUploadState(prev => ({
-
-            ...prev,
-
-            [g]: { uploading: true, progress: 0, stage: "preparing", error: "" }
-
-          }));
-
-
-
-          const result = await uploadPromise;
-
-
-
-          if (!result.ok) throw new Error(result.message || "Upload failed");
-
-
-
-          updatedChapters = updatedChapters.map((ch, c) =>
-            c !== ci ? ch
-              : { ...ch, assets: ch.assets.map((a, ax) => ax === ai ? { ...a, url: result.url || "", file: undefined } : a) }
-          );
-
-          setAssetUploadState(prev => ({
-
-            ...prev,
-
-            [g]: { uploading: false, progress: 100, error: "", stage: "done" }
-
-          }));
-
-        } catch (err: unknown) {
-
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err as Error)?.message || "Upload failed";
-
-          throw new Error(`Failed to upload asset ${asset.name}: ${msg}`);
-
-        }
-
-      }
-
-
-
-      setChapters(updatedChapters);
-
-
-
-      // Now create/update the course with all URLs
-
-      const payload: CreateCourseRequest = {
+      const editPayload = {
 
         courseName: courseName.trim(),
 
@@ -1424,7 +1165,7 @@ export default function CreateCoursePage() {
 
         courseRequirements: requirements.filter((r) => r.trim()),
 
-        chapters: updatedChapters.map(c => ({
+        chapters: chapters.map(c => ({
 
           ...c,
 
@@ -1434,101 +1175,41 @@ export default function CreateCoursePage() {
 
         })),
 
-        courseVideos: flattenVideos(updatedChapters).map(v => ({ ...v, file: undefined })),
+        courseVideos: flattenVideos(chapters).map(v => ({ ...v, file: undefined })),
 
-        programmingCodes: flattenCodes(updatedChapters),
+        programmingCodes: flattenCodes(chapters),
 
-        assets: flattenAssets(updatedChapters).map(a => ({ ...a, file: undefined })),
+        assets: flattenAssets(chapters).map(a => ({ ...a, file: undefined })),
 
-        quizzes: flattenQuizzes(updatedChapters),
+        quizzes: flattenQuizzes(chapters),
 
       };
 
+      const formData = new FormData();
 
+      formData.append("metadata", JSON.stringify(editPayload));
 
-      let res;
+      for (const { video, g } of videosWithFiles) formData.append(`video_${g}`, video.file!);
 
-      if (isEditMode && editCourseId) {
+      for (const { asset, g } of assetsWithFiles) formData.append(`asset_${g}`, asset.file!);
 
-        const axiosRes = await axiosInstance.put(`/api/course/edit/${editCourseId}`, payload);
+      const res = await axiosInstance.post(`/api/course/edit-job/${editCourseId}`, formData, { timeout: 0 });
 
-        res = axiosRes.data;
+      if (res.data.status === "success" && res.data.jobId) {
 
-      } else {
+        activityTracker.addActivity("Course update started", `Started updating course: ${courseName.trim()}`, "instructor");
 
-        res = await courseService.createCourse(payload);
+        clearDraft();
 
-      }
+        router.push("/instructor");
 
-      
-
-      if (res.status === "success") {
-
-        // Track activity for course creation/editing
-
-        if (isEditMode) {
-
-          activityTracker.addActivity(
-
-            "Course updated",
-
-            `Updated course: ${courseName.trim()}`,
-
-            "instructor"
-
-          );
-
-        } else {
-
-          activityTracker.addActivity(
-
-            "Course created",
-
-            `Created new course: ${courseName.trim()}`,
-
-            "instructor"
-
-          );
-
-        }
-
-
-
-        // Check if there were deletion errors
-
-        if (res.deletionErrors && res.deletionErrors.length > 0) {
-
-          setDeletionErrors(res.deletionErrors);
-
-          // Extract failed video URLs from error messages
-
-          const videoErrors = res.deletionErrors.filter((err: string) => err.includes("YouTube video"));
-
-          const failedUrls = videoErrors.map((err: string) => {
-
-            const match = err.match(/https:\/\/www\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]+/);
-
-            return match ? match[0] : "";
-
-          }).filter((url: string) => url);
-
-          setFailedVideoUrls(failedUrls);
-
-          setShowDeletionErrorsModal(true);
-
-        } else {
-
-          clearDraft();
-
-          router.push("/instructor");
-
-        }
-
-      } else {
-
-        setSubmitError(res.message || "Failed to save course");
+        return;
 
       }
+
+      setSubmitError(res.data.message || "Failed to start course update");
+
+      return;
 
     } catch (err: unknown) {
 
@@ -1537,56 +1218,6 @@ export default function CreateCoursePage() {
     } finally {
 
       setIsSubmitting(false);
-
-    }
-
-  };
-
-
-
-  const handleRetryDeletion = async () => {
-
-    if (!editCourseId || failedVideoUrls.length === 0) return;
-
-    
-
-    setIsRetryingDeletion(true);
-
-    try {
-
-      const res = await axiosInstance.post(`/api/course/retry-deletion/${editCourseId}`, {
-
-        videoUrls: failedVideoUrls
-
-      });
-
-      
-
-      if (res.data.status === "success") {
-
-        setShowDeletionErrorsModal(false);
-
-        setShouldRetryAfterAuth(false);
-
-        setSkipDeletion(true); // Skip deletion on next submit
-
-        // Continue with the original submit flow
-
-        await handleSubmit();
-
-      } else {
-
-        setDeletionErrors(res.data.deletionErrors || ["Failed to retry deletion"]);
-
-      }
-
-    } catch (error: unknown) {
-
-      setDeletionErrors([(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to retry deletion"]);
-
-    } finally {
-
-      setIsRetryingDeletion(false);
 
     }
 
@@ -1694,10 +1325,6 @@ export default function CreateCoursePage() {
     if (pendingReauth && pendingReauth.videoIndex !== undefined) {
       onYouTubeAuthSuccessRef.current = () => { retryPendingYouTubeUpload(pendingReauth); };
       return;
-    }
-
-    if (shouldRetryAfterAuth) {
-      onYouTubeAuthSuccessRef.current = () => { handleRetryDeletion(); };
     }
   };
 
@@ -2132,150 +1759,6 @@ export default function CreateCoursePage() {
       />
 
 
-
-      {/* Deletion Errors Modal */}
-
-      {showDeletionErrorsModal && (
-
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center backdrop-blur-sm">
-
-          <div className={`rounded-2xl p-6 lg:p-8 max-w-lg w-full mx-4 shadow-xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-
-            <div className="flex items-center gap-3 mb-4">
-
-              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-
-                <FiHelpCircle className="text-amber-600" size={20} />
-
-              </div>
-
-              <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-[#111827]'}`}>Course Updated with Warnings</h3>
-
-            </div>
-
-            <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-
-              The course data has been saved successfully, but some resources could not be deleted from external services:
-
-            </p>
-
-            <div className={`rounded-xl p-4 mb-6 max-h-60 overflow-y-auto ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-
-              <ul className="space-y-2">
-
-                {deletionErrors.map((error, index) => (
-
-                  <li key={index} className={`text-sm flex items-start gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-
-                    <span className="text-amber-500 mt-0.5">•</span>
-
-                    <span>{error}</span>
-
-                  </li>
-
-                ))}
-
-              </ul>
-
-            </div>
-
-            <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-
-              Click &quot;Authenticate&quot; to re-authenticate with YouTube and get fresh tokens. After authentication, you can retry the deletion or manually clean up the resources from those platforms.
-
-            </p>
-
-            <button
-
-              onClick={async () => {
-
-                setShouldRetryAfterAuth(true);
-
-                setShowDeletionErrorsModal(false);
-
-                try {
-
-                  const res = await axiosInstance.get("/api/youtube/auth?force=true");
-
-                  if (res.data.status === "success" && res.data.authUrl) {
-
-                    // Store the current URL for redirect after auth
-
-                    sessionStorage.setItem('course_form_redirect_url', window.location.href);
-
-                    const width = 500;
-
-                    const height = 600;
-
-                    const left = (window.screen.width - width) / 2;
-
-                    const top = (window.screen.height - height) / 2;
-
-                    window.open(res.data.authUrl, 'youtube-auth', `width=${width},height=${height},left=${left},top=${top}`);
-
-                  } else {
-
-                    alert("Failed to get YouTube authentication URL");
-
-                  }
-
-                } catch (err: unknown) {
-
-                  console.error("YouTube auth error:", err as Error);
-
-                  alert("Failed to initiate YouTube authentication. Please try again.");
-
-                }
-
-              }}
-
-              className="w-full px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors mb-3"
-
-            >
-
-              Authenticate
-
-            </button>
-
-            <button
-
-              onClick={handleRetryDeletion}
-
-              disabled={isRetryingDeletion}
-
-              className={`w-full px-4 py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-60 mb-3 ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-
-            >
-
-              {isRetryingDeletion ? "Retrying..." : "Retry Deletion"}
-
-            </button>
-
-            <button
-
-              onClick={() => {
-
-                setShowDeletionErrorsModal(false);
-
-                setSkipDeletion(true);
-
-                handleSubmit();
-
-              }}
-
-              className={`w-full px-4 py-3 rounded-xl font-semibold text-sm transition-colors ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-
-            >
-
-              Skip & Continue
-
-            </button>
-
-          </div>
-
-        </div>
-
-      )}
 
       {/* Fixed bottom progress loader — stays visible while the server uploads videos */}
       {showBottomProgress && (

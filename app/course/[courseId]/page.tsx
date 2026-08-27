@@ -48,7 +48,7 @@ export default function CoursePurchasePage() {
   const { courseId } = useParams<{ courseId: string }>();
   const router = useRouter();
   const { theme } = useThemeStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const isDark = theme === 'dark';
 
   const [course, setCourse] = useState<CoursePreview | null>(null);
@@ -57,6 +57,7 @@ export default function CoursePurchasePage() {
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const loadCourse = useCallback(async () => {
     if (!courseId) return;
@@ -78,19 +79,49 @@ export default function CoursePurchasePage() {
   }, [courseId]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      const affiliate = getAffiliateCode();
-      const target = affiliate
-        ? `/course/${courseId}?affiliate=${encodeURIComponent(affiliate)}`
-        : `/course/${courseId}`;
-      router.replace(
-        `/get-started?redirect=${encodeURIComponent(target)}`
-      );
-      return;
-    }
+    // Get user ID from auth store
+    const getUserId = () => {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        try {
+          const parsedAuth = JSON.parse(authStorage);
+          // The user ID might be in different places depending on user type
+          const userId = parsedAuth?.state?.user?._id || parsedAuth?.state?.user?.id || null;
+          console.log('User ID from auth storage:', userId);
+          return userId;
+        } catch (e) {
+          console.error('Error parsing auth storage:', e);
+          return null;
+        }
+      }
+      return null;
+    };
+
+    setUserId(getUserId());
+
+    // Load course
     const timer = setTimeout(() => loadCourse(), 0);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, courseId, router, loadCourse]);
+  }, [courseId, loadCourse]);
+
+  // Check if user has already purchased the course
+  useEffect(() => {
+    if (course && userId && course.appliedUsers) {
+      console.log('Checking purchase - userId:', userId, 'appliedUsers:', course.appliedUsers);
+      const hasPurchased = course.appliedUsers.some(
+        (appliedUser) => {
+          // Handle both string and ObjectId conversions
+          const appliedUserId = typeof appliedUser.userId === 'string' 
+            ? appliedUser.userId 
+            : String(appliedUser.userId);
+          const currentUserId = typeof userId === 'string' ? userId : String(userId);
+          return appliedUserId === currentUserId;
+        }
+      );
+      console.log('Has purchased:', hasPurchased);
+      setAlreadyPurchased(hasPurchased);
+    }
+  }, [course, userId]);
 
   const handlePurchase = async () => {
     if (!course) return;
@@ -285,10 +316,10 @@ export default function CoursePurchasePage() {
 
                 {alreadyPurchased ? (
                   <button
-                    onClick={() => router.push('/student')}
+                    onClick={() => router.push(`/learn/${courseId}`)}
                     className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all cursor-pointer text-sm"
                   >
-                    <FiCheck size={18} /> Course in your library
+                    <FiCheck size={18} /> Owned
                   </button>
                 ) : (
                   <button
@@ -358,7 +389,7 @@ export default function CoursePurchasePage() {
         </section>
 
         {/* Preview videos */}
-        {course.previewVideos.length > 0 && (
+        {/* {course.previewVideos.length > 0 && (
           <section className={`mt-8 rounded-3xl border shadow-sm p-6 md:p-10 ${cardStyle}`}>
             <h2 className={`text-xl md:text-2xl font-black mb-6 ${textPrimary}`}>Course Preview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -385,7 +416,7 @@ export default function CoursePurchasePage() {
               ))}
             </div>
           </section>
-        )}
+        )} */}
 
         {/* Requirements */}
         {course.courseRequirements.length > 0 && (

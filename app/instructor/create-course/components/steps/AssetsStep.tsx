@@ -23,8 +23,9 @@ export const AssetsStep = ({ assets, setAssets, onDriveAuth }: AssetsStepProps) 
   };
 
   const handleAssetFileSelect = (i: number, file: File) => {
-    updateAsset(i, "file", file);
-    updateAsset(i, "name", file.name);
+    const n = [...assets];
+    n[i] = { ...n[i], file, name: file.name };
+    setAssets(n);
   };
 
   return (
