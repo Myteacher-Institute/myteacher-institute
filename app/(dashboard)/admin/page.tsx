@@ -1,3 +1,5 @@
+"use client"
+
 import { useThemeStore } from "@/store/theme.store";
 import AdminDashboard from "@/app/components/AdminDashboard";
 

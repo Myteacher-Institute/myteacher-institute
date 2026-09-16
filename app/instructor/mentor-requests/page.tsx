@@ -10,6 +10,8 @@ import {
   FiAlertCircle,
   FiClock,
   FiCalendar,
+  FiLink,
+  FiDollarSign,
 } from "react-icons/fi";
 import InstructorSidebar from "@/app/components/InstructorSidebar";
 import { useAuthStore } from "@/store/auth.store";
@@ -35,6 +37,8 @@ export default function InstructorMentorRequestsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [acceptTarget, setAcceptTarget] = useState<InstructorMentorRequest | null>(null);
   const [scheduleForm, setScheduleForm] = useState({ availableTime: "", programDuration: "" });
+  const [groupChatLink, setGroupChatLink] = useState("");
+  const [actualPrice, setActualPrice] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -85,6 +89,8 @@ export default function InstructorMentorRequestsPage() {
     setScheduleError("");
     setError('');
     setSuccess('');
+    setGroupChatLink("");
+    setActualPrice("");
 
     if (request.availability === 'Weekends') {
       setSelectedDays(['Sat', 'Sun']);
@@ -120,12 +126,26 @@ export default function InstructorMentorRequestsPage() {
       return;
     }
 
+    const isGroup = acceptTarget.mentorshipType === 'Group';
+    if (isGroup && !groupChatLink.trim()) {
+      setScheduleError("Add a WhatsApp group link for this group mentorship");
+      return;
+    }
+
+    const parsedPrice = actualPrice.trim() === '' ? undefined : Number(actualPrice);
+    if (parsedPrice !== undefined && (Number.isNaN(parsedPrice) || parsedPrice <= 0)) {
+      setScheduleError("Enter a valid program price");
+      return;
+    }
+
     setActionId(acceptTarget._id);
     setScheduleError("");
     try {
       const res = await mentorService.acceptMentorRequest(acceptTarget._id, {
         availableTime: finalAvailableTime,
         programDuration: scheduleForm.programDuration.trim(),
+        groupChatLink: groupChatLink.trim() ? groupChatLink.trim() : undefined,
+        actualPrice: parsedPrice,
       });
       if (res.status === 'success') {
         // Keep the card visible in accepted state
@@ -347,9 +367,19 @@ export default function InstructorMentorRequestsPage() {
 
       {/* ── Accept Modal ──────────────────────────────────────────── */}
       {acceptTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => { if (actionId !== acceptTarget._id) setAcceptTarget(null); }}>
-          <div onClick={(e) => e.stopPropagation()}
+        <>
+          <style jsx>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+            .scrollbar-hide {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+          `}</style>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto grow pr-2 scrollbar-hide"
+            onClick={() => { if (actionId !== acceptTarget._id) setAcceptTarget(null); }}>
+            <div onClick={(e) => e.stopPropagation()}
             className={`w-full max-w-lg rounded-3xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-[#111827]'}`}>
 
             <div className="flex items-center justify-between mb-2">
@@ -443,6 +473,35 @@ export default function InstructorMentorRequestsPage() {
                   className={inputBase}
                   placeholder="e.g. 8 weeks (24 sessions total)" />
               </div>
+
+              {/* ── WhatsApp Group Link — only for Group mentorships ── */}
+              {acceptTarget.mentorshipType === 'Group' && (
+                <div>
+                  <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <FiLink size={15} /> WhatsApp Group Link
+                  </label>
+                  <input type="text" value={groupChatLink}
+                    onChange={(e) => setGroupChatLink(e.target.value)}
+                    disabled={actionId === acceptTarget._id}
+                    className={inputBase}
+                    placeholder="https://chat.whatsapp.com/your-invite-code" />
+                  <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                    Shared with the student so they can join the group after paying.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Program Price — optional custom price ── */}
+              <div>
+                <label className={`flex items-center gap-2 text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <FiDollarSign size={15} /> Program Price (₦)
+                </label>
+                <input type="number" value={actualPrice} min="1"
+                  onChange={(e) => setActualPrice(e.target.value)}
+                  disabled={actionId === acceptTarget._id}
+                  className={inputBase}
+                  placeholder="Leave blank to use your default mentor price" />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-8">
@@ -460,6 +519,7 @@ export default function InstructorMentorRequestsPage() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { 
   FiGrid, FiBook, FiUsers, FiDollarSign,
   FiStar, FiMessageSquare, FiTrendingUp,
-  FiSettings, FiHelpCircle, FiLogOut, FiX
+  FiSettings, FiHelpCircle, FiLogOut, FiX, FiInbox, FiMessageCircle
 } from 'react-icons/fi';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -29,6 +29,8 @@ export default function InstructorSidebar({ isSidebarOpen, setSidebarOpen, activ
     { icon: FiGrid, label: 'Dashboard', href: '/instructor' },
     { icon: FiBook, label: 'My Courses', href: '/instructor/courses' },
     { icon: FiUsers, label: 'Students', href: '/instructor/students' },
+    { icon: FiInbox, label: 'Mentor Requests', href: '/instructor/mentor-requests' },
+    { icon: FiMessageCircle, label: 'Mentorship', href: '/instructor/mentorship' },
     { icon: FiDollarSign, label: 'Earnings', href: '/instructor/earnings' },
     { icon: FiStar, label: 'Reviews', href: '/instructor/reviews' },
     { icon: FiMessageSquare, label: 'Announcements', href: '/instructor/announcements' },

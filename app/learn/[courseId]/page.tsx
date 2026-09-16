@@ -336,7 +336,7 @@ export default function LearnCoursePage() {
               <FiArrowLeft size={15} />
             </button>
             <span className={`text-xs font-medium truncate ${mutedText}`}>
-              Braimy.com/course/{course.courseName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}
+              myteacher.institute/course/{course.courseName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}
             </span>
             {course.instructorDetails?.name && (
               <span className={`hidden md:flex items-center gap-2 shrink-0 ml-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>

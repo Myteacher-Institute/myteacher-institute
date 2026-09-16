@@ -41,6 +41,8 @@ export interface InstructorMentorRequest {
   status: 'pending' | 'accepted' | 'rejected' | 'paid' | 'active';
   availableTime?: string;
   programDuration?: string;
+  groupChatLink?: string;
+  actualPrice?: number;
   paymentStatus?: 'pending' | 'successful' | 'failed' | 'cancelled';
   amountPaid?: number;
   createdAt: string;
@@ -79,6 +81,7 @@ export interface StudentMentorship {
   };
   amountPaid?: number;
   createdAt: string;
+  originalDuration?: string; // For renewal calculations
 }
 
 export const mentorService = {
@@ -140,7 +143,12 @@ export const mentorService = {
 
   async acceptMentorRequest(
     requestId: string,
-    data: { availableTime: string; programDuration: string }
+    data: {
+      availableTime: string;
+      programDuration: string;
+      groupChatLink?: string;
+      actualPrice?: number;
+    }
   ): Promise<{ status: string; message: string }> {
     const res = await axiosInstance.patch(`/api/mentor/requests/${requestId}/accept`, data);
     return res.data;
@@ -165,6 +173,45 @@ export const mentorService = {
     pendingRequests: StudentPendingRequest[];
   }> {
     const res = await axiosInstance.get('/api/student/mentorship');
+    return res.data;
+  },
+
+  // Student renews an ended mentorship
+  async renewMentorship(mentorshipId: string, duration: string): Promise<{
+    status: string;
+    message: string;
+    paymentLink?: string;
+    transactionReference?: string;
+    discountedPrice?: number;
+    originalPrice?: number;
+    monthlyRate?: number;
+  }> {
+    const res = await axiosInstance.post(`/api/mentor/mentorships/${mentorshipId}/renew`, { duration });
+    return res.data;
+  },
+
+  // Student reports an instructor
+  async reportInstructor(data: {
+    instructorId: string;
+    reason: string;
+    description: string;
+    mentorshipId?: string;
+  }): Promise<{ status: string; message: string; report?: any }> {
+    const res = await axiosInstance.post('/api/reports/instructor', data);
+    return res.data;
+  },
+
+  // Student deletes/ends a mentorship
+  async deleteMentorship(mentorshipId: string): Promise<{ status: string; message: string }> {
+    const res = await axiosInstance.delete(`/api/mentor/mentorships/${mentorshipId}`);
+    return res.data;
+  },
+
+  // Verify payment with backend
+  async verifyPayment(txRef: string, transactionId: string): Promise<{ status: string; message: string; transaction?: any }> {
+    const res = await axiosInstance.get('/api/payment/verify', {
+      params: { transaction_id: transactionId, tx_ref: txRef }
+    });
     return res.data;
   },
 };

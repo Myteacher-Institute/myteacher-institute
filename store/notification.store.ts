@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Socket } from 'socket.io-client';
+import { Channel } from 'pusher-js';
 
 interface Notification {
   _id: string;
@@ -26,7 +26,7 @@ interface NotificationState {
   clearAll: () => void;
   setUnreadCount: (count: number) => void;
   setConnected: (connected: boolean) => void;
-  syncWithSocket: (socket: Socket | null, userType: 'admin' | 'instructor' | 'user') => void;
+  syncWithPusher: (channel: Channel | null, userType: 'admin' | 'instructor' | 'user') => void;
 }
 
 export const useNotificationStore = create<NotificationState>()(
@@ -83,32 +83,25 @@ export const useNotificationStore = create<NotificationState>()(
         set({ isConnected: connected });
       },
 
-      syncWithSocket: (socket, userType) => {
-        if (!socket) return;
+      syncWithPusher: (channel, userType) => {
+        if (!channel) return;
 
         // Listen for new notifications
-        socket.on('notification:new', (data: { notification: Notification }) => {
+        channel.bind('new-notification', (data: { notification: Notification }) => {
           if (data.notification.recipientType === userType) {
             get().addNotification(data.notification);
           }
         });
 
         // Listen for unread count updates
-        socket.on('notification:unread_count', (data: { count: number }) => {
+        channel.bind('unread-count-update', (data: { count: number }) => {
           get().setUnreadCount(data.count);
-        });
-
-        // Listen for user status changes
-        socket.on('user:status_changed', (data: { userId: string; userType: string; isOnline: boolean }) => {
-          // Can be used to update online status indicators
-          console.log('User status changed:', data);
         });
 
         // Cleanup on unmount
         return () => {
-          socket.off('notification:new');
-          socket.off('notification:unread_count');
-          socket.off('user:status_changed');
+          channel.unbind('new-notification');
+          channel.unbind('unread-count-update');
         };
       }
     }),

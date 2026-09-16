@@ -10,12 +10,13 @@ import { triggerNotificationFeedback } from '@/utils/notificationAudio';
 import { showLocalNotification } from '@/lib/pushNotifications';
 import { initializeAuth } from '@/lib/authInitializer';
 import { updateSocketToken, disconnectSocket } from '@/lib/socket';
+import { initializePusher, getPusher } from '@/lib/pusher';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { socket, isConnected, connect } = useSocket();
-  const { syncWithSocket } = useNotificationStore();
+  const { syncWithPusher } = useNotificationStore();
   const { user, userType } = useAuthStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -278,29 +279,31 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [socket, userType, connect]);
 
+  // Subscribe to the user's private Pusher channel for real-time notifications
+  // and chat-message feedback (sound + local push when the tab is hidden).
   useEffect(() => {
-    if (!socket || !isConnected || !userType) return;
+    const authUserId = user?._id ?? '';
+    if (!authUserId || !userType) return;
 
-    // Sync notification store with socket
-    syncWithSocket(socket, userType);
+    let pusherChannel: any;
+    let disposed = false;
 
-    // Listen for auth store token changes to keep socket in sync
-    const unsubscribe = useAuthStore.subscribe((state, prevState) => {
-      const newToken = state.accessToken;
-      if (socket && newToken && state.accessToken !== prevState.accessToken) {
-        const currentSocketToken =
-          socket.auth && typeof socket.auth === 'object'
-            ? socket.auth.token
-            : undefined;
-        if (currentSocketToken !== newToken) {
-          console.log('Socket: Access token updated in store, reconnecting...');
-          updateSocketToken(newToken);
-        }
-      }
-    });
+    try {
+      const pusher = initializePusher(authUserId);
+      pusherChannel = pusher.subscribe(`private-user-${authUserId}`);
+      pusherChannel.bind('pusher:subscription_error', () => {
+        // Channel auth failed — ignore (e.g. stale token)
+      });
+    } catch {
+      return;
+    }
 
-    // Listen for new notifications and trigger feedback
-    const handleNewNotification = (data: { notification: { type: string; title: string; message: string } }) => {
+    // Sync notification store with the user channel
+    syncWithPusher(pusherChannel, userType);
+
+    // Trigger feedback when a new notification arrives
+    pusherChannel.bind('new-notification', (data: { notification: { type: string; title: string; message: string } }) => {
+      if (disposed) return;
       const isValidNotificationType = (type: string): type is 'success' | 'error' | 'info' | 'warning' =>
         type === 'success' || type === 'error' || type === 'info' || type === 'warning';
 
@@ -314,15 +317,46 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           icon: '/favicon.ico'
         });
       }
+    });
+
+    // Play the notification sound when a chat message arrives from the other party.
+    // userType 'user'  → self sends messages with senderType 'user'
+    // userType 'instructor' → self sends messages with senderType 'instructor'
+    const handleChatMessage = (data: { chatId: string; message: { senderType: string } }) => {
+      if (disposed) return;
+      const isIncoming =
+        (userType === 'instructor' && data.message.senderType === 'user') ||
+        (userType === 'user' && data.message.senderType === 'instructor');
+
+      if (!isIncoming) return;
+
+      triggerNotificationFeedback('info');
+
+      if (document.hidden) {
+        showLocalNotification('New message', {
+          body: 'You have a new message in your mentorship chat.',
+          icon: '/favicon.ico'
+        });
+      }
     };
 
-    socket.on('notification:new', handleNewNotification);
+    pusherChannel.bind('new-message', (data: { chatId: string; message: { senderType: string } }) => {
+      handleChatMessage(data);
+    });
 
     return () => {
-      socket.off('notification:new', handleNewNotification);
-      unsubscribe();
+      disposed = true;
+      try {
+        pusherChannel.unbind('new-notification');
+        pusherChannel.unbind('new-message');
+        pusherChannel.unbind('pusher:subscription_error');
+        const pusher = getPusher();
+        pusher?.unsubscribe(`private-user-${authUserId}`);
+      } catch {
+        // ignore
+      }
     };
-  }, [socket, isConnected, userType, syncWithSocket]);
+  }, [user?._id, userType, syncWithPusher]);
 
   return (
     <>

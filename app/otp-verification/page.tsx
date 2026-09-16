@@ -41,8 +41,14 @@ export default function OtpVerificationPage() {
 
     await verifyOtp(otp);
 
-    const { isAuthenticated, userType, user, accessToken } = useAuthStore.getState();
+    const { isAuthenticated, userType, user, accessToken, pendingUserId } = useAuthStore.getState();
     console.log('After verifyOtp - isAuthenticated:', isAuthenticated, 'userType:', userType, 'user:', user, 'accessToken:', accessToken);
+
+    if (pendingUserId) {
+      // New account - finish profile setup (name/password) before onboarding.
+      router.push(`/onboarding?userId=${encodeURIComponent(pendingUserId)}`);
+      return;
+    }
 
     if (isAuthenticated && userType) {
       // If the user was headed somewhere specific (e.g. /affiliate-dashboard),

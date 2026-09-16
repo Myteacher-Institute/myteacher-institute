@@ -16,6 +16,23 @@ export interface StudentProfile {
   recommendationsProvided?: boolean;
 }
 
+export interface Certificate {
+  _id: string;
+  courseName: string;
+  description: string;
+  duration: number;
+  certificate: string;
+  instructorDetails: {
+    userId: string;
+    name: string;
+    email: string;
+    profilePicture?: string;
+  };
+  averageRating: number;
+  completedAt: string;
+  completionDate: string;
+}
+
 export const studentService = {
   getStats: async () => {
     const res = await axiosInstance.get('/api/student/stats');
@@ -34,6 +51,11 @@ export const studentService = {
 
   getRecommendedCourses: async () => {
     const res = await axiosInstance.get('/api/student/recommended-courses');
+    return res.data;
+  },
+
+  getCertificates: async () => {
+    const res = await axiosInstance.get('/api/student/certificates');
     return res.data;
   }
 };

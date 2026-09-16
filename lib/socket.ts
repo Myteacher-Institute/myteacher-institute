@@ -12,6 +12,25 @@ let isServerAvailable = true;
 let lastServerCheck = 0;
 const SERVER_CHECK_INTERVAL = 30000; // Check server availability every 30 seconds
 
+type SocketChangeListener = () => void;
+const socketChangeListeners = new Set<SocketChangeListener>();
+
+const notifySocketChanged = () => {
+  socketChangeListeners.forEach((listener) => listener());
+};
+
+/**
+ * Subscribe to changes of the shared socket instance (created / replaced /
+ * removed). Components other than SocketProvider should use this to receive
+ * the live socket instead of keeping their own disconnected instance.
+ */
+export const subscribeSocketChanges = (listener: SocketChangeListener): (() => void) => {
+  socketChangeListeners.add(listener);
+  return () => {
+    socketChangeListeners.delete(listener);
+  };
+};
+
 const checkServerAvailability = async (): Promise<boolean> => {
   const now = Date.now();
   // Cache the server availability check result
@@ -141,6 +160,8 @@ export const initializeSocket = (token: string): Socket => {
     timeout: 30000
   });
 
+  notifySocketChanged();
+
   socket.on('connect', () => {
     console.log('Socket connected:', socket?.id);
     reconnectAttempts = 0;
@@ -261,6 +282,7 @@ export const disconnectSocket = (): void => {
     socket.disconnect();
     socket = null;
     reconnectAttempts = 0;
+    notifySocketChanged();
   }
 };
 

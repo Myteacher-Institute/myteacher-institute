@@ -33,6 +33,13 @@ export default function EditCoursePage() {
     }
   }, [courseId]);
 
+  // Redirect to create-course page with pre-filled data
+  useEffect(() => {
+    if (course && courseId) {
+      router.push(`/instructor/create-course?edit=true&courseId=${courseId}`);
+    }
+  }, [course, courseId, router]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center">
@@ -59,10 +66,6 @@ export default function EditCoursePage() {
       </div>
     );
   }
-
-  // Redirect to create-course page with pre-filled data
-  // We'll use query params to pass the course data
-  router.push(`/instructor/create-course?edit=true&courseId=${courseId}`);
 
   return null;
 }

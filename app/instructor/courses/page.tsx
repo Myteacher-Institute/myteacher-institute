@@ -317,7 +317,7 @@ export default function AllCoursesPage() {
                                     e.stopPropagation();
                                     handleEditCourse(course);
                                   }}
-                                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#111827] hover:bg-slate-50 transition-colors"
+                                  className={isDark ? "w-full flex items-center gap-3 px-4 py-2 text-sm text-[#fff] hover:bg-slate-50 transition-colors" : "w-full flex items-center gap-3 px-4 py-2 text-sm text-[#111827] hover:bg-slate-50 transition-colors"}
                                 >
                                   <FiEdit2 size={16} /> Edit
                                 </button>
@@ -326,7 +326,7 @@ export default function AllCoursesPage() {
                                     e.stopPropagation();
                                     handleViewCourse(course);
                                   }}
-                                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#111827] hover:bg-slate-50 transition-colors"
+                                  className={isDark ? "w-full flex items-center gap-3 px-4 py-2 text-sm text-[#fff] hover:bg-slate-50 transition-colors" : "w-full flex items-center gap-3 px-4 py-2 text-sm text-[#111827] hover:bg-slate-50 transition-colors"}
                                 >
                                   <FiEye size={16} /> View
                                 </button>

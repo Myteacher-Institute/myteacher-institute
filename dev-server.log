@@ -1,0 +1,116 @@
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.19:3000
+- Environments: .env.local, .env
+✓ Ready in 4.3s
+○ Compiling proxy ...
+
+○ Compiling / ...
+✓ Finished writing to filesystem cache in 14.0s
+ GET /instructor/login 200 in 56s (next.js: 45s, proxy.ts: 25ms, application-code: 11.0s)
+ GET / 200 in 77s (next.js: 60s, proxy.ts: 1331ms, application-code: 15.8s)
+ GET / 200 in 77s (next.js: 66s, proxy.ts: 1461ms, application-code: 9.6s)
+✓ Finished writing to filesystem cache in 11.7s
+○ Compiling /get-started ...
+ GET /get-started 200 in 58s (next.js: 47s, proxy.ts: 21ms, application-code: 10.9s)
+✓ Finished writing to filesystem cache in 23.5s
+ GET /get-started 200 in 2.2s (next.js: 228ms, proxy.ts: 67ms, application-code: 1928ms)
+ GET /get-started 200 in 1659ms (next.js: 235ms, proxy.ts: 340ms, application-code: 1084ms)
+ GET /get-started 200 in 4.1s (next.js: 302ms, proxy.ts: 65ms, application-code: 3.7s)
+ GET / 200 in 1210ms (next.js: 201ms, proxy.ts: 142ms, application-code: 867ms)
+ GET / 200 in 524ms (next.js: 21ms, proxy.ts: 20ms, application-code: 483ms)
+○ Compiling /student ...
+ GET /instructor 200 in 108s (next.js: 87s, proxy.ts: 37ms, application-code: 20.4s)
+ GET /student 200 in 112s (next.js: 68s, proxy.ts: 24ms, application-code: 44s)
+✓ Finished writing to filesystem cache in 76s
+✓ Finished writing to filesystem cache in 15.6s
+✓ Finished filesystem cache database compaction in 14.4s
+○ Compiling /instructor/mentorship ...
+ GET /instructor/mentorship 200 in 19.9s (next.js: 19.3s, proxy.ts: 38ms, application-code: 497ms)
+○ Compiling /student/mentorship ...
+ GET /student/mentorship 200 in 20.2s (next.js: 19.5s, proxy.ts: 18ms, application-code: 703ms)
+○ Compiling /student/mentorship/chat ...
+✓ Finished filesystem cache database compaction in 14.7s
+ GET /student/mentorship/chat?mentorship=6a917f59b6a1a87c7b57326b 200 in 13.8s (next.js: 13.4s, proxy.ts: 79ms, application-code: 301ms)
+ GET /student/mentorship/chat?mentorship=6a917f59b6a1a87c7b57326b 200 in 3.1s (next.js: 416ms, proxy.ts: 91ms, application-code: 2.6s)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket: Failed to refresh token during reconnection: TypeError: Failed to fetch
+    at SocketProvider.useEffect.handleDisconnect (app/components/SocketProvider.tsx:235:15)
+  233 |               console.log('Socket: Token invalid during reconnection, attempting refresh');
+  234 |               // Try to refresh token
+> 235 |               fetch(`${BACKEND_URL}/api/auth/new-access-code`, {
+      |               ^
+  236 |                 method: 'GET',
+  237 |                 credentials: 'include',
+  238 |               }).then(response => { (app/components/SocketProvider.tsx:255:25)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)
+[browser] Socket connection error: websocket error 
+    at Socket.<anonymous> (lib/socket.ts:183:13)
+  181 |
+  182 |   socket.on('connect_error', async (error) => {
+> 183 |     console.error('Socket connection error:', error.message || error);
+      |             ^
+  184 |     reconnectAttempts++;
+  185 |     
+  186 |     // Check if it's an authentication error (lib/socket.ts:183:13)

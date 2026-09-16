@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
-import { initializeSocket, disconnectSocket, updateSocketToken, isSocketConnected } from '@/lib/socket';
+import {
+  initializeSocket,
+  disconnectSocket,
+  updateSocketToken,
+  getSocket,
+  subscribeSocketChanges,
+} from '@/lib/socket';
 
 interface UseSocketReturn {
   socket: Socket | null;
@@ -11,13 +17,45 @@ interface UseSocketReturn {
 }
 
 export const useSocket = (): UseSocketReturn => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  // The socket instance is a shared singleton managed by lib/socket.ts.
+  // This hook mirrors it so every consumer (SocketProvider, ChatThread,
+  // dashboard pages…) sees the SAME live socket and receives its events.
+  const [socket, setSocket] = useState<Socket | null>(getSocket());
+  const [isConnected, setIsConnected] = useState<boolean>(socket?.connected ?? false);
+
+  useEffect(() => {
+    const sync = () => {
+      const current = getSocket();
+      setSocket(current);
+      setIsConnected(current?.connected ?? false);
+    };
+
+    sync();
+    const unsubscribe = subscribeSocketChanges(sync);
+    return unsubscribe;
+  }, []);
+
+  // Track connect/disconnect for the current socket instance
+  useEffect(() => {
+    if (!socket) return;
+
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    setIsConnected(socket.connected);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+    };
+  }, [socket]);
 
   const connect = useCallback((token: string) => {
     const socketInstance = initializeSocket(token);
     setSocket(socketInstance);
-    setIsConnected(true);
+    setIsConnected(socketInstance.connected);
   }, []);
 
   const disconnect = useCallback(() => {
@@ -30,24 +68,11 @@ export const useSocket = (): UseSocketReturn => {
     updateSocketToken(token);
   }, []);
 
-  useEffect(() => {
-    // Update connection status when socket connects/disconnects
-    if (socket) {
-      socket.on('connect', () => setIsConnected(true));
-      socket.on('disconnect', () => setIsConnected(false));
-
-      return () => {
-        socket.off('connect');
-        socket.off('disconnect');
-      };
-    }
-  }, [socket]);
-
   return {
     socket,
     isConnected,
     connect,
     disconnect,
-    updateToken
+    updateToken,
   };
 };

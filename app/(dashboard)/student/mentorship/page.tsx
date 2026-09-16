@@ -17,6 +17,10 @@ import StudentSidebar from "@/app/components/StudentSidebar";
 import { useAuthStore } from "@/store/auth.store";
 import { useThemeStore } from "@/store/theme.store";
 import { mentorService, StudentMentorship, StudentPendingRequest } from "@/services/mentor.service";
+import { RenewMentorshipModal } from "@/app/components/constants/Students/RenewMentorshipModal";
+import { MentorshipMenu } from "@/app/components/constants/Students/MentorshipMenu";
+import { ReportInstructorModal } from "@/app/components/constants/Students/ReportInstructorModal";
+import { DeleteMentorshipModal } from "@/app/components/constants/Students/DeleteMentorshipModal";
 
 export default function StudentMentorshipPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -29,6 +33,14 @@ export default function StudentMentorshipPage() {
   const { logout } = useAuthStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+
+  // Modal states
+  const [renewModalOpen, setRenewModalOpen] = useState(false);
+  const [selectedMentorship, setSelectedMentorship] = useState<StudentMentorship | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +66,39 @@ export default function StudentMentorshipPage() {
     };
   }, []);
 
+  // Handle payment success callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const status = urlParams.get('status');
+    const txRef = urlParams.get('tx_ref');
+    const transactionId = urlParams.get('transaction_id');
+
+    if (payment === 'success' && status === 'completed' && txRef?.includes('MENTOR-RENEW')) {
+      // Verify the payment with backend before refreshing
+      const verifyPayment = async () => {
+        try {
+          if (transactionId) {
+            await mentorService.verifyPayment(txRef, transactionId);
+          }
+          // Refresh mentorships after successful renewal payment
+          const res = await mentorService.getMyMentorships();
+          if (res.status === 'success') {
+            setMentorships(res.mentorships ?? []);
+            setPendingRequests(res.pendingRequests ?? []);
+          }
+        } catch (err) {
+          console.error('Failed to verify payment or refresh mentorships:', err);
+        }
+      };
+
+      verifyPayment();
+
+      // Clean up URL
+      window.history.replaceState({}, '', '/student/mentorship');
+    }
+  }, []);
+
   // Payment for an accepted request — fetches a fresh Flutterwave link server-side
   const handlePayNow = async (req: StudentPendingRequest) => {
     setPayingId(req._id);
@@ -72,6 +117,93 @@ export default function StudentMentorshipPage() {
       setPayingId(null);
     }
   };
+
+  // Renew mentorship
+  const handleRenewMentorship = async (duration: string) => {
+    if (!selectedMentorship) return;
+
+    try {
+      const res = await mentorService.renewMentorship(selectedMentorship.requestId, duration);
+      if (res.status === 'success' && res.paymentLink) {
+        setRenewModalOpen(false);
+        window.location.assign(res.paymentLink);
+      } else {
+        alert(res.message || "Could not initiate renewal. Please try again.");
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(message || "Could not initiate renewal. Please try again.");
+    }
+  };
+
+  // Open renew modal
+  const openRenewModal = (mentorship: StudentMentorship) => {
+    setSelectedMentorship(mentorship);
+    setRenewModalOpen(true);
+  };
+
+  // Report instructor
+  const handleReportInstructor = async (instructorId: string, reason: string, description: string) => {
+    try {
+      const res = await mentorService.reportInstructor({
+        instructorId,
+        reason,
+        description,
+        mentorshipId: selectedMentorship?.requestId
+      });
+
+      if (res.status === 'success') {
+        setReportModalOpen(false);
+        alert("Report submitted successfully. An admin will review it shortly.");
+      } else {
+        alert(res.message || "Could not submit report. Please try again.");
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(message || "Could not submit report. Please try again.");
+    }
+  };
+
+  // Open report modal
+  const openReportModal = (instructorId: string, instructorName: string) => {
+    setSelectedInstructor({ id: instructorId, name: instructorName });
+    setReportModalOpen(true);
+  };
+
+  // Delete mentorship
+  const handleDeleteMentorship = async () => {
+    if (!selectedMentorship) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await mentorService.deleteMentorship(selectedMentorship.requestId);
+      if (res.status === 'success') {
+        setDeleteModalOpen(false);
+        // Refresh mentorships
+        const refreshed = await mentorService.getMyMentorships();
+        if (refreshed.status === 'success') {
+          setMentorships(refreshed.mentorships ?? []);
+        }
+      } else {
+        alert(res.message || "Could not end mentorship. Please try again.");
+      }
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      alert(message || "Could not end mentorship. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Open delete modal
+  const openDeleteModal = (mentorship: StudentMentorship) => {
+    setSelectedMentorship(mentorship);
+    setDeleteModalOpen(true);
+  };
+
+  // Opens (or lazily creates) the in-app conversation with the mentor — chat
+  // now lives on its own page, not a modal.
+  const chatHref = (m: StudentMentorship) => `/student/mentorship/chat?mentorship=${m.requestId}`;
 
   return (
     <div className={`flex min-h-screen font-poppins ${isDark ? 'bg-slate-900' : 'bg-[#FDFDFD]'}`}>
@@ -222,10 +354,17 @@ export default function StudentMentorshipPage() {
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <h4 className={`font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{m.mentor.name}</h4>
                           <p className={`text-xs font-bold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>{m.mentor.specialization}</p>
                         </div>
+                        <MentorshipMenu
+                          mentorshipId={m.requestId}
+                          mentorId={m.mentor._id}
+                          mentorName={m.mentor.name}
+                          onDelete={() => openDeleteModal(m)}
+                          onReport={(instructorId, instructorName) => openReportModal(instructorId, instructorName)}
+                        />
                       </div>
 
                       {/* Ended badge */}
@@ -275,30 +414,40 @@ export default function StudentMentorshipPage() {
                         </div>
                       )}
 
-                      {/* Ended → Renew button; Active → WhatsApp chat */}
+                      {/* Ended → Renew button; Active → in-app Chat + WhatsApp */}
                       {isEnded ? (
-                        <Link
-                          href={`/mentor?mentor=${m.mentor._id}`}
+                        <button
+                          onClick={() => openRenewModal(m)}
                           className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-lg cursor-pointer flex items-center justify-center gap-2"
                         >
                           Renew Mentorship
-                        </Link>
-                      ) : m.mentor.whatsappLink ? (
-                        <a
-                          href={m.mentor.whatsappLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-auto w-full bg-[#25D366] hover:bg-[#1fb857] text-white py-3.5 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-lg cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          <FiMessageCircle size={18} /> Chat on WhatsApp
-                        </a>
-                      ) : (
-                        <button
-                          disabled
-                          className="mt-auto w-full bg-slate-300 dark:bg-slate-700 text-white py-3.5 rounded-2xl font-bold cursor-not-allowed opacity-70 flex items-center justify-center gap-2"
-                        >
-                          <FiMessageCircle size={18} /> WhatsApp Unavailable
                         </button>
+                      ) : (
+                        <div className="mt-auto grid grid-cols-2 gap-3">
+                          <Link
+                            href={chatHref(m)}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                          >
+                            <FiMessageCircle size={18} /> Chat
+                          </Link>
+                          {m.mentor.whatsappLink ? (
+                            <a
+                              href={m.mentor.whatsappLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full bg-[#25D366] hover:bg-[#1fb857] text-white py-3.5 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-lg cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              <FiMessageCircle size={18} /> WhatsApp
+                            </a>
+                          ) : (
+                            <button
+                              disabled
+                              className="w-full bg-slate-300 dark:bg-slate-700 text-white py-3.5 rounded-2xl font-bold cursor-not-allowed opacity-70 flex items-center justify-center gap-2"
+                            >
+                              <FiMessageCircle size={18} /> WhatsApp
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     );
@@ -354,14 +503,14 @@ export default function StudentMentorshipPage() {
                           </div>
                         )}
 
-                        {accepted && req.paymentStatus === 'pending' && req.instructorId?.mentorshipPrice ? (
+                        {accepted && req.paymentStatus === 'pending' && (req.actualPrice ?? req.instructorId?.mentorshipPrice) ? (
                           <button
                             onClick={() => handlePayNow(req)}
                             disabled={payingId === req._id}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
                           >
                             {payingId === req._id ? <FiLoader className="animate-spin" size={18} /> : <FiCreditCard size={18} />}
-                            Pay ₦{req.instructorId.mentorshipPrice.toLocaleString()}
+                            Pay ₦{(req.actualPrice ?? req.instructorId.mentorshipPrice!).toLocaleString()}
                           </button>
                         ) : accepted ? (
                           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-700 text-sm">
@@ -381,6 +530,43 @@ export default function StudentMentorshipPage() {
           </>
         )}
       </main>
+
+      {/* Renew Mentorship Modal */}
+      {selectedMentorship && (
+        <RenewMentorshipModal
+          isOpen={renewModalOpen}
+          onClose={() => setRenewModalOpen(false)}
+          mentorship={{
+            requestId: selectedMentorship.requestId,
+            mentor: selectedMentorship.mentor,
+            originalAmount: selectedMentorship.amountPaid,
+            originalDuration: selectedMentorship.programDuration
+          }}
+          onRenew={handleRenewMentorship}
+        />
+      )}
+
+      {/* Report Instructor Modal */}
+      {selectedInstructor && (
+        <ReportInstructorModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          instructorId={selectedInstructor.id}
+          instructorName={selectedInstructor.name}
+          onSubmitReport={handleReportInstructor}
+        />
+      )}
+
+      {/* Delete Mentorship Modal */}
+      {selectedMentorship && (
+        <DeleteMentorshipModal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          mentorName={selectedMentorship.mentor.name}
+          onConfirm={handleDeleteMentorship}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 }

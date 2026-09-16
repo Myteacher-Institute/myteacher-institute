@@ -14,12 +14,22 @@ const SOUNDS: Record<string, NotificationSound> = {
 };
 
 let audioContext: AudioContext | null = null;
+let notificationAudio: HTMLAudioElement | null = null;
 
 const getAudioContext = (): AudioContext => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   return audioContext;
+};
+
+const getNotificationAudio = (): HTMLAudioElement | null => {
+  if (typeof window === 'undefined') return null;
+  if (!notificationAudio) {
+    notificationAudio = new Audio('/notification.mp3');
+    notificationAudio.preload = 'auto';
+  }
+  return notificationAudio;
 };
 
 export const playNotificationSound = (type: 'success' | 'error' | 'info' | 'warning' = 'info'): void => {
@@ -30,9 +40,32 @@ export const playNotificationSound = (type: 'success' | 'error' | 'info' | 'warn
     const soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
     if (!soundEnabled) return;
 
+    const audio = getNotificationAudio();
+    if (audio) {
+      audio.currentTime = 0;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Fall back to the WebAudio beep if the mp3 cannot be played
+          playTone(type);
+        });
+      }
+      return;
+    }
+
+    playTone(type);
+  } catch (error) {
+    console.error('Error playing notification sound:', error);
+  }
+};
+
+const playTone = (type: 'success' | 'error' | 'info' | 'warning'): void => {
+  try {
+    if (typeof window === 'undefined') return;
+
     const sound = SOUNDS[type] || SOUNDS.info;
     const context = getAudioContext();
-    
+
     // Resume context if suspended (required by some browsers)
     if (context.state === 'suspended') {
       context.resume();
@@ -53,7 +86,7 @@ export const playNotificationSound = (type: 'success' | 'error' | 'info' | 'warn
     oscillator.start(context.currentTime);
     oscillator.stop(context.currentTime + sound.duration / 1000);
   } catch (error) {
-    console.error('Error playing notification sound:', error);
+    console.error('Error playing fallback tone:', error);
   }
 };
 
