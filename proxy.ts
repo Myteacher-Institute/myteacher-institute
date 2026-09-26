@@ -122,6 +122,15 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // -- 5c. AI Tutor page -------------------------------------------------------
+  // Protected — requires authentication for any user type
+  if (pathname.startsWith('/tutor')) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/get-started', request.url));
+    }
+    return NextResponse.next();
+  }
+
   // -- 6. Instructor protected pages ----------------------------------------
   // /instructor/login etc. are already handled above in section 2.
   if (pathname.startsWith('/instructor')) {

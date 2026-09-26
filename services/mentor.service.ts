@@ -196,7 +196,7 @@ export const mentorService = {
     reason: string;
     description: string;
     mentorshipId?: string;
-  }): Promise<{ status: string; message: string; report?: any }> {
+  }): Promise<{ status: string; message: string; report?: { _id: string; instructorId: string; reason: string; description: string; createdAt: Date } }> {
     const res = await axiosInstance.post('/api/reports/instructor', data);
     return res.data;
   },
@@ -208,7 +208,7 @@ export const mentorService = {
   },
 
   // Verify payment with backend
-  async verifyPayment(txRef: string, transactionId: string): Promise<{ status: string; message: string; transaction?: any }> {
+  async verifyPayment(txRef: string, transactionId: string): Promise<{ status: string; message: string; transaction?: { transactionId: string; amount: number; status: string; createdAt: Date } }> {
     const res = await axiosInstance.get('/api/payment/verify', {
       params: { transaction_id: transactionId, tx_ref: txRef }
     });

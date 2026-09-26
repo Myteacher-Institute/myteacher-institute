@@ -21,6 +21,7 @@ import { RenewMentorshipModal } from "@/app/components/constants/Students/RenewM
 import { MentorshipMenu } from "@/app/components/constants/Students/MentorshipMenu";
 import { ReportInstructorModal } from "@/app/components/constants/Students/ReportInstructorModal";
 import { DeleteMentorshipModal } from "@/app/components/constants/Students/DeleteMentorshipModal";
+import { MentorshipDetailsModal } from "@/app/components/constants/Students/MentorshipDetailsModal";
 
 export default function StudentMentorshipPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function StudentMentorshipPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<{ id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -201,6 +203,12 @@ export default function StudentMentorshipPage() {
     setDeleteModalOpen(true);
   };
 
+  // Open details modal
+  const openDetailsModal = (mentorship: StudentMentorship) => {
+    setSelectedMentorship(mentorship);
+    setDetailsModalOpen(true);
+  };
+
   // Opens (or lazily creates) the in-app conversation with the mentor — chat
   // now lives on its own page, not a modal.
   const chatHref = (m: StudentMentorship) => `/student/mentorship/chat?mentorship=${m.requestId}`;
@@ -242,28 +250,28 @@ export default function StudentMentorshipPage() {
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`rounded-3xl p-6 border shadow-sm flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+                    className={`rounded-2xl p-4 border shadow-sm flex flex-col ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
                   >
                     {/* Avatar + name */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className={`w-14 h-14 rounded-full shrink-0 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 rounded-full shrink-0 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                       <div className="min-w-0 flex-1 space-y-2">
-                        <div className={`h-4 w-28 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
-                        <div className={`h-3 w-32 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                        <div className={`h-3 w-24 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                        <div className={`h-2 w-20 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                       </div>
                     </div>
 
                     {/* Details */}
-                    <div className="space-y-2 mb-4">
-                      <div className={`h-3 w-40 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
-                      <div className={`h-3 w-56 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className="space-y-2 mb-2">
+                      <div className={`h-2 w-32 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                      <div className={`h-2 w-40 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                     </div>
 
                     {/* Price */}
-                    <div className={`h-3 w-24 rounded mb-4 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`h-2 w-20 rounded mb-2 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
 
                     {/* Button */}
-                    <div className={`mt-auto h-14 w-full rounded-2xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`mt-auto h-10 w-full rounded-xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                   </div>
                 ))}
               </div>
@@ -276,25 +284,25 @@ export default function StudentMentorshipPage() {
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`rounded-3xl p-6 border shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+                    className={`rounded-2xl p-4 border shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
                   >
                     {/* Status badge + clock */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`h-3 w-36 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
-                      <div className={`w-4 h-4 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`h-2 w-24 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                      <div className={`w-3 h-3 rounded animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                     </div>
 
                     {/* Mentor name */}
-                    <div className={`h-5 w-32 rounded mb-2 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`h-4 w-24 rounded mb-1 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
 
                     {/* Category + level */}
-                    <div className={`h-3 w-44 rounded mb-1 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`h-2 w-32 rounded mb-1 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
 
                     {/* Date */}
-                    <div className={`h-3 w-28 rounded mb-5 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`h-2 w-20 rounded mb-3 animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
 
                     {/* Message / button block */}
-                    <div className={`h-20 w-full rounded-xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+                    <div className={`h-16 w-full rounded-lg animate-pulse ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
                   </div>
                 ))}
               </div>
@@ -336,27 +344,27 @@ export default function StudentMentorshipPage() {
                     return (
                     <div
                       key={m.requestId}
-                      className={`rounded-3xl p-6 border shadow-sm flex flex-col ${isEnded ? (isDark ? 'bg-slate-800/60 border-slate-700/50 opacity-75' : 'bg-gray-50 border-gray-200 opacity-75') : isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+                      className={`rounded-2xl p-4 border shadow-sm flex flex-col ${isEnded ? (isDark ? 'bg-slate-800/60 border-slate-700/50 opacity-75' : 'bg-gray-50 border-gray-200 opacity-75') : isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
                     >
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="relative w-14 h-14 shrink-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="relative w-10 h-10 shrink-0">
                           {m.mentor.profilePicture ? (
                             <Image
-                              width={56}
-                              height={56}
+                              width={40}
+                              height={40}
                               alt={m.mentor.name}
                               src={m.mentor.profilePicture}
-                              className={`w-14 h-14 rounded-full object-cover border-2 ${isEnded ? 'border-gray-300 grayscale' : 'border-blue-50'}`}
+                              className={`w-10 h-10 rounded-full object-cover border-2 ${isEnded ? 'border-gray-300 grayscale' : 'border-blue-50'}`}
                             />
                           ) : (
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold ${isEnded ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-[#0F1C2E]'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isEnded ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-[#0F1C2E]'}`}>
                               {m.mentor.name.split(' ').slice(0, 2).map((p) => p[0]?.toUpperCase()).join('')}
                             </div>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className={`font-bold leading-tight truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{m.mentor.name}</h4>
-                          <p className={`text-xs font-bold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>{m.mentor.specialization}</p>
+                          <h4 className={`font-bold leading-tight truncate text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{m.mentor.name}</h4>
+                          <p className={`text-[10px] font-bold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>{m.mentor.specialization}</p>
                         </div>
                         <MentorshipMenu
                           mentorshipId={m.requestId}
@@ -364,13 +372,19 @@ export default function StudentMentorshipPage() {
                           mentorName={m.mentor.name}
                           onDelete={() => openDeleteModal(m)}
                           onReport={(instructorId, instructorName) => openReportModal(instructorId, instructorName)}
+                          whatsappLink={m.mentor.whatsappLink}
+                          chatHref={chatHref(m)}
+                          isEnded={isEnded}
+                          onRenew={() => openRenewModal(m)}
+                          mentorship={m}
+                          onViewDetails={() => openDetailsModal(m)}
                         />
                       </div>
 
                       {/* Ended badge */}
                       {isEnded && (
-                        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-3 text-xs font-semibold ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>
-                          <FiCheckCircle size={14} />
+                        <div className={`flex items-center gap-2 rounded-lg px-2 py-1 mb-2 text-[10px] font-semibold ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>
+                          <FiCheckCircle size={12} />
                           Program ended
                         </div>
                       )}
@@ -382,39 +396,39 @@ export default function StudentMentorshipPage() {
                         if (daysLeft <= 0) return null;
                         if (daysLeft <= 7) {
                           return (
-                            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-3 text-xs font-semibold ${isDark ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                              <FiAlertTriangle size={14} />
+                            <div className={`flex items-center gap-2 rounded-lg px-2 py-1 mb-2 text-[10px] font-semibold ${isDark ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                              <FiAlertTriangle size={12} />
                               {daysLeft <= 1 ? 'Program expires today' : `Program expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`}
                             </div>
                           );
                         }
                         return (
-                          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-3 text-xs ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
-                            <FiClock size={14} />
+                          <div className={`flex items-center gap-2 rounded-lg px-2 py-1 mb-2 text-[10px] ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-50 text-gray-500 border border-gray-100'}`}>
+                            <FiClock size={12} />
                             {daysLeft} day{daysLeft > 1 ? 's' : ''} remaining
                           </div>
                         );
                       })()}
 
                       {m.skillCategory && (
-                        <p className={`text-sm mb-1 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                        <p className={`text-[11px] mb-1 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
                           Focus: <span className="font-semibold">{m.skillCategory}</span>
                           {m.mentorshipType ? ` • ${m.mentorshipType}` : ''}
                         </p>
                       )}
                       {m.mentor.mentorshipBio && (
-                        <p className={`text-sm leading-relaxed mb-4 line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        <p className={`text-[11px] leading-relaxed mb-2 line-clamp-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                           {m.mentor.mentorshipBio}
                         </p>
                       )}
 
                       {m.amountPaid && (
-                        <div className={`flex items-center gap-2 text-sm font-semibold mb-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                          <DollarSign size={16} /> Paid ₦{m.amountPaid.toLocaleString()}
+                        <div className={`flex items-center gap-2 text-[11px] font-semibold mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          <DollarSign size={12} /> Paid ₦{m.amountPaid.toLocaleString()}
                         </div>
                       )}
 
-                      {/* Ended → Renew button; Active → in-app Chat + WhatsApp */}
+                      {/* Ended → Renew button; Active → in-app Chat + WhatsApp (moved to menu for mobile) */}
                       {isEnded ? (
                         <button
                           onClick={() => openRenewModal(m)}
@@ -423,7 +437,7 @@ export default function StudentMentorshipPage() {
                           Renew Mentorship
                         </button>
                       ) : (
-                        <div className="mt-auto grid grid-cols-2 gap-3">
+                        <div className="mt-auto grid grid-cols-2 gap-3 hidden md:grid">
                           <Link
                             href={chatHref(m)}
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold transition-all active:scale-[0.98] shadow-lg cursor-pointer flex items-center justify-center gap-2"
@@ -475,24 +489,24 @@ export default function StudentMentorshipPage() {
                     return (
                       <div
                         key={req._id}
-                        className={`rounded-3xl p-6 border shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
+                        className={`rounded-2xl p-4 border shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`text-xs font-bold uppercase tracking-widest ${accepted ? 'text-emerald-500' : 'text-yellow-500'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${accepted ? 'text-emerald-500' : 'text-yellow-500'}`}>
                             {accepted ? 'Accepted — awaiting payment' : 'Awaiting response'}
                           </span>
-                          <FiClock size={16} className={isDark ? 'text-slate-500' : 'text-gray-300'} />
+                          <FiClock size={14} className={isDark ? 'text-slate-500' : 'text-gray-300'} />
                         </div>
-                        <h4 className={`font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{mentorName}</h4>
-                        <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        <h4 className={`font-bold mb-1 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{mentorName}</h4>
+                        <p className={`text-[11px] mb-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                           {req.skillCategory} • {req.skillLevel}
                         </p>
-                        <p className={`text-sm mb-5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <p className={`text-[11px] mb-3 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                           Requested {new Date(req.createdAt).toLocaleDateString()}
                         </p>
 
                         {accepted && (req.availableTime || req.programDuration) && (
-                          <div className={`rounded-xl p-4 mb-4 text-sm space-y-1 ${isDark ? 'bg-slate-700/60' : 'bg-blue-50'}`}>
+                          <div className={`rounded-lg p-3 mb-3 text-[11px] space-y-1 ${isDark ? 'bg-slate-700/60' : 'bg-blue-50'}`}>
                             <p className={`font-semibold ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>Program Schedule</p>
                             {req.availableTime && (
                               <p className={isDark ? 'text-slate-300' : 'text-gray-700'}><span className="font-medium">Available Time:</span> {req.availableTime}</p>
@@ -507,17 +521,17 @@ export default function StudentMentorshipPage() {
                           <button
                             onClick={() => handlePayNow(req)}
                             disabled={payingId === req._id}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 text-sm"
                           >
-                            {payingId === req._id ? <FiLoader className="animate-spin" size={18} /> : <FiCreditCard size={18} />}
+                            {payingId === req._id ? <FiLoader className="animate-spin" size={16} /> : <FiCreditCard size={16} />}
                             Pay ₦{(req.actualPrice ?? req.instructorId.mentorshipPrice!).toLocaleString()}
                           </button>
                         ) : accepted ? (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-700 text-sm">
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-emerald-700 text-[11px]">
                             Your mentor accepted! Check your email for the secure payment link to activate this mentorship.
                           </div>
                         ) : (
-                          <div className={`rounded-xl p-4 text-sm ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-50 text-gray-600'}`}>
+                          <div className={`rounded-lg p-3 text-[11px] ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-50 text-gray-600'}`}>
                             We&apos;ll notify you by email as soon as {mentorName} responds to your request.
                           </div>
                         )}
@@ -565,6 +579,16 @@ export default function StudentMentorshipPage() {
           mentorName={selectedMentorship.mentor.name}
           onConfirm={handleDeleteMentorship}
           isDeleting={isDeleting}
+        />
+      )}
+
+      {/* Mentorship Details Modal */}
+      {selectedMentorship && (
+        <MentorshipDetailsModal
+          isOpen={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+          mentorship={selectedMentorship}
+          isDark={isDark}
         />
       )}
     </div>
