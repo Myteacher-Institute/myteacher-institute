@@ -18,7 +18,9 @@ import { useThemeStore } from '@/store/theme.store';
 import { API_CONFIG } from '@/config/api';
 import axiosInstance from '@/lib/axios';
 import { courseService, BrowseCourse } from '@/services/course.service';
+import { affiliateService, AffiliateStats, Referral } from '@/services/affiliate.service';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type AffiliateStatus =
     | { state: 'loading' }
@@ -37,6 +39,19 @@ export default function AffiliateDashboard() {
     const [searchError, setSearchError] = useState('');
     const [copiedCourseId, setCopiedCourseId] = useState<string | null>(null);
     const [ownCourseIds, setOwnCourseIds] = useState<Set<string>>(new Set());
+    const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
+    const [recentReferrals, setRecentReferrals] = useState<Referral[]>([]);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
+    const [withdrawalAmount, setWithdrawalAmount] = useState('');
+    const [bankName, setBankName] = useState('');
+    const [accountNumber, setAccountNumber] = useState('');
+    const [accountName, setAccountName] = useState('');
+    const [withdrawalError, setWithdrawalError] = useState('');
+    const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
+    const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+    const [banks, setBanks] = useState<any[]>([]);
+    const [banksLoading, setBanksLoading] = useState(false);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const userType = useAuthStore((s) => s.userType);
     const { theme } = useThemeStore();
@@ -87,6 +102,53 @@ export default function AffiliateDashboard() {
         const t = setTimeout(ensureAffiliate, 0);
         return () => clearTimeout(t);
     }, [isUnauthenticated, ensureAffiliate]);
+
+    // Fetch affiliate stats and recent referrals
+    useEffect(() => {
+        if (isUnauthenticated || status.state !== 'active') {
+            return;
+        }
+        const t = setTimeout(async () => {
+            setStatsLoading(true);
+            try {
+                const [statsRes, referralsRes] = await Promise.all([
+                    affiliateService.getStats(),
+                    affiliateService.getRecentReferrals()
+                ]);
+                if (statsRes.status === 'success') {
+                    setAffiliateStats(statsRes.stats);
+                }
+                if (referralsRes.status === 'success') {
+                    setRecentReferrals(referralsRes.referrals);
+                }
+            } catch (error) {
+                console.error('Failed to fetch affiliate data:', error);
+            } finally {
+                setStatsLoading(false);
+            }
+        }, 0);
+        return () => clearTimeout(t);
+    }, [isUnauthenticated, status.state]);
+
+    // Fetch bank list when withdrawal modal opens
+    useEffect(() => {
+        if (withdrawalModalOpen) {
+            const fetchBanks = async () => {
+                setBanksLoading(true);
+                try {
+                    const res = await affiliateService.getBanks();
+                    if (res.status === 'success') {
+                        setBanks(res.banks);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch banks:', error);
+                } finally {
+                    setBanksLoading(false);
+                }
+            };
+            fetchBanks();
+        }
+    }, [withdrawalModalOpen]);
 
     // Instructors cannot generate referral links for their own courses — load
     // the instructor's own course ids so the copy button is hidden for them.
@@ -164,22 +226,49 @@ export default function AffiliateDashboard() {
         window.location.href = `${API_CONFIG.baseURL}/api/auth/google`;
     };
 
-    const recentReferrals = [
-        {
-            avatar: 'https://randomuser.me/api/portraits/women/45.jpg',
-            name: 'Stella Chika',
-            course: 'Python for Beginners',
-            earnings: '₦2,500',
-            status: 'Enrolled'
-        },
-        {
-            avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-            name: 'Michael Chen',
-            course: 'Web Development',
-            earnings: '₦3,200',
-            status: 'Pending'
+    const handleWithdrawalSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setWithdrawalError('');
+        setWithdrawalSuccess('');
+        setWithdrawalLoading(true);
+
+        try {
+            const amount = parseFloat(withdrawalAmount);
+            if (isNaN(amount) || amount < 1000) {
+                setWithdrawalError('Minimum withdrawal amount is ₦1,000');
+                setWithdrawalLoading(false);
+                return;
+            }
+
+            const res = await affiliateService.createWithdrawal({
+                amount,
+                bankName,
+                accountNumber,
+                accountName
+            });
+
+            if (res.status === 'success') {
+                setWithdrawalSuccess('Withdrawal request submitted successfully!');
+                setWithdrawalAmount('');
+                setBankName('');
+                setAccountNumber('');
+                setAccountName('');
+                setWithdrawalModalOpen(false);
+                
+                // Refresh stats after withdrawal
+                const statsRes = await affiliateService.getStats();
+                if (statsRes.status === 'success') {
+                    setAffiliateStats(statsRes.stats);
+                }
+            } else {
+                setWithdrawalError(res.message || 'Failed to create withdrawal request');
+            }
+        } catch (error) {
+            setWithdrawalError('Failed to create withdrawal request. Please try again.');
+        } finally {
+            setWithdrawalLoading(false);
         }
-    ];
+    };
 
     const referralAssets = [
         {
@@ -378,22 +467,38 @@ export default function AffiliateDashboard() {
                         {/* Total Earnings Card (Green Colors) */}
                         <article className={`p-5 sm:p-6 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'border-[#F0FDF4]'}`} style={isDark ? undefined : { backgroundColor: '#DCFCE7' }}>
                             <h3 className={`text-xs font-semibold uppercase ${isDark ? 'text-green-400' : 'text-green-700'}`}>Total Earnings</h3>
-                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>₦{status.state === 'active' ? status.affiliate_money.toLocaleString() : '0'}</p>
+                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : `₦${affiliateStats?.totalEarnings?.toLocaleString() || '0'}`}
+                            </p>
                             <p className={`text-xs sm:text-sm ${isDark ? 'text-green-400' : 'text-green-700'}`}>+12% from last month</p>
                         </article>
 
                         {/* Pending Balance Card (Yellow/Amber Colors) */}
                         <article className={`p-5 sm:p-6 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'border-[#FEFCE8]'}`} style={isDark ? undefined : { backgroundColor: '#FEF9C3' }}>
                             <h3 className={`text-xs font-semibold uppercase ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Pending</h3>
-                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>₦8,750</p>
+                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : `₦${affiliateStats?.pendingBalance?.toLocaleString() || '0'}`}
+                            </p>
                             <p className={`text-xs sm:text-sm ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>Processing</p>
                         </article>
 
                         {/* Withdrawn Earnings Card (Blue Colors) */}
                         <article className={`p-5 sm:p-6 rounded-lg border col-span-1 sm:col-span-2 md:col-span-1 ${isDark ? 'bg-slate-700 border-slate-600' : 'border-[#EFF6FF]'}`} style={isDark ? undefined : { backgroundColor: '#DBEAFE' }}>
-                            <h3 className={`text-xs font-semibold uppercase ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>Withdrawn</h3>
-                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>₦95,200</p>
-                            <p className={`text-xs sm:text-sm ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>Last withdrawal: 5 days ago</p>
+                            <h3 className={`text-xs font-semibold uppercase ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>Available Balance</h3>
+                            <p className={`text-2xl sm:text-3xl font-bold my-1.5 sm:my-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : `₦${affiliateStats?.currentBalance?.toLocaleString() || '0'}`}
+                            </p>
+                            <button
+                                onClick={() => setWithdrawalModalOpen(true)}
+                                disabled={statsLoading || !affiliateStats || affiliateStats.currentBalance < 1000}
+                                className={`mt-2 text-xs sm:text-sm font-semibold px-3 py-1.5 rounded transition ${
+                                    statsLoading || !affiliateStats || affiliateStats.currentBalance < 1000
+                                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                                        : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                }`}
+                            >
+                                Withdraw Funds
+                            </button>
                         </article>
 
                     </div>
@@ -412,7 +517,9 @@ export default function AffiliateDashboard() {
                                 <BiMouseAlt className={`${isDark ? 'text-purple-400' : 'text-purple-600'}`} size={22} />
                             </div>
                             <div className={`text-xs sm:text-sm mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Clicks</div>
-                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>2,847</div>
+                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : affiliateStats?.totalClicks?.toLocaleString() || '0'}
+                            </div>
                         </div>
 
                         <div className={`flex flex-col items-center border-t border-b sm:border-t-0 sm:border-b-0 py-4 sm:py-0 ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
@@ -420,7 +527,9 @@ export default function AffiliateDashboard() {
                                 <HiOutlineUserGroup className={`${isDark ? 'text-orange-400' : 'text-orange-600'}`} size={22} />
                             </div>
                             <div className={`text-xs sm:text-sm mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Signups</div>
-                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>186</div>
+                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : affiliateStats?.totalSignups?.toLocaleString() || '0'}
+                            </div>
                         </div>
 
                         <div className="flex flex-col items-center">
@@ -428,7 +537,9 @@ export default function AffiliateDashboard() {
                                 <GiGraduateCap className={`${isDark ? 'text-green-400' : 'text-green-600'}`} size={22} />
                             </div>
                             <div className={`text-xs sm:text-sm mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Paid Enrollments</div>
-                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>94</div>
+                            <div className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                                {statsLoading ? '...' : affiliateStats?.paidEnrollments?.toLocaleString() || '0'}
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -441,24 +552,164 @@ export default function AffiliateDashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-1 gap-4 sm:gap-6">
-                        {recentReferrals.map((item, idx) => (
-                            <div key={idx} className={`flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-center sm:justify-between border rounded-lg p-4 sm:p-5 ${isDark ? 'border-slate-700 bg-slate-700/40' : 'border-gray-100'}`}>
-                                <div className="flex items-center gap-3">
-                                    <img src={item.avatar} alt={item.name} className="w-9 h-9 rounded-full object-cover" />
-                                    <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.name}</div>
-                                </div>
-                                <div className={`text-xs sm:text-sm font-medium sm:px-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.course}</div>
-                                <div className={`flex items-center justify-between sm:justify-end sm:gap-4 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 ${isDark ? 'border-slate-700' : 'border-gray-50'}`}>
-                                    <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.earnings}</div>
-                                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${item.status === 'Enrolled' ? (isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-50 text-green-700') : (isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-50 text-amber-700')
-                                        }`}>
-                                        {item.status}
-                                    </span>
-                                </div>
+                        {statsLoading ? (
+                            <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Loading recent referrals...
                             </div>
-                        ))}
+                        ) : recentReferrals.length === 0 ? (
+                            <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                No recent referrals yet. Start sharing your referral links to see your referrals here.
+                            </div>
+                        ) : (
+                            recentReferrals.map((item, idx) => (
+                                <div key={idx} className={`flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-center sm:justify-between border rounded-lg p-4 sm:p-5 ${isDark ? 'border-slate-700 bg-slate-700/40' : 'border-gray-100'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <Image src={item.avatar} alt={item.name} width={36} height={36} className="w-9 h-9 rounded-full object-cover" />
+                                        <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.name}</div>
+                                    </div>
+                                    <div className={`text-xs sm:text-sm font-medium sm:px-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{item.course}</div>
+                                    <div className={`flex items-center justify-between sm:justify-end sm:gap-4 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 ${isDark ? 'border-slate-700' : 'border-gray-50'}`}>
+                                        <div className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.earnings}</div>
+                                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${item.status === 'Enrolled' ? (isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-50 text-green-700') : (isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-50 text-amber-700')
+                                            }`}>
+                                            {item.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </section>
+
+                {/* Withdrawal Modal */}
+                {withdrawalModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className={`rounded-lg border shadow-xl max-w-md w-full p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Withdraw Funds</h3>
+                                <button
+                                    onClick={() => setWithdrawalModalOpen(false)}
+                                    className={`p-2 rounded ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-slate-500'}`}
+                                >
+                                    <HiOutlineX size={20} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleWithdrawalSubmit} className="space-y-4">
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Amount (₦)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={withdrawalAmount}
+                                        onChange={(e) => setWithdrawalAmount(e.target.value)}
+                                        min="1000"
+                                        step="100"
+                                        placeholder="Enter amount (min ₦1,000)"
+                                        className={`w-full px-3 py-2 rounded border outline-none ${
+                                            isDark 
+                                                ? 'bg-slate-900 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500' 
+                                                : 'bg-white border-gray-300 text-slate-800 placeholder-slate-400 focus:border-blue-500'
+                                        }`}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Select Bank
+                                    </label>
+                                    <select
+                                        value={bankName}
+                                        onChange={(e) => setBankName(e.target.value)}
+                                        disabled={banksLoading}
+                                        className={`w-full px-3 py-2 rounded border outline-none ${
+                                            isDark 
+                                                ? 'bg-slate-900 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500' 
+                                                : 'bg-white border-gray-300 text-slate-800 placeholder-slate-400 focus:border-blue-500'
+                                        }`}
+                                    >
+                                        <option value="">Select your bank</option>
+                                        {banksLoading ? (
+                                            <option>Loading banks...</option>
+                                        ) : banks.length > 0 ? (
+                                            banks.map((bank: any) => (
+                                                <option key={bank.code} value={bank.code}>
+                                                    {bank.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option>No banks available</option>
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Account Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={accountNumber}
+                                        onChange={(e) => setAccountNumber(e.target.value)}
+                                        placeholder="Enter your account number"
+                                        className={`w-full px-3 py-2 rounded border outline-none ${
+                                            isDark 
+                                                ? 'bg-slate-900 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500' 
+                                                : 'bg-white border-gray-300 text-slate-800 placeholder-slate-400 focus:border-blue-500'
+                                        }`}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Account Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={accountName}
+                                        onChange={(e) => setAccountName(e.target.value)}
+                                        placeholder="Enter account holder name"
+                                        className={`w-full px-3 py-2 rounded border outline-none ${
+                                            isDark 
+                                                ? 'bg-slate-900 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500' 
+                                                : 'bg-white border-gray-300 text-slate-800 placeholder-slate-400 focus:border-blue-500'
+                                        }`}
+                                    />
+                                </div>
+
+                                {withdrawalError && (
+                                    <p className="text-red-600 text-sm">{withdrawalError}</p>
+                                )}
+
+                                {withdrawalSuccess && (
+                                    <p className="text-green-600 text-sm">{withdrawalSuccess}</p>
+                                )}
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setWithdrawalModalOpen(false)}
+                                        className={`flex-1 px-4 py-2 rounded font-semibold transition ${
+                                            isDark 
+                                                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                                                : 'bg-gray-200 text-slate-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={withdrawalLoading}
+                                        className={`flex-1 px-4 py-2 rounded font-semibold transition bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed`}
+                                    >
+                                        {withdrawalLoading ? 'Processing...' : 'Submit Request'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {/* Section: Promotional Marketing Toolkit */}
                 <section className="pt-2" aria-labelledby="assets-heading">
