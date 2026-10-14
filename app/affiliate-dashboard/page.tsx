@@ -50,7 +50,7 @@ export default function AffiliateDashboard() {
     const [withdrawalError, setWithdrawalError] = useState('');
     const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
     const [withdrawalLoading, setWithdrawalLoading] = useState(false);
-    const [banks, setBanks] = useState<any[]>([]);
+    const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
     const [banksLoading, setBanksLoading] = useState(false);
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const userType = useAuthStore((s) => s.userType);
@@ -263,7 +263,7 @@ export default function AffiliateDashboard() {
             } else {
                 setWithdrawalError(res.message || 'Failed to create withdrawal request');
             }
-        } catch (error) {
+        } catch {
             setWithdrawalError('Failed to create withdrawal request. Please try again.');
         } finally {
             setWithdrawalLoading(false);
@@ -633,7 +633,7 @@ export default function AffiliateDashboard() {
                                         {banksLoading ? (
                                             <option>Loading banks...</option>
                                         ) : banks.length > 0 ? (
-                                            banks.map((bank: any) => (
+                                            banks.map((bank: { code: string; name: string }) => (
                                                 <option key={bank.code} value={bank.code}>
                                                     {bank.name}
                                                 </option>

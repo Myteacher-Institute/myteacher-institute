@@ -69,6 +69,7 @@ export interface StudentMentorship {
   mentorshipType?: string;
   programDuration?: string;
   programEndDate?: string;
+  availableTime?: string;
   mentor: {
     _id: string;
     name: string;

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense } from 'react';
+import Image from 'next/image';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { FiChevronDown } from 'react-icons/fi';
 import { useAuthStore } from '@/store/auth.store';
@@ -8,15 +9,19 @@ import { onboardingSchema } from '@/validation/auth.schema';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decryptFromUrl, encryptForUrl } from '@/utils/encryption';
 
-export default function RegistrationPage() {
+function RegistrationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { register, isLoading, error, pendingUserId, instruction } = useAuthStore();
+  const { register, isLoading, error } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+
+  const emailParam = searchParams.get('email') || '';
+  const email = emailParam ? decryptFromUrl(emailParam) : '';
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: '',
+    email: email,
     password: '',
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -35,17 +40,6 @@ export default function RegistrationPage() {
     germany: '+49',
     france: '+33',
   };
-
-  const emailParam = searchParams.get('email') || '';
-  const email = emailParam ? decryptFromUrl(emailParam) : '';
-  const userId = searchParams.get('userId') || pendingUserId || '';
-
-  // Pre-fill email from URL params
-  useEffect(() => {
-    if (email) {
-      setFormData(prev => ({ ...prev, email }));
-    }
-  }, [email]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +63,7 @@ export default function RegistrationPage() {
 
     if (!result.success) {
       const errors: Record<string, string> = {};
-      result.error.issues.forEach((err: any) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           errors[err.path[0] as string] = err.message;
         }
@@ -97,30 +91,32 @@ export default function RegistrationPage() {
   return (
     /* h-screen and overflow-hidden completely removes the page scrollbar */
     <div className="flex h-screen w-full items-center justify-center bg-white p-4 font-sans select-none overflow-hidden">
-      
+
       {/* Main Container Card - Uses h-full and max-h constraint so it never overflows the screen */}
-      <div 
+      <div
         className="grid grid-cols-1 md:grid-cols-2 w-full h-full bg-white shadow-2xl overflow-hidden rounded-none"
         style={{ maxWidth: '1000px', maxHeight: '650px' }}
       >
-        
+
         {/* Left Section: Image Split - Hidden on small mobile screens to save layout space */}
         <div className="w-full relative h-full bg-[#eaeaea] hidden md:block">
-          <img 
-            src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1000&auto=format&fit=crop" 
-            alt="Student holding laptop" 
-            className="absolute inset-0 w-full h-full object-cover object-center"
+          <Image
+            src="https://images.unsplash.com/photo-1593508512255-86ab42a8e620?q=80&w=1000&auto=format&fit=crop"
+            alt="Student holding laptop"
+            fill
+            className="object-cover object-center"
+            unoptimized
           />
         </div>
 
         {/* Right Section: Form Sheet - Optimized spacing (py-2 md:py-6) to perfectly fit tight mobile views */}
         <div className="w-full bg-white h-full flex flex-col justify-center items-center px-6 py-2 md:py-6 overflow-hidden">
-          
+
           {/* Logo Assembly - Shrunk margins slightly for vertical breathing room */}
           <div className="flex items-center gap-3 mb-4 md:mb-6 flex-shrink-0">
-            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-9 object-contain" />
+            <Image src="/logo.png" alt="Myteacher Institute Logo" width={180} height={36} className="object-contain" />
           </div>
-            
+
           {/* Form Header */}
           <h2 className="text-[#111111] text-[20px] md:text-[24px] font-bold mb-3 md:mb-5 tracking-tight text-center flex-shrink-0">
             Create Account
@@ -135,10 +131,10 @@ export default function RegistrationPage() {
 
           {/* Fixed Width Action Block Container */}
           <div style={{ width: '310px' }} className="flex flex-col items-center w-full">
-            
+
             {/* Registration Form */}
             <form className="w-full flex flex-col gap-2.5 md:gap-3.5" onSubmit={handleSubmit}>
-              
+
               {/* Full Name Input */}
               <div className="w-full flex flex-col gap-0.5 flex-shrink-0">
                 <label className="text-[#111111] font-semibold text-[13px] md:text-[14px]">Full Name</label>
@@ -161,14 +157,14 @@ export default function RegistrationPage() {
               <div className="w-full flex flex-col gap-0.5 flex-shrink-0">
                 <label className="text-[#111111] font-semibold text-[13px] md:text-[14px]">Phone Number</label>
                 <div className="flex items-center gap-2" style={{ height: '44px' }}>
-                  
+
                   {/* Styled Country Code Selector Container */}
                   <div className="relative h-full flex items-center bg-[#e5e7eb] border border-[#b3b3b3] rounded-[6px] px-2.5 gap-1.5 cursor-pointer select-none">
                     <span className="text-[#111111] font-semibold text-[13px] md:text-[14px]">{selectedCountryCode}</span>
                     <div className="h-4 w-[1px] bg-[#b3b3b3]"></div>
                     <FiChevronDown className="text-[#223D85] font-bold" size={14} />
-                    <select 
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                    <select
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                       value={selectedCountryCode}
                       onChange={(e) => setSelectedCountryCode(e.target.value)}
                     >
@@ -263,5 +259,20 @@ export default function RegistrationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegistrationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center bg-white p-4 font-sans select-none overflow-hidden">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <RegistrationPageContent />
+    </Suspense>
   );
 }

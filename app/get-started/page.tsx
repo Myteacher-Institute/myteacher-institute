@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { HiOutlineMail, HiOutlineX, HiOutlineShare } from 'react-icons/hi';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -10,7 +10,7 @@ import { encryptForUrl } from '@/utils/encryption';
 import Link from 'next/link';
 import { API_CONFIG } from '@/config/api';
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { checkUserExists, login, verifyOtp, isLoading, error, clearInstruction } = useAuthStore();
@@ -359,5 +359,20 @@ export default function AuthPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen w-full items-center justify-center p-4 font-sans select-none bg-white">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AuthPageContent />
+    </Suspense>
   );
 }

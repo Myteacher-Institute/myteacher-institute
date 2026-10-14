@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
 import { verifyOtpSchema } from '@/validation/auth.schema';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decryptFromUrl } from '@/utils/encryption';
 
-export default function OtpVerificationPage() {
+function OtpVerificationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useThemeStore();
@@ -148,7 +148,7 @@ export default function OtpVerificationPage() {
             disabled={isLoading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              cursor: "pointer" 
+              cursor: "pointer"
             }}
           >
             {isLoading ? 'Verifying...' : 'Verify OTP'}
@@ -182,5 +182,25 @@ export default function OtpVerificationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OtpVerificationPage() {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+
+  return (
+    <Suspense fallback={
+      <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'}`}>
+        <div className={`max-w-md w-full rounded-2xl shadow-xl p-8 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+          <div className="text-center">
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <OtpVerificationPageContent />
+    </Suspense>
   );
 }

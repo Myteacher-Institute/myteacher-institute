@@ -22,7 +22,7 @@ export const MentorshipDetailsModal: React.FC<MentorshipDetailsModalProps> = ({
 
   const isEnded = mentorship.status === 'ended';
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

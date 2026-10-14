@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FiLoader, FiCheckCircle, FiX } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
 
-export default function YouTubeCallbackPage() {
+function YouTubeCallbackPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -60,7 +60,7 @@ export default function YouTubeCallbackPage() {
       } catch (err: unknown) {
         const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || (err as Error)?.message || "An error occurred during authentication";
         setStatus("error");
-        
+
         // Provide more user-friendly error messages
         if (errorMessage.includes("invalid_grant")) {
           setMessage("The authorization code has expired or already been used. Please try authenticating again.");
@@ -131,5 +131,24 @@ export default function YouTubeCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function YouTubeCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FDFDFD] font-poppins flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 max-w-md w-full text-center">
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
+              <FiLoader size={32} className="text-blue-600 animate-spin" />
+            </div>
+            <h2 className="text-xl font-bold text-[#111827]">Loading...</h2>
+          </div>
+        </div>
+      </div>
+    }>
+      <YouTubeCallbackPageContent />
+    </Suspense>
   );
 }

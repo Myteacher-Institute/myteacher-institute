@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FiCheckCircle, FiXCircle, FiLoader } from "react-icons/fi";
 import axiosInstance from "@/lib/axios";
 
-export default function StudentTokenPurchaseCallback() {
+function StudentTokenPurchaseCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -39,7 +39,7 @@ export default function StudentTokenPurchaseCallback() {
       }
 
       try {
-        const params: any = { tx_ref };
+        const params: { tx_ref: string; transaction_id?: string } = { tx_ref };
         if (transaction_id) {
           params.transaction_id = transaction_id;
         }
@@ -108,5 +108,22 @@ export default function StudentTokenPurchaseCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StudentTokenPurchaseCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="flex flex-col items-center gap-4">
+            <FiLoader className="animate-spin text-blue-600" size={48} />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Loading...</h2>
+          </div>
+        </div>
+      </div>
+    }>
+      <StudentTokenPurchaseCallbackContent />
+    </Suspense>
   );
 }
