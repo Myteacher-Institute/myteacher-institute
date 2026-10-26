@@ -5,6 +5,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import { useAuthStore } from '@/store/auth.store';
 import { onboardingSchema } from '@/validation/auth.schema';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 function OnboardingPageContent() {
   const router = useRouter();
@@ -13,7 +14,7 @@ function OnboardingPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    name: user && 'name' in user ? user.name : '',
     password: '',
     confirmPassword: '',
   });
@@ -23,13 +24,6 @@ function OnboardingPageContent() {
     searchParams.get('userId') ||
     pendingUserId ||
     (user && '_id' in user ? user._id : '');
-
-  // Pre-fill the user's name (Google already provides it).
-  useEffect(() => {
-    if (!formData.name && user && 'name' in user) {
-      setFormData(prev => ({ ...prev, name: user.name }));
-    }
-  }, [user, formData.name]);
 
   // No account to onboard -> send back to sign-in.
   useEffect(() => {
@@ -45,7 +39,7 @@ function OnboardingPageContent() {
     const result = onboardingSchema.safeParse(formData);
     if (!result.success) {
       const errors: Record<string, string> = {};
-      result.error.issues.forEach((err: any) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           errors[err.path[0] as string] = err.message;
         }
@@ -74,16 +68,18 @@ function OnboardingPageContent() {
         style={{ maxWidth: '1000px', maxHeight: '650px' }}
       >
         <div className="w-full relative h-full bg-[#eaeaea] hidden md:block">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop"
             alt="Person completing setup"
-            className="absolute inset-0 w-full h-full object-cover object-center"
+            fill
+            className="object-cover object-center"
+            unoptimized
           />
         </div>
 
         <div className="w-full bg-white h-full flex flex-col justify-center items-center px-6 py-2 md:py-6 overflow-hidden">
           <div className="flex items-center gap-3 mb-4 md:mb-6 flex-shrink-0">
-            <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-9 object-contain" />
+            <Image src="/logo.png" alt="Myteacher Institute Logo" width={180} height={36} className="object-contain" />
           </div>
 
           <h2 className="text-[#111111] text-[20px] md:text-[24px] font-bold mb-1 md:mb-2 tracking-tight text-center flex-shrink-0">

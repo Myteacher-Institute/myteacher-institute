@@ -228,7 +228,7 @@ export default function StudentSettingsPage() {
         onLogout={handleLogout}
       />
 
-      <main className={`grow p-5 lg:p-10 overflow-y-auto w-full`}>
+      <main className={`grow p-5 lg:p-10 overflow-y-auto w-full lg:ml-72 min-w-0 z-10 relative`}>
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <button
