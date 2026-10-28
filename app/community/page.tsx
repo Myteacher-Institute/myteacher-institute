@@ -27,7 +27,7 @@ export default function CommunitySearchPage() {
     const [visibleItems, setVisibleItems] = useState(new Set());
 
     const observerRef = useRef<IntersectionObserver | null>(null);
-    const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const itemRefs = useRef<(Element | null)[]>([]);
 
     // Fetch communities from backend
     useEffect(() => {
@@ -222,7 +222,7 @@ export default function CommunitySearchPage() {
                             filteredCommunities.map((community: any, index) => (
                                 <article
                                     key={community._id || index}
-                                    ref={(el) => (itemRefs.current[index] = el)}
+                                    ref={(el) => { if (el) itemRefs.current[index] = el; }}
                                     data-id={community._id || index}
                                     className={`rounded-2xl p-6 border flex flex-col items-center text-center justify-between transition-all duration-500 ease-in-out hover:shadow-sm ${
                                         visibleItems.has(community._id || String(index))

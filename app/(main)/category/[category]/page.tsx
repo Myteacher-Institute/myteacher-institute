@@ -31,7 +31,7 @@ export default function CategoryPage() {
     fetchCoursesByCategory();
   }, [category]);
 
-  const categoryTitle = category?.replace('-', ' ') || 'Courses';
+  const categoryTitle = (Array.isArray(category) ? category[0] : category)?.replace('-', ' ') || 'Courses';
 
   const handleEnrollClick = (courseId: string) => {
     router.push(`/course/${courseId}`);

@@ -12,7 +12,7 @@ export default function BlogPage() {
   const [visibleItems, setVisibleItems] = useState(new Set());
 
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(Element | null)[]>([]);
 
   // Fetch blog posts from backend
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function BlogPage() {
             blogPosts.map((post: any, index) => (
               <article
                 key={post._id || index}
-                ref={(el) => (itemRefs.current[index] = el)}
+                ref={(el) => { if (el) itemRefs.current[index] = el; }}
                 data-id={post._id || index}
                 className={`rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-all duration-500 ease-in-out ${
                   visibleItems.has(post._id || String(index))
