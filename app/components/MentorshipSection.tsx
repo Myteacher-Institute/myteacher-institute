@@ -14,10 +14,10 @@ const MentorMiniCard = ({ name, role, initial, color }: { name: string; role: st
       <div className={`w-14 h-14 rounded-full ${color} flex items-center justify-center text-[#0F1C2E] font-bold mb-3 text-lg border-2 border-white shadow-sm`}>
         {initial}
       </div>
-      <p className={isDark ? "font-bold text-sm text-white" : "font-bold text-sm text-[#0F1C2E]"}>{name}</p>
-      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{role}</p>
+      <p className={isDark ? "font-bold text-base text-white" : "font-bold text-base text-[#0F1C2E]"}>{name}</p>
+      <p className="text-xs text-slate-400 font-bold uppercase tracking-tight">{role}</p>
       <div className="flex gap-0.5 text-orange-400 mt-2">
-        {[...Array(5)].map((_, i) => <FiStar key={i} size={10} fill="currentColor" />)}
+        {[...Array(5)].map((_, i) => <FiStar key={i} size={12} fill="currentColor" />)}
       </div>
     </div>
   );
@@ -120,7 +120,7 @@ export const MentorshipSection = () => {
 
           <FiAward size={32} className="mb-2 text-yellow-400" />
 
-          <p className="font-bold text-sm leading-tight text-white/90 cursor-pointer ">
+          <p className="font-bold text-base leading-tight text-white/90 cursor-pointer ">
             {totalMentors > 0 ? `${totalMentors}+ Expert Mentors Ready` : '180+ Expert Mentors Ready'}
           </p>
         </div>
@@ -128,19 +128,19 @@ export const MentorshipSection = () => {
 
       {/* Content Side */}
       <div className="lg:pl-10">
-        <div className={isDark ? "flex items-center gap-2 text-indigo-400 bg-indigo-900/30 w-fit px-3 py-1.5 rounded-md font-black text-[10px] uppercase tracking-widest mb-6" : "flex items-center gap-2 text-indigo-700 bg-indigo-50 w-fit px-3 py-1.5 rounded-md font-black text-[10px] uppercase tracking-widest mb-6"}>
+        <div className={isDark ? "flex items-center gap-2 text-indigo-400 bg-indigo-900/30 w-fit px-3 py-1.5 rounded-md font-black text-[11px] uppercase tracking-widest mb-6" : "flex items-center gap-2 text-indigo-700 bg-indigo-50 w-fit px-3 py-1.5 rounded-md font-black text-[11px] uppercase tracking-widest mb-6"}>
           <FiAward /> Mentorship
         </div>
-        <h2 className={isDark ? "text-3xl lg:text-4xl font-black text-white mb-6 leading-[1.1]" : "text-3xl lg:text-4xl font-black text-[#0F1C2E] mb-6 leading-[1.1]"}>
+        <h2 className={isDark ? "text-4xl lg:text-5xl font-black text-white mb-6 leading-[1.1]" : "text-4xl lg:text-5xl font-black text-[#0F1C2E] mb-6 leading-[1.1]"}>
           Need a 1-1 Private or Corporate Mentorship
         </h2>
-        <p className={isDark ? "text-slate-400 mb-10 text-lg leading-relaxed max-w-lg" : "text-[#4A5E7A] mb-10 text-lg leading-relaxed max-w-lg"}>
+        <p className={isDark ? "text-slate-400 mb-10 text-xl leading-relaxed max-w-lg" : "text-[#4A5E7A] mb-10 text-xl leading-relaxed max-w-lg"}>
           Get matched with industry professionals who give personalized feedback, career guidance, and accountability.
         </p>
 
         <ul className="space-y-5 mb-12">
           {benefits.map((item, i) => (
-            <li key={i} className={isDark ? "flex items-center gap-4 text-white font-semibold text-sm" : "flex items-center gap-4 text-[#0F1C2E] font-semibold text-sm"}>
+            <li key={i} className={isDark ? "flex items-center gap-4 text-white font-semibold text-base" : "flex items-center gap-4 text-[#0F1C2E] font-semibold text-base"}>
               <div className={`p-2.5 rounded-xl ${item.color}`}>
                 <item.icon size={20} />
               </div>
@@ -150,7 +150,7 @@ export const MentorshipSection = () => {
         </ul>
 
         <button onClick={() => router.push('/mentors')} className={isDark ? "bg-[#1E40AF] text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-800 transition-all flex items-center gap-3 cursor-pointer" : "bg-[#1E40AF] text-white px-10 py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-3 cursor-pointer"}>
-          Explore Mentorship <span className="text-xl">→</span>
+          Explore Mentorship <span className="text-xl">&rarr;</span>
         </button>
       </div>
     </section>

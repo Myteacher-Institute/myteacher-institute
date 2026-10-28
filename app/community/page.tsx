@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useThemeStore } from "@/store/theme.store";
 import {
     FaCompass,
@@ -16,22 +16,77 @@ import {
     FaUserPlus
 } from "react-icons/fa";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 
 export default function CommunitySearchPage() {
     const { theme } = useThemeStore();
     const isDark = theme === 'dark';
     const [activeTab, setActiveTab] = useState("Courses");
+    const [isLoading, setIsLoading] = useState(true);
+    const [communities, setCommunities] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [visibleItems, setVisibleItems] = useState(new Set());
 
-    // Sample data for community cards
-    const communityCards = [
-        { id: 1, title: "AI Fundamentals", members: "69k Members", image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=150&h=150&q=80" },
-        { id: 2, title: "Digital Marketers", members: "87k Members", image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&h=150&q=80" },
-        { id: 3, title: "Front End Developers", members: "55k Members", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=150&h=150&q=80" },
-        { id: 4, title: "UI/UX Designers", members: "69k Members", image: "https://images.unsplash.com/photo-1581291518655-9523c932dedf?auto=format&fit=crop&w=150&h=150&q=80" },
-        { id: 5, title: "Back End Developers", members: "55k Members", image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=150&h=150&q=80" },
-        { id: 6, title: "Graphic Designer", members: "87k Members", image: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=150&h=150&q=80" },
-    ];
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    // Fetch communities from backend
+    useEffect(() => {
+        const fetchCommunities = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/community/all');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    setCommunities(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching communities:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCommunities();
+    }, []);
+
+    // Intersection Observer for fade-in/fade-out
+    useEffect(() => {
+        observerRef.current = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    const id = entry.target.getAttribute('data-id');
+                    if (id) {
+                        if (entry.isIntersecting) {
+                            setVisibleItems(prev => new Set([...prev, id]));
+                        } else {
+                            setVisibleItems(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(id);
+                                return newSet;
+                            });
+                        }
+                    }
+                });
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            }
+        );
+
+        itemRefs.current.forEach((ref) => {
+            if (ref) observerRef.current?.observe(ref);
+        });
+
+        return () => {
+            observerRef.current?.disconnect();
+        };
+    }, [communities]);
+
+    // Filter communities based on search query
+    const filteredCommunities = communities.filter((community: any) =>
+        community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        community.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     // Sample data for trending tags
     const trendingTags = [
@@ -44,6 +99,20 @@ export default function CommunitySearchPage() {
         { name: "#hashtag", shares: "1.3k shares" },
         { name: "#hashtag", shares: "1.3k shares" },
     ];
+
+    // Skeleton component
+    const SkeletonCard = () => (
+        <article className={`rounded-2xl p-6 border flex flex-col items-center text-center justify-between ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-blue-50/40 border-blue-100/50'}`}>
+            <div className="mb-4">
+                <div className={`h-24 w-24 rounded-full p-1 border-2 animate-pulse ${isDark ? 'border-slate-600 bg-slate-700' : 'border-blue-500 bg-white'}`}></div>
+            </div>
+            <div className="mb-6 w-full space-y-2">
+                <div className={`h-4 rounded animate-pulse w-3/4 mx-auto ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+                <div className={`h-3 rounded animate-pulse w-1/2 mx-auto ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+            </div>
+            <div className={`h-10 w-full rounded-xl animate-pulse ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
+        </article>
+    );
 
     return (
         <div className={`min-h-screen font-sans ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-800'}`}>
@@ -134,7 +203,9 @@ export default function CommunitySearchPage() {
                         <div className="w-full sm:w-72">
                             <input
                                 type="text"
-                                placeholder="Search courses, team, mentor"
+                                placeholder="Search communities..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`w-full px-4 py-2.5 border border-transparent rounded-xl text-xs font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-slate-200 transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-slate-200 focus:bg-slate-700 focus:border-slate-600' : 'bg-slate-100'}`}
                             />
                         </div>
@@ -142,29 +213,48 @@ export default function CommunitySearchPage() {
 
                     {/* Grid Layout Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {communityCards.map((card) => (
-                            <article
-                                key={card.id}
-                                className={`rounded-2xl p-6 border flex flex-col items-center text-center justify-between transition-shadow hover:shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-blue-50/40 border-blue-100/50'}`}
-                            >
-                                <div className="mb-4">
-                                    <div className={`h-24 w-24 rounded-full p-1 border-2 overflow-hidden ${isDark ? 'border-slate-600 bg-slate-700' : 'border-blue-500 bg-white'}`}>
-                                        <img
-                                            src={card.image}
-                                            alt={card.title}
-                                            className="h-full w-full rounded-full object-cover"
-                                        />
+                        {isLoading ? (
+                            // Skeleton loading state
+                            Array.from({ length: 6 }).map((_, index) => (
+                                <SkeletonCard key={index} />
+                            ))
+                        ) : filteredCommunities.length > 0 ? (
+                            filteredCommunities.map((community: any, index) => (
+                                <article
+                                    key={community._id || index}
+                                    ref={(el) => (itemRefs.current[index] = el)}
+                                    data-id={community._id || index}
+                                    className={`rounded-2xl p-6 border flex flex-col items-center text-center justify-between transition-all duration-500 ease-in-out hover:shadow-sm ${
+                                        visibleItems.has(community._id || String(index))
+                                            ? 'opacity-100 translate-y-0'
+                                            : 'opacity-0 translate-y-4'
+                                    } ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-blue-50/40 border-blue-100/50'}`}
+                                >
+                                    <div className="mb-4">
+                                        <div className={`h-24 w-24 rounded-full p-1 border-2 overflow-hidden ${isDark ? 'border-slate-600 bg-slate-700' : 'border-blue-500 bg-white'}`}>
+                                            <img
+                                                src={community.profilePicture || community.coverImage || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80"}
+                                                alt={community.name}
+                                                className="h-full w-full rounded-full object-cover"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mb-6">
-                                    <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.title}</h3>
-                                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{card.members}</p>
-                                </div>
-                                <button className="w-full py-2.5 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors">
-                                    Join
-                                </button>
-                            </article>
-                        ))}
+                                    <div className="mb-6">
+                                        <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{community.name}</h3>
+                                        <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{community.followerCount || 0} Members</p>
+                                    </div>
+                                    <button className="w-full py-2.5 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors">
+                                        Join
+                                    </button>
+                                </article>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-12">
+                                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    No communities found. Try a different search term.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </main>
 
@@ -221,7 +311,6 @@ export default function CommunitySearchPage() {
 
             </div>
 
-            <Footer />
         </div>
     );
 }

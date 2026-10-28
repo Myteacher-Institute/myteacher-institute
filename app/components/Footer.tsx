@@ -35,9 +35,9 @@ const Footer = () => {
                 <div>
                     <h3 className="text-lg font-bold mb-6">Resources</h3>
                     <ul className="space-y-4 text-slate-400 text-sm">
-                        <li className="hover:text-white cursor-pointer transition-colors">Blog</li>
-                        <li className="hover:text-white cursor-pointer transition-colors">Tutorials</li>
-                        <a href="/community" className="hover:text-white cursor-pointer transition-colors">Community</a>
+                        <li><a href="/blog" className="hover:text-white cursor-pointer transition-colors">Blog</a></li>
+                        <li><a href="/category/Web-Development" className="hover:text-white cursor-pointer transition-colors">Courses</a></li>
+                        <li><a href="/community" className="hover:text-white cursor-pointer transition-colors">Community</a></li>
                     </ul>
                 </div>
 
@@ -45,9 +45,9 @@ const Footer = () => {
                 <div>
                     <h3 className="text-lg font-bold mb-6">Company</h3>
                     <ul className="space-y-4 text-slate-400 text-sm">
-                        <li className="hover:text-white cursor-pointer transition-colors">About Us</li>
-                        <li className="hover:text-white cursor-pointer transition-colors">Careers</li>
-                        <li className="hover:text-white cursor-pointer transition-colors">Contact</li>
+                        <li><a href="/about" className="hover:text-white cursor-pointer transition-colors">About Us</a></li>
+                        <li><a href="/instructor/apply" className="hover:text-white cursor-pointer transition-colors">Careers</a></li>
+                        <li><a href="/contact" className="hover:text-white cursor-pointer transition-colors">Contact</a></li>
                     </ul>
                 </div>
 

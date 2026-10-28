@@ -37,14 +37,14 @@ const Testimonial = () => {
         
         {/* Header Section */}
         <div className="text-center space-y-3 mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff9ea] border border-[#fef3c7] text-[10px] font-bold text-[#d97706] uppercase tracking-[0.2em]">
-            <Star size={12} fill="#d97706" /> Student Stories
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff9ea] border border-[#fef3c7] text-[11px] font-bold text-[#d97706] uppercase tracking-[0.2em]">
+            <Star size={14} fill="#d97706" /> Student Stories
           </div>
-          <h2 className={isDark ? "text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight" : "text-3xl lg:text-4xl font-black text-[#0f172a] tracking-tight leading-tight"}>
+          <h2 className={isDark ? "text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight" : "text-4xl lg:text-5xl font-black text-[#0f172a] tracking-tight leading-tight"}>
             Careers transformed. Lives changed.
           </h2>
-          <p className="text-slate-500 text-base font-medium max-w-xl mx-auto">
-            Don&#39;t take our word for it — here&#39;s what our students achieved.
+          <p className="text-slate-500 text-lg font-medium max-w-xl mx-auto">
+            Don&apos;t take our word for it — here&apos;s what our students achieved.
           </p>
         </div>
 
@@ -63,18 +63,18 @@ const Testimonial = () => {
                   ))}
                 </div>
 
-                <p className={isDark ? "text-white text-sm font-medium leading-relaxed italic" : "text-[#0f172a] text-sm font-medium leading-relaxed italic"}>
-                  &#34;{item.text}&#34;
+                <p className={isDark ? "text-white text-base font-medium leading-relaxed italic" : "text-[#0f172a] text-base font-medium leading-relaxed italic"}>
+                  &quot;{item.text}&quot;
                 </p>
 
                 {/* Profile Section */}
                 <div className="flex items-center gap-3 pt-2">
-                  <div className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center font-bold text-[10px]`}>
+                  <div className={`w-10 h-10 rounded-full ${item.color} flex items-center justify-center font-bold text-sm`}>
                     {item.initials}
                   </div>
                   <div>
-                    <h4 className={isDark ? "font-bold text-white text-sm" : "font-bold text-[#0f172a] text-sm"}>{item.name}</h4>
-                    <p className="text-slate-400 text-xs font-medium">{item.location}</p>
+                    <h4 className={isDark ? "font-bold text-white text-base" : "font-bold text-[#0f172a] text-base"}>{item.name}</h4>
+                    <p className="text-slate-400 text-sm font-medium">{item.location}</p>
                   </div>
                 </div>
               </div>

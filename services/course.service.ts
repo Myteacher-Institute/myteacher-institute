@@ -68,6 +68,34 @@ export interface CoursePreviewResponse {
   course?: CoursePreview;
 }
 
+export interface PopularCourse {
+  _id: string;
+  courseName: string;
+  description: string;
+  ratings: Array<{
+    userId: string;
+    userName: string;
+    rating: number;
+    comment: string;
+    ratedAt: string;
+  }>;
+  averageRating: number;
+  price: number;
+  duration: number;
+  previewVideo?: {
+    videoUrl: string;
+    videoTitle: string;
+    videoDescription: string;
+    videoDuration: number;
+  };
+}
+
+export interface PopularCoursesResponse {
+  status: 'success' | 'failed';
+  message: string;
+  courses?: PopularCourse[];
+}
+
 export const courseService = {
   async getAllCourses(): Promise<CourseResponse> {
     const response = await axiosInstance.get(API_ENDPOINTS.COURSES.GET_ALL);
@@ -81,6 +109,16 @@ export const courseService = {
     category?: string;
   }): Promise<BrowseCoursesResponse> {
     const response = await axiosInstance.get('/api/course/browse', { params });
+    return response.data;
+  },
+
+  async getPopularCourses(): Promise<PopularCoursesResponse> {
+    const response = await axiosInstance.get('/api/course/popular');
+    return response.data;
+  },
+
+  async getCoursesByCategory(category: string): Promise<PopularCoursesResponse> {
+    const response = await axiosInstance.get(`/api/course/category/${encodeURIComponent(category)}`);
     return response.data;
   },
 

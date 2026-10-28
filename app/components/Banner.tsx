@@ -12,10 +12,10 @@ const Banner = () => {
         
         {/* Heading Section */}
         <div className="space-y-3">
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
             Ready to Start Earning?
           </h2>
-          <p className="text-slate-300/80 text-sm md:text-base max-w-xl mx-auto font-normal">
+          <p className="text-slate-300/80 text-base md:text-lg max-w-xl mx-auto font-normal">
             Join thousands of affiliates who are already earning commissions
           </p>
         </div>
