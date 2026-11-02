@@ -43,7 +43,7 @@ function AuthPageContent() {
   }, [redirectTo]);
 
   const handleGoogleSignIn = () => {
-    window.location.href = `${API_CONFIG.baseURL}/api/auth/google`;
+    window.location.href = `${API_CONFIG.baseURL}/api/auth/google?user_type=student`;
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {

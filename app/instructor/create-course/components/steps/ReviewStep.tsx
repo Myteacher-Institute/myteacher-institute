@@ -10,6 +10,7 @@ interface ReviewStepProps {
   price: string;
   duration: string;
   certificate: string;
+  category: string;
   requirements: string[];
   chapters: Chapter[];
   submitError: string;
@@ -23,6 +24,7 @@ export const ReviewStep = ({
   price,
   duration,
   certificate,
+  category,
   requirements,
   chapters,
   submitError
@@ -50,7 +52,10 @@ export const ReviewStep = ({
             <ReviewRow label="Price" value={`₦${Number(price).toLocaleString()}`} />
             <ReviewRow label="Duration" value={`${duration} hours`} />
           </div>
-          <ReviewRow label="Certificate" value={certificate} />
+          <div className="grid grid-cols-2 gap-3">
+            <ReviewRow label="Certificate" value={certificate} />
+            <ReviewRow label="Category" value={category} />
+          </div>
         </div>
 
         <div className={isDark ? "bg-slate-800 rounded-2xl p-5" : "bg-slate-50 rounded-2xl p-5"}>

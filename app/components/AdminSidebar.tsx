@@ -1,8 +1,8 @@
 "use client";
 
 import Image from 'next/image';
-import { 
-  FiLogOut, FiX, FiBook
+import {
+  FiLogOut, FiX, FiGrid, FiFlag, FiUsers, FiUserPlus, FiBell, FiFileText, FiBook
 } from "react-icons/fi";
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -16,10 +16,12 @@ interface AdminSidebarProps {
 }
 
 const ADMIN_SIDEBAR_ITEMS = [
-  { icon: FiBook, label: 'Dashboard', href: '/admin' },
-  { icon: FiBook, label: 'Reports', href: '/admin/reports' },
-  { icon: FiBook, label: 'Manage Instructors', href: '/admin/manage-instructors' },
-  { icon: FiBook, label: 'Add Admin', href: '/admin/add-admin' },
+  { icon: FiGrid, label: 'Dashboard', href: '/admin' },
+  { icon: FiFlag, label: 'Reports', href: '/admin/reports' },
+  { icon: FiUsers, label: 'Manage Instructors', href: '/admin/manage-instructors' },
+  { icon: FiUserPlus, label: 'Add Admin', href: '/admin/add-admin' },
+  { icon: FiBell, label: 'Announcements', href: '/admin/announcements' },
+  { icon: FiFileText, label: 'Blogs', href: '/admin/blogs' },
 ];
 
 export default function AdminSidebar({ isSidebarOpen, setSidebarOpen, activePath = '/admin', onLogout }: AdminSidebarProps) {

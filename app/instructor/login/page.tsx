@@ -7,6 +7,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FcGoogle } from 'react-icons/fc';
+import { API_CONFIG } from '@/config/api';
 
 export default function InstructorLoginPage() {
   const router = useRouter();
@@ -152,6 +154,23 @@ export default function InstructorLoginPage() {
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
+
+            {/* Google Sign In Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const pendingRedirect = '/instructor';
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem('pendingRedirect', pendingRedirect);
+                }
+                window.location.href = `${API_CONFIG.baseURL}/api/auth/google?user_type=instructor`;
+              }}
+              className="w-full border border-[#b3b3b3] hover:border-[#223D85] bg-white text-[#111111] font-semibold text-[14px] rounded-[6px] transition-colors duration-200 tracking-wide flex-shrink-0 flex items-center justify-center gap-2"
+              style={{ height: '48px', cursor: "pointer" }}
+            >
+              <FcGoogle size={20} />
+              Sign in with Google
+            </button>
             </form>
 
             {/* Links */}

@@ -185,6 +185,8 @@ function CreateCoursePageContent() {
 
   const [certificate,  setCertificate]  = useState<string>("");
 
+  const [category,     setCategory]     = useState<string>("");
+
 
 
   // Step 1 — Requirements
@@ -455,6 +457,8 @@ function CreateCoursePageContent() {
 
             setCertificate(formData.certificate || "");
 
+            setCategory(formData.category || "");
+
             setRequirements(formData.requirements || [""]);
 
             setChapters(sanitizeRestoredChapters(formData.chapters));
@@ -507,6 +511,8 @@ function CreateCoursePageContent() {
 
             setCertificate(courseData.certificate || "");
 
+            setCategory(courseData.category || "");
+
             setRequirements(courseData.courseRequirements || [""]);
 
             const legacyChapters = courseData.chapters?.length
@@ -555,6 +561,8 @@ function CreateCoursePageContent() {
 
           setCertificate(draft.certificate ?? "");
 
+          setCategory(draft.category ?? "");
+
           setRequirements(draft.requirements ?? [""]);
 
           setChapters(sanitizeRestoredChapters(draft.chapters));
@@ -579,7 +587,7 @@ function CreateCoursePageContent() {
 
   useEffect(() => {
 
-    saveDraft({ step, courseName, description, price, duration, certificate, requirements, chapters });
+    saveDraft({ step, courseName, description, price, duration, certificate, category, requirements, chapters });
 
   }, [step, courseName, description, price, duration, certificate, requirements, chapters]);
 
@@ -600,6 +608,8 @@ function CreateCoursePageContent() {
     if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) errs.duration = "Enter a valid duration in hours";
 
     if (!certificate) errs.certificate = "Select a certificate type";
+
+    if (!category) errs.category = "Select a category";
 
     setFieldErrors(errs);
 
@@ -733,6 +743,8 @@ function CreateCoursePageContent() {
     duration,
 
     certificate,
+
+    category,
 
     requirements,
 
@@ -1064,6 +1076,8 @@ function CreateCoursePageContent() {
 
           certificate,
 
+          category,
+
           courseRequirements: requirements.filter((r) => r.trim()),
 
           chapters: chapters.map(c => ({
@@ -1162,6 +1176,8 @@ function CreateCoursePageContent() {
         duration: Number(duration),
 
         certificate,
+
+        category,
 
         courseRequirements: requirements.filter((r) => r.trim()),
 
@@ -1552,6 +1568,10 @@ function CreateCoursePageContent() {
 
               setCertificate={setCertificate}
 
+              category={category}
+
+              setCategory={setCategory}
+
               fieldErrors={fieldErrors}
 
             />
@@ -1617,6 +1637,8 @@ function CreateCoursePageContent() {
               duration={duration}
 
               certificate={certificate}
+
+              category={category}
 
               requirements={requirements}
 

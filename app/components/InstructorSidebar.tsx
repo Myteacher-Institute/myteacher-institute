@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { 
+import {
   FiGrid, FiBook, FiUsers, FiDollarSign,
   FiStar, FiMessageSquare, FiTrendingUp,
-  FiSettings, FiHelpCircle, FiLogOut, FiX, FiInbox, FiMessageCircle
+  FiSettings, FiHelpCircle, FiLogOut, FiX, FiInbox, FiMessageCircle, FiUser
 } from 'react-icons/fi';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -29,11 +29,12 @@ export default function InstructorSidebar({ isSidebarOpen, setSidebarOpen, activ
     { icon: FiGrid, label: 'Dashboard', href: '/instructor' },
     { icon: FiBook, label: 'My Courses', href: '/instructor/courses' },
     { icon: FiUsers, label: 'Students', href: '/instructor/students' },
-    { icon: FiInbox, label: 'Mentor Requests', href: '/instructor/mentor-requests' },
+    { icon: FiInbox, label: 'Mentor Req', href: '/instructor/mentor-requests' },
     { icon: FiMessageCircle, label: 'Mentorship', href: '/instructor/mentorship' },
     { icon: FiDollarSign, label: 'Earnings', href: '/instructor/earnings' },
     { icon: FiStar, label: 'Reviews', href: '/instructor/reviews' },
     { icon: FiMessageSquare, label: 'Announcements', href: '/instructor/announcements' },
+    { icon: FiUser, label: 'Communities', href: '/instructor/communities' },
     { icon: FiTrendingUp, label: 'Analytics', href: '/instructor/analytics' },
     { icon: FiSettings, label: 'Settings', href: '/instructor/settings' },
     { icon: FiHelpCircle, label: 'Help & Support', href: '/instructor/help' },

@@ -1,6 +1,6 @@
-import { FiBook, FiDollarSign, FiClock, FiAward } from "react-icons/fi";
+import { FiBook, FiDollarSign, FiClock, FiAward, FiTag } from "react-icons/fi";
 import { Field } from "../Field";
-import { CERTIFICATE_OPTIONS } from "../../constants";
+import { CERTIFICATE_OPTIONS, CATEGORY_OPTIONS } from "../../constants";
 import { inputCls } from "../../utils";
 import { useThemeStore } from "@/store/theme.store";
 import { RichTextEditor } from "@/app/components/RichTextEditor";
@@ -17,6 +17,8 @@ interface BasicInfoStepProps {
   setDuration: (value: string) => void;
   certificate: string;
   setCertificate: (value: string) => void;
+  category: string;
+  setCategory: (value: string) => void;
   fieldErrors: Record<string, string>;
 }
 
@@ -31,6 +33,8 @@ export const BasicInfoStep = ({
   setDuration,
   certificate,
   setCertificate,
+  category,
+  setCategory,
   fieldErrors
 }: BasicInfoStepProps) => {
   const { theme } = useThemeStore();
@@ -107,6 +111,20 @@ export const BasicInfoStep = ({
           >
             <option value="">Select certificate type</option>
             {CERTIFICATE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      </Field>
+
+      <Field label="Category" error={fieldErrors.category}>
+        <div className="relative">
+          <FiTag size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={`${inputCls(fieldErrors.category, isDark)} pl-9 appearance-none cursor-pointer`}
+          >
+            <option value="">Select category</option>
+            {CATEGORY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
       </Field>

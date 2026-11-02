@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { IconType } from 'react-icons';
-import { FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiTrash2, FiMenu, FiLoader, FiEdit2, FiEye, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut } from 'react-icons/fi';
+import { FiBell, FiPlus, FiMoreHorizontal, FiArrowUpRight, FiTrash2, FiMenu, FiLoader, FiEdit2, FiEye, FiUsers, FiBook, FiDollarSign, FiStar, FiX, FiLogOut, FiMessageSquare } from 'react-icons/fi';
 import { activityTracker, type Activity } from '@/utils/activityTracker';
 import { useAuthStore } from '@/store/auth.store';
 import { useThemeStore } from '@/store/theme.store';
@@ -421,6 +421,7 @@ export default function InstructorDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button type="button" onClick={() => router.push('/instructor/communities')} aria-label="View communities" className={isDark ? "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-slate-800 border-slate-700 text-white" : "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-[#FFFFFF] border-slate-100 text-[#111827]"}><FiMessageSquare size={22} /></button>
             <button type="button" aria-label="View notifications" className={isDark ? "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-slate-800 border-slate-700 text-white" : "p-3 border rounded-2xl relative cursor-pointer hover:bg-slate-50 bg-[#FFFFFF] border-slate-100 text-[#111827]"}><FiBell size={22} /><span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white" /></button>
             <button type="button" onClick={() => router.push('/instructor/create-course')} className={isDark ? "grow sm:grow-0 bg-transparent text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 border border-slate-700 hover:border-slate-600" : "grow sm:grow-0 bg-blue-600 text-white cursor-pointer px-5 lg:px-8 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200"}><FiPlus size={18} /> <span className="whitespace-nowrap">Create New Course</span></button>
           </div>

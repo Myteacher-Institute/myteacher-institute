@@ -13,3 +13,16 @@ export const CERTIFICATE_OPTIONS = [
   "Professional Certificate",
   "No Certificate"
 ];
+
+export const CATEGORY_OPTIONS = [
+  "Web Development",
+  "Data Science",
+  "Design",
+  "Business",
+  "DevOps",
+  "Programming",
+  "Game Development",
+  "Animation",
+  "Cyber Security",
+  "Other"
+];
