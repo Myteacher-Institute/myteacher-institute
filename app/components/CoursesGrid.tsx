@@ -6,6 +6,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { courseService, PopularCourse } from '@/services/course.service';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { ScrollAnimate } from '@/components/ScrollAnimate';
 
 const IconMap = {
   python: FiTerminal,
@@ -59,21 +61,21 @@ const CourseCard = ({ course, iconKey, tag, tagColor }: { course: PopularCourse;
 
   return (
     <div className={isDark ? "bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-sm flex flex-col h-full group transition-all hover:shadow-md" : "bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full group transition-all hover:shadow-md"}>
-      <div className={`h-36 flex items-center justify-center ${tagColor || 'bg-gradient-to-br from-blue-50 to-blue-100'} relative`}>
+      <div className={`h-32 sm:h-36 flex items-center justify-center ${tagColor || 'bg-gradient-to-br from-blue-50 to-blue-100'} relative`}>
         {tag && (
           <span className={`absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg ${tagStyle.bg} backdrop-blur-sm ${tagStyle.text}`}>
             {tag}
           </span>
         )}
-        <Icon size={44} className="text-[#0F1C2E] stroke-[1.5]" />
+        <Icon size={40} className="text-[#0F1C2E] stroke-[1.5]" />
       </div>
 
-      <div className="p-6 flex flex-col grow">
-        <h3 className={isDark ? "font-bold text-[21px] leading-snug mb-4 text-white transition-colors cursor-pointer" : "font-bold text-[21px] leading-snug mb-4 text-[#0F1C2E] transition-colors cursor-pointer"}>
+      <div className="p-4 sm:p-6 flex flex-col grow">
+        <h3 className={isDark ? "font-bold text-lg sm:text-[21px] leading-snug mb-4 text-white transition-colors cursor-pointer" : "font-bold text-lg sm:text-[21px] leading-snug mb-4 text-[#0F1C2E] transition-colors cursor-pointer"}>
           {course.courseName}
         </h3>
 
-        <div className={isDark ? "flex items-center gap-4 text-slate-300 text-[14px] font-medium mb-6" : "flex items-center gap-4 text-[#4A5E7A] text-[14px] font-medium mb-6"}>
+        <div className={isDark ? "flex items-center gap-4 text-slate-300 text-xs sm:text-[14px] font-medium mb-6" : "flex items-center gap-4 text-[#4A5E7A] text-xs sm:text-[14px] font-medium mb-6"}>
           <div className="flex items-center gap-1.5"><FiClock className="text-slate-400" /> {durationInWeeks} weeks</div>
           <div className="flex items-center gap-1 text-orange-500 font-bold">
             <FiStar fill="currentColor" /> {averageRating.toFixed(1)}
@@ -81,10 +83,10 @@ const CourseCard = ({ course, iconKey, tag, tagColor }: { course: PopularCourse;
         </div>
 
         <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
-          <span className={isDark ? "text-2xl font-black text-white" : "text-2xl font-black text-[#0F1C2E]"}>${course.price}</span>
+          <span className={isDark ? "text-xl sm:text-2xl font-black text-white" : "text-xl sm:text-2xl font-black text-[#0F1C2E]"}>${course.price}</span>
           <button
             onClick={handleEnrollClick}
-            className="bg-[#1E40AF] text-white px-6 py-2.5 rounded-xl font-bold text-base transition-colors shadow-sm cursor-pointer hover:bg-[#1E3A8A]"
+            className="bg-[#1E40AF] text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer hover:bg-[#1E3A8A]"
           >
             Enroll Now
           </button>
@@ -99,23 +101,42 @@ export const CoursesGrid = () => {
   const isDark = theme === 'dark';
   const [courses, setCourses] = useState<PopularCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const { elementRef, isVisible } = useScrollAnimation({ threshold: 0.1 });
+
+  const CATEGORIES = [
+    'All',
+    'Web Development',
+    'Data Science',
+    'Design',
+    'Business',
+    'DevOps',
+    'Programming',
+    'Game Development',
+    'Animation',
+    'Cyber Security',
+    'Other'
+  ];
 
   useEffect(() => {
-    const fetchPopularCourses = async () => {
+    const fetchCourses = async () => {
+      setLoading(true);
       try {
-        const response = await courseService.getPopularCourses();
+        const response = selectedCategory === '' || selectedCategory === 'All'
+          ? await courseService.getPopularCourses()
+          : await courseService.getCoursesByCategory(selectedCategory);
         if (response.status === 'success' && response.courses) {
           setCourses(response.courses);
         }
       } catch (error) {
-        console.error('Failed to fetch popular courses:', error);
+        console.error('Failed to fetch courses:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPopularCourses();
-  }, []);
+    fetchCourses();
+  }, [selectedCategory]);
 
   // Icon and tag assignment based on course name
   const getCourseMetadata = (courseName: string) => {
@@ -132,43 +153,82 @@ export const CoursesGrid = () => {
   };
 
   return (
-    <section className="py-20 px-6 max-w-7xl mx-auto font-sans">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+    <section
+      ref={elementRef}
+      className={`py-16 sm:py-20 px-4 sm:px-6 max-w-7xl mx-auto font-sans transition-all duration-700 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+      }`}
+    >
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 sm:mb-10">
         <div className="space-y-5">
-          <div className={isDark ? "flex items-center gap-2 text-emerald-400 bg-emerald-900/30 rounded-md px-3 py-1.5 w-fit font-extrabold text-[10px] uppercase tracking-[0.2em]" : "flex items-center gap-2 text-[#1A8A5C] bg-[#E8FAF3] rounded-md px-3 py-1.5 w-fit font-extrabold text-[10px] uppercase tracking-[0.2em]"}>
-            <FiStar className="h-4 w-4" />
-            Popular Courses
-          </div>
-          <h2 className={isDark ? "text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.1]" : "text-4xl md:text-5xl font-black text-[#0F1C2E] tracking-tight leading-[1.1]"}>
-            Skills the market is hiring for
-          </h2>
-          <p className={isDark ? "text-slate-400 text-[16px] font-medium max-w-107.5 leading-relaxed" : "text-[#4A5E7A] text-[16px] font-medium max-w-107.5 leading-relaxed"}>
-            Curated by industry professionals, updated quarterly with the latest tools and trends.
-          </p>
+          <ScrollAnimate delay={0}>
+            <div className={isDark ? "flex items-center gap-2 text-emerald-400 bg-emerald-900/30 rounded-md px-3 py-1.5 w-fit font-extrabold text-[10px] uppercase tracking-[0.2em]" : "flex items-center gap-2 text-[#1A8A5C] bg-[#E8FAF3] rounded-md px-3 py-1.5 w-fit font-extrabold text-[10px] uppercase tracking-[0.2em]"}>
+              <FiStar className="h-4 w-4" />
+              Popular Courses
+            </div>
+          </ScrollAnimate>
+          <ScrollAnimate delay={100}>
+            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] ${isDark ? "text-white" : "text-[#0F1C2E]"}`}>
+              Skills the market is hiring for
+            </h2>
+          </ScrollAnimate>
+          <ScrollAnimate delay={200}>
+            <p className={isDark ? "text-slate-400 text-[15px] sm:text-[16px] font-medium max-w-107.5 leading-relaxed" : "text-[#4A5E7A] text-[15px] sm:text-[16px] font-medium max-w-107.5 leading-relaxed"}>
+              Curated by industry professionals, updated quarterly with the latest tools and trends.
+            </p>
+          </ScrollAnimate>
         </div>
-        <button className={isDark ? "border-2 border-slate-700 px-8 py-3.5 rounded-2xl font-bold mb-27.5 text-sm text-white transition-all active:scale-95 cursor-pointer" : "border-2 border-slate-100 px-8 py-3.5 rounded-2xl font-bold mb-27.5 text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer"}>
-          View all 80+ courses &rarr;
-        </button>
+        <ScrollAnimate delay={300}>
+          <button className={isDark ? "border-2 border-slate-700 px-6 sm:px-8 py-3.5 rounded-2xl font-bold text-sm text-white transition-all active:scale-95 cursor-pointer" : "border-2 border-slate-100 px-6 sm:px-8 py-3.5 rounded-2xl font-bold text-sm text-[#0F1C2E] transition-all active:scale-95 cursor-pointer"}>
+            View all 80+ courses &rarr;
+          </button>
+        </ScrollAnimate>
       </div>
 
+      {/* Category Filter */}
+      <ScrollAnimate delay={400}>
+        <div className="mb-6 sm:mb-8 overflow-x-auto">
+          <div className="flex gap-2 sm:gap-3 pb-2 overflow-x-hidden overflow-y-hidden">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-3 sm:px-4 py-2 rounded-xl font-medium text-xs sm:text-sm whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedCategory === category
+                    ? isDark
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-600 text-white'
+                    : isDark
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </ScrollAnimate>
+
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-80 animate-pulse bg-gray-200 rounded-3xl" />
+            <div key={i} className="h-64 sm:h-80 animate-pulse bg-gray-200 rounded-3xl" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {courses.map((course) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {courses.map((course, index) => {
             const { iconKey, tag, tagColor } = getCourseMetadata(course.courseName);
             return (
-              <CourseCard
-                key={course._id}
-                course={course}
-                iconKey={iconKey}
-                tag={tag}
-                tagColor={tagColor}
-              />
+              <ScrollAnimate key={course._id} delay={500 + index * 100}>
+                <CourseCard
+                  course={course}
+                  iconKey={iconKey}
+                  tag={tag}
+                  tagColor={tagColor}
+                />
+              </ScrollAnimate>
             );
           })}
         </div>

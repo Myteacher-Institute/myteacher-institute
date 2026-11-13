@@ -93,9 +93,9 @@ export default function Navbar() {
     }, []);
 
     return (
-        <nav className={`fixed inset-x-0 top-0 z-50 backdrop-blur-sm border-b px-4 lg:px-16 h-20 flex items-center justify-between shadow-sm ${isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-100'}`}>
-            <div className="flex items-center gap-3">
-                <img src="/logo.png" alt="Myteacher Institute Logo" className="w-45 h-10 object-contain" />
+        <nav className={`fixed inset-x-0 top-0 z-50 backdrop-blur-sm border-b px-3 sm:px-4 lg:px-16 h-16 sm:h-20 flex items-center justify-between shadow-sm ${isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-100'}`}>
+            <div className="flex items-center gap-2 sm:gap-3">
+                <img src="/logo.png" alt="Myteacher Institute Logo" className="w-10 h-10 sm:w-32 sm:h-10 lg:w-44 lg:h-10 object-contain" />
             </div>
 
             <div className="flex items-center gap-3">
@@ -159,9 +159,9 @@ export default function Navbar() {
                     onClick={toggleTheme}
                     aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                     title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                    className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+                    className={`p-1.5 sm:p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
                 >
-                    {isDark ? <FiSun size={18} /> : <FiMoon size={18} />}
+                    {isDark ? <FiSun size={16} /> : <FiMoon size={16} />}
                 </button>
                 {isAuthenticated ? (
                     /* ── Authenticated: user menu ── */
@@ -210,20 +210,22 @@ export default function Navbar() {
                         )}
                     </div>
                 ) : (
-                    /* ── Guest: Get Started ── */
-                    <button onClick={handleGetStarted} className={`text-white px-4 py-2 ml-2 rounded-lg hover:bg-slate-800 transition-all font-bold text-sm inline-flex cursor-pointer ${isDark ? 'bg-slate-700' : 'bg-[#0f172a]'}`}>
+                    /* ── Guest: Get Started (desktop only) ── */
+                    <button onClick={handleGetStarted} className={`hidden lg:inline-flex text-white px-4 py-2 ml-2 rounded-lg hover:bg-slate-800 transition-all font-bold text-sm cursor-pointer ${isDark ? 'bg-slate-700' : 'bg-[#0f172a]'}`}>
                         Get Started
                     </button>
                 )}
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`lg:hidden ${isDark ? 'text-slate-400 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`}>
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`lg:hidden p-1.5 -mr-1.5 rounded-lg transition-colors cursor-pointer ${isDark ? 'text-slate-400 hover:text-blue-400 hover:bg-slate-800' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100'}`}>
                     <BiMenu className="text-xl" />
                 </button>
             </div>
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className={`absolute top-20 left-0 w-full border-b lg:hidden z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
-                    <div className="flex flex-col items-center gap-4 py-4">
+                <div className={`absolute top-16 sm:top-20 left-0 w-full border-b lg:hidden z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'}`}>
+                    <div className="flex flex-col items-center gap-4 py-5 px-4">
+                        <Link href="/" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Home</Link>
+                        <Link href="/affiliate-dashboard" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Affiliate</Link>
                         <Link href="/courses" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Courses</Link>
 
                         {/* Mobile instructor accordion */}
@@ -258,12 +260,12 @@ export default function Navbar() {
                                 </div>
                             )}
                         </div>
-                        <a href="/mentors" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Mentorship</a>
-                        <a href="/ai-tutor" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>AI Tutor</a>
+                        <a href="/mentor" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Mentorship</a>
+                        <a href="/tutor" className={`hover:text-blue-600 font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>AI Tutor</a>
 
                         {/* Mobile auth section */}
                         {isAuthenticated ? (
-                            <div className={`w-full flex flex-col items-center gap-2 border-t pt-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+                            <div className={`w-full flex flex-col items-center gap-2 border-t pt-4 mt-2 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="w-7 h-7 rounded-md bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
                                         {initials}
@@ -289,7 +291,7 @@ export default function Navbar() {
                         ) : (
                             <button
                                 onClick={() => { setIsMenuOpen(false); handleGetStarted(); }}
-                                className="bg-[#0f172a] text-white px-5 py-2 rounded-lg font-bold text-sm cursor-pointer"
+                                className="w-full max-w-xs bg-[#0f172a] text-white px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer hover:bg-slate-800 transition-colors"
                             >
                                 Get Started
                             </button>
