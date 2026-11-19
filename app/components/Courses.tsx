@@ -103,7 +103,7 @@ const CourseCard: React.FC<{ course: BrowseCourse; onEnroll: (courseId: string) 
         </div>
 
         <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
-          <span className={isDark ? "text-xl font-black text-white" : "text-xl font-black text-[#0F1C2E]"}>${course.price}</span>
+          <span className={isDark ? "text-xl font-black text-white" : "text-xl font-black text-[#0F1C2E]"}>₦{course.price}</span>
           <button onClick={() => onEnroll(course._id)} className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-5 py-2 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-md cursor-pointer ">
             Enroll Now
           </button>
