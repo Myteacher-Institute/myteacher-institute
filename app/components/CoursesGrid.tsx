@@ -83,7 +83,7 @@ const CourseCard = ({ course, iconKey, tag, tagColor }: { course: PopularCourse;
         </div>
 
         <div className={isDark ? "mt-auto pt-4 border-t border-slate-700 flex justify-between items-center" : "mt-auto pt-4 border-t border-slate-50 flex justify-between items-center"}>
-          <span className={isDark ? "text-xl sm:text-2xl font-black text-white" : "text-xl sm:text-2xl font-black text-[#0F1C2E]"}>${course.price}</span>
+          <span className={isDark ? "text-xl sm:text-2xl font-black text-white" : "text-xl sm:text-2xl font-black text-[#0F1C2E]"}>₦{course.price}</span>
           <button
             onClick={handleEnrollClick}
             className="bg-[#1E40AF] text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer hover:bg-[#1E3A8A]"
