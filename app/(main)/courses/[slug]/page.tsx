@@ -178,8 +178,8 @@ const CourseDetailsPage = () => {
                 <div className="lg:col-span-4 mt-10 lg:mt-0">
                     <div className="bg-white p-6 md:p-10 rounded-4xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] lg:sticky lg:top-28 border border-gray-50">
                         <div className="flex items-baseline gap-3 mb-2">
-                            <span className="text-4xl font-bold tracking-tight">$50</span>
-                            <span className="text-gray-400 line-through text-xl">$149.99</span>
+                            <span className="text-4xl font-bold tracking-tight">₦50</span>
+                            <span className="text-gray-400 line-through text-xl">₦149.99</span>
                         </div>
 
                         <p className="text-green-600 text-sm font-bold flex items-center gap-2 mb-8">

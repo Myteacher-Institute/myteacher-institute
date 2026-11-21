@@ -308,7 +308,7 @@ export default function CoursePurchasePage() {
               {/* Price + purchase (where MS Store shows Install) */}
               <div className={`rounded-2xl p-5 border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-[#F8FAFC] border-slate-100'}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`text-3xl font-black ${textPrimary}`}>${course.price}</span>
+                  <span className={`text-3xl font-black ${textPrimary}`}>₦{course.price}</span>
                   <span className={`flex items-center gap-1.5 text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                     <FiShield size={14} /> One-time payment
                   </span>
